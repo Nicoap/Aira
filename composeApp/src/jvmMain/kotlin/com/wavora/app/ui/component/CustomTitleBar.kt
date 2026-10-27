@@ -23,6 +23,7 @@ import androidx.compose.material.icons.rounded.Remove
 import androidx.compose.material.icons.rounded.UnfoldLess
 import androidx.compose.material.icons.rounded.UnfoldMore
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -34,22 +35,16 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowState
-import com.wavora.app.ui.theme.md_theme_dark_background
+import com.wavora.app.ui.theme.themeAccentBrush
 import com.wavora.app.ui.theme.typo
 import java.awt.MouseInfo
 import java.awt.Window
-
-// Wavora brand gradient
-private val wavoraGradient = Brush.horizontalGradient(
-    colors = listOf(Color(0xFFA259FF), Color(0xFF6A5CFF), Color(0xFF00D4FF))
-)
 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -72,7 +67,7 @@ fun CustomTitleBar(
         modifier = modifier
             .fillMaxWidth()
             .height(44.dp)
-            .background(Color(0xFF0B0B0F))
+            .background(MaterialTheme.colorScheme.surface)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onDoubleTap = {
@@ -116,7 +111,7 @@ fun CustomTitleBar(
                 modifier = Modifier
                     .size(6.dp)
                     .clip(androidx.compose.foundation.shape.CircleShape)
-                    .background(wavoraGradient)
+                    .background(themeAccentBrush())
             )
             Spacer(modifier = Modifier.width(8.dp))
             Text(
@@ -125,7 +120,7 @@ fun CustomTitleBar(
                     fontSize = 13.sp,
                     letterSpacing = 1.5.sp,
                 ),
-                color = Color(0xFFB3B3C6),
+                color = MaterialTheme.colorScheme.onSurface,
             )
 
             Spacer(modifier = Modifier.weight(1f))
@@ -177,8 +172,8 @@ private fun WindowControlButton(
 
     val bgColor = when {
         isHovered && type == ButtonType.Danger -> Color(0xFFFF4444)
-        isHovered && type == ButtonType.Neutral -> Color(0xFF1F1F2E)
-        else -> Color(0xFF12121A)
+        isHovered && type == ButtonType.Neutral -> MaterialTheme.colorScheme.primary
+        else -> MaterialTheme.colorScheme.surfaceVariant
     }
 
     Box(
@@ -192,7 +187,12 @@ private fun WindowControlButton(
             },
         contentAlignment = Alignment.Center,
     ) {
-        val iconTint = if (isHovered) Color.White else Color(0xFF6B6B7A)
+        val iconTint =
+            when {
+                isHovered && type == ButtonType.Danger -> Color.White
+                isHovered -> MaterialTheme.colorScheme.onPrimary
+                else -> MaterialTheme.colorScheme.onSurfaceVariant
+            }
         when (icon) {
             WindowControlIcon.Minimize ->
                 Icon(Icons.Rounded.Remove, tint = iconTint, contentDescription = "Minimize",

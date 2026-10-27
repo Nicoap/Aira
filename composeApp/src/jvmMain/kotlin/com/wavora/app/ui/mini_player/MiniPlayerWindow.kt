@@ -22,7 +22,7 @@ import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.app.viewModel.UIEvent
 import org.jetbrains.compose.resources.painterResource
 import wavora.composeapp.generated.resources.Res
-import wavora.composeapp.generated.resources.circle_app_icon
+import wavora.composeapp.generated.resources.system_app_icon
 import java.awt.Dimension
 import java.util.prefs.Preferences
 
@@ -92,7 +92,7 @@ fun MiniPlayerWindow(
     Window(
         onCloseRequest = onCloseRequest,
         title = "Wavora - Mini Player",
-        icon = painterResource(Res.drawable.circle_app_icon),
+        icon = painterResource(Res.drawable.system_app_icon),
         alwaysOnTop = true,
         undecorated = true,
         transparent = true,

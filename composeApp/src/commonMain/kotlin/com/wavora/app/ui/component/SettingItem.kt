@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.material3.Text
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -18,7 +19,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.wavora.app.extension.greyScale
 import com.wavora.app.ui.theme.typo
-import com.wavora.app.ui.theme.white
 import com.wavora.app.ui.theme.LocalAppTypography
 
 @Composable
@@ -73,23 +73,25 @@ fun SettingItem(
                         LocalAppTypography.current.labelMedium.let {
                             if (!isEnable) it.greyScale() else it
                         },
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
-                Spacer(Modifier.height(4.dp))
-                Text(
-                    text = subtitle,
-                    style =
-                        if (smallSubtitle) {
-                            LocalAppTypography.current.bodySmall.let {
-                                if (!isEnable) it.greyScale() else it
-                            }
-                        } else {
-                            LocalAppTypography.current.bodyMedium.let {
-                                if (!isEnable) it.greyScale() else it
-                            }
-                        },
-                    maxLines = 2,
-                )
+                if (subtitle.isNotBlank()) {
+                    Spacer(Modifier.height(4.dp))
+                    Text(
+                        text = subtitle,
+                        style =
+                            if (smallSubtitle) {
+                                LocalAppTypography.current.bodySmall.let {
+                                    if (!isEnable) it.greyScale() else it
+                                }
+                            } else {
+                                LocalAppTypography.current.bodyMedium.let {
+                                    if (!isEnable) it.greyScale() else it
+                                }
+                            },
+                        maxLines = 2,
+                    )
+                }
 
                 otherView?.let {
                     Spacer(Modifier.height(16.dp))

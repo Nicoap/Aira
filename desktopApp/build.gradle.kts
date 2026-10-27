@@ -352,7 +352,7 @@ compose.desktop {
                 // a non-Conveyor packaging fallback — do not rely on it for Wavora's
                 // actual Windows distribution.
                 shortcut = true
-                menu = false
+                menu = true
                 upgradeUuid = "A1B2C3D4-E5F6-7890-ABCD-EF1234567890"
             }
             linux {

@@ -15,11 +15,11 @@ import androidx.compose.material.icons.filled.Insights
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
@@ -113,7 +113,7 @@ fun LibraryTilingItem(
         elevation = CardDefaults.elevatedCardElevation(),
         colors =
             CardDefaults.elevatedCardColors().copy(
-                containerColor = state.containerColor,
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
             ),
     ) {
         Row(
@@ -127,12 +127,12 @@ fun LibraryTilingItem(
                     Modifier
                         .size(50.dp)
                         .padding(10.dp),
-                tint = state.iconColor,
+                tint = MaterialTheme.colorScheme.primary,
             )
             Text(
                 title,
                 style = LocalAppTypography.current.titleSmall,
-                color = Color.Black,
+                color = MaterialTheme.colorScheme.onPrimaryContainer,
             )
         }
     }
@@ -140,38 +140,28 @@ fun LibraryTilingItem(
 
 data class LibraryTilingState(
     val title: StringResource,
-    val containerColor: Color,
     val icon: ImageVector,
-    val iconColor: Color,
 ) {
     companion object {
         val Favorite =
             LibraryTilingState(
                 title = Res.string.favorite,
-                containerColor = Color(0xffff99ae),
                 icon = Icons.Default.Favorite,
-                iconColor = Color(0xffD10000),
             )
         val Followed =
             LibraryTilingState(
                 title = Res.string.followed,
-                containerColor = Color(0xffFFEB3B),
                 icon = Icons.Default.Insights,
-                iconColor = Color.Black,
             )
         val MostPlayed =
             LibraryTilingState(
                 title = Res.string.most_played,
-                containerColor = Color(0xff00BCD4),
                 icon = Icons.AutoMirrored.Filled.TrendingUp,
-                iconColor = Color.Black,
             )
         val Downloaded =
             LibraryTilingState(
                 title = Res.string.downloaded,
-                containerColor = Color(0xff4CAF50),
                 icon = Icons.Default.Downloading,
-                iconColor = Color.Black,
             )
     }
 }

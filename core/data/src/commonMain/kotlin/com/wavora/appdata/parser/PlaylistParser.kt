@@ -272,7 +272,7 @@ internal fun parsePlaylistData(
                                             ?.navigationEndpoint
                                             ?.browseEndpoint
                                             ?.browseId ?: return null,
-                                    name = "Album",
+                                    name = "",
                                 )
                             },
                     artists =

@@ -46,9 +46,10 @@ open class KizzyRPC(
     fun isRpcRunning(): Boolean = discordWebSocket.isWebSocketConnected()
 
     open suspend fun close() {
-        if (!isRpcRunning()) {
-            discordWebSocket.connect()
-        }
+        clearActivity()
+    }
+
+    suspend fun clearActivity() {
         val presence =
             Presence(
                 activities = emptyList(),

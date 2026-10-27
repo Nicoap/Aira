@@ -826,6 +826,135 @@ class YouTube {
             )
         }
 
+    suspend fun getLikedSongs(): Result<List<SongItem>> =
+        runCatching {
+            val firstPage = playlist("LM").getOrThrow()
+            val songs = firstPage.songs.toMutableList()
+            var continuation = firstPage.songsContinuation
+            while (continuation != null) {
+                val page = playlistContinuation(continuation).getOrThrow()
+                songs.addAll(page.songs)
+                continuation = page.continuation
+            }
+            songs.distinctBy { it.id }
+        }
+
+    suspend fun getLibrarySubscriptions(): Result<List<ArtistItem>> =
+        runCatching {
+            fun artistItems(contents: List<com.wavora.scraper.models.SectionListRenderer.Content>): List<ArtistItem> =
+                buildList {
+                    contents.forEach { section ->
+                        section.gridRenderer?.items.orEmpty().forEach { item ->
+                            val renderer = item.musicTwoRowItemRenderer ?: return@forEach
+                            if (renderer.isArtist) {
+                                val id = renderer.navigationEndpoint.browseEndpoint?.browseId ?: return@forEach
+                                add(
+                                    ArtistItem(
+                                        id = id,
+                                        title = renderer.title.runs?.firstOrNull()?.text ?: return@forEach,
+                                        thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: "",
+                                        shuffleEndpoint = null,
+                                        radioEndpoint = null,
+                                    ),
+                                )
+                            }
+                        }
+                        section.musicShelfRenderer?.contents.orEmpty().forEach { item ->
+                            val renderer = item.musicResponsiveListItemRenderer ?: return@forEach
+                            if (renderer.isArtist) {
+                                val firstRun =
+                                    renderer.flexColumns
+                                        .firstOrNull()
+                                        ?.musicResponsiveListItemFlexColumnRenderer
+                                        ?.text
+                                        ?.runs
+                                        ?.firstOrNull() ?: return@forEach
+                                val id =
+                                    renderer.navigationEndpoint?.browseEndpoint?.browseId
+                                        ?: firstRun.navigationEndpoint?.browseEndpoint?.browseId
+                                        ?: return@forEach
+                                add(
+                                    ArtistItem(
+                                        id = id,
+                                        title = firstRun.text,
+                                        thumbnail = renderer.thumbnail?.musicThumbnailRenderer?.getThumbnailUrl() ?: "",
+                                        shuffleEndpoint = null,
+                                        radioEndpoint = null,
+                                    ),
+                                )
+                            }
+                        }
+                    }
+                }
+
+            val response =
+                ytMusic
+                    .browse(WEB_REMIX, "FEmusic_library_corpus_artists", setLogin = true)
+                    .body<BrowseResponse>()
+            val sections =
+                response.contents?.sectionListRenderer?.contents
+                    ?: response.contents?.singleColumnBrowseResultsRenderer
+                        ?.tabs
+                        ?.firstOrNull()
+                        ?.tabRenderer
+                        ?.content
+                        ?.sectionListRenderer
+                        ?.contents
+                    ?: response.contents?.twoColumnBrowseResultsRenderer
+                        ?.secondaryContents
+                        ?.sectionListRenderer
+                        ?.contents
+                    ?: emptyList()
+            val artists = artistItems(sections).toMutableList()
+            var continuation =
+                response.contents?.sectionListRenderer?.continuations?.firstOrNull()?.nextContinuationData?.continuation
+                    ?: sections
+                        .asSequence()
+                        .mapNotNull { it.gridRenderer?.continuations?.firstOrNull()?.nextContinuationData?.continuation }
+                        .firstOrNull()
+
+            while (continuation != null) {
+                val next =
+                    ytMusic
+                        .browse(WEB_REMIX, continuation = continuation, setLogin = true)
+                        .body<BrowseResponse>()
+                val nextSections = next.continuationContents?.sectionListContinuation?.contents.orEmpty()
+                artists.addAll(artistItems(nextSections))
+                next.continuationContents?.gridContinuation?.items.orEmpty().forEach { item ->
+                    val renderer = item.musicTwoRowItemRenderer ?: return@forEach
+                    if (renderer.isArtist) {
+                        val id = renderer.navigationEndpoint.browseEndpoint?.browseId ?: return@forEach
+                        artists.add(
+                            ArtistItem(
+                                id = id,
+                                title = renderer.title.runs?.firstOrNull()?.text ?: return@forEach,
+                                thumbnail = renderer.thumbnailRenderer.musicThumbnailRenderer?.getThumbnailUrl() ?: "",
+                                shuffleEndpoint = null,
+                                radioEndpoint = null,
+                            ),
+                        )
+                    }
+                }
+                continuation =
+                    next.continuationContents?.sectionListContinuation
+                        ?.continuations
+                        ?.firstOrNull()
+                        ?.nextContinuationData
+                        ?.continuation
+                        ?: next.continuationContents?.gridContinuation
+                            ?.continuations
+                            ?.firstOrNull()
+                            ?.nextContinuationData
+                            ?.continuation
+            }
+            artists.distinctBy { it.id }
+        }
+
+    suspend fun subscribeArtist(channelId: String): Result<Int> =
+        runCatching {
+            ytMusic.subscribeArtist(channelId).status.value
+        }
+
     /**
      * Execute a custom POST request to YouTube Music
      * In Wavora, I use this function to parsing Home, Playlist, Album data instead using [album], [playlist], [artist] function

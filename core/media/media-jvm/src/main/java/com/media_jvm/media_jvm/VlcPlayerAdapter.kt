@@ -230,6 +230,8 @@ class VlcPlayerAdapter(
     // instance. Does not change crossfade timing, curve, or any other logic.
     private val mediaPlayerFactorySecondary: MediaPlayerFactory
     private val factoryToggle = java.util.concurrent.atomic.AtomicLong(0)
+    @Volatile
+    private var maxPrecacheCount = 2
 
     init {
         System
@@ -250,7 +252,6 @@ class VlcPlayerAdapter(
         val factoryArgs =
             mutableListOf(
                 "--no-video-title-show",
-                "--no-video",
                 "--quiet",
                 "--no-metadata-network-access",
                 "--network-caching=3000",
@@ -294,6 +295,10 @@ class VlcPlayerAdapter(
                 djCrossfadeEnabled = (enabled == DataStoreManager.TRUE)
                 Logger.d(TAG, "DJ crossfade mode: $djCrossfadeEnabled")
             }
+        }
+
+        coroutineScope.launch {
+            dataStoreManager.mediaPreloadCount.collect(::setMaxPrecacheCount)
         }
     }
 
@@ -591,7 +596,6 @@ class VlcPlayerAdapter(
 
     private val precachedPlayers = ConcurrentHashMap<String, PrecachedPlayer>()
     private var precacheEnabled = true
-    private val maxPrecacheCount = 2
     private var precacheJob: Job? = null
 
     // ROOT CAUSE FIX (Windows crossfade double-freeze): triggerPrecachingInternal()
@@ -1638,8 +1642,9 @@ class VlcPlayerAdapter(
             options.add(":input-slave=${source.audioSlaveUrl}")
         }
         if (source.isVideo) {
-            // Extra buffering for video streams to prevent stalls near end
-            options.add(":network-caching=5000")
+            // Video decoding and rendering are more sensitive to network
+            // jitter than audio-only playback; keep a larger stream buffer.
+            options.add(":network-caching=10000")
             options.add(":http-reconnect")
         } else {
             // WAVORA CROSSFADE FIX (Windows root cause): audio-only sources — which
@@ -2024,6 +2029,8 @@ class VlcPlayerAdapter(
 
         val shouldCrossfade =
             crossfadeEnabled &&
+                !currentPlayerIsVideo &&
+                playlist.getOrNull(getNextMediaItemIndex())?.isVideo() != true &&
                 hasNextMediaItem()
 
         if (shouldCrossfade) {
@@ -2057,6 +2064,10 @@ class VlcPlayerAdapter(
      */
     private fun triggerCrossfadeTransition(nextIndex: Int) {
         if (nextIndex !in playlist.indices || isCrossfading) return
+        if (currentPlayerIsVideo || playlist[nextIndex].isVideo()) {
+            seekTo(nextIndex, 0)
+            return
+        }
 
         // AUDIT FIX (canciones "mezcladas" / sonando una encima de otra):
         // confirmado por logs — cuando una canción termina de forma ambigua
@@ -2916,6 +2927,8 @@ class VlcPlayerAdapter(
                             // Block when paused (internalPlayWhenReady=false) to prevent
                             // crossfade during queue restore.
                             if (crossfadeEnabled &&
+                                !currentPlayerIsVideo &&
+                                playlist.getOrNull(getNextMediaItemIndex())?.isVideo() != true &&
                                 !isCrossfading &&
                                 internalPlayWhenReady
                             ) {
@@ -3198,7 +3211,11 @@ class VlcPlayerAdapter(
      * Trigger precaching
      */
     private fun triggerPrecachingInternal() {
-        if (!precacheEnabled || playlist.isEmpty()) return
+        if (!precacheEnabled || maxPrecacheCount <= 0 || playlist.isEmpty()) return
+        if (currentPlayerIsVideo) {
+            cancelPrecaching()
+            return
+        }
 
         cancelPrecaching()
         Logger.d(TAG, "Trigger precache (grace period: ${precacheStartupGraceMs}ms)")
@@ -3249,6 +3266,11 @@ class VlcPlayerAdapter(
                         val source = withContext(Dispatchers.IO) { extractPlayableUrl(mediaItem) }
 
                         if (source != null && source.url.isNotEmpty()) {
+                            if (source.isVideo) {
+                                Logger.d(TAG, "Skipping video track preloading to avoid decoder contention")
+                                delay(precacheStaggerMs)
+                                continue
+                            }
                             try {
                                 val player = createMediaPlayerInternal(source)
                                 val options = buildVlcOptions(source)
@@ -3395,7 +3417,19 @@ class VlcPlayerAdapter(
     }
 
     fun setMaxPrecacheCount(count: Int) {
-        // maxPrecacheCount is val, but can be changed to var if needed
+        val normalizedCount = count.coerceIn(0, 5)
+        if (maxPrecacheCount == normalizedCount) return
+
+        maxPrecacheCount = normalizedCount
+        coroutineScope.launch {
+            cancelPrecaching()
+            if (normalizedCount == 0) {
+                clearAllPrecacheInternal()
+            } else {
+                clearPrecacheExceptCurrentInternal()
+                triggerPrecachingInternal()
+            }
+        }
     }
 
     // ========== URL Extraction ==========

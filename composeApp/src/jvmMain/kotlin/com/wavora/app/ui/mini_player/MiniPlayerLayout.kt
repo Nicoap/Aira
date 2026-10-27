@@ -3,10 +3,14 @@ package com.wavora.app.ui.mini_player
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.RepeatMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.SolidColor
 import com.wavora.app.extension.wavoraIconGradient
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
+import com.wavora.app.ui.theme.themeAccentBrush
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -28,6 +32,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -46,6 +51,7 @@ import androidx.compose.material.icons.filled.VolumeUp
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -74,7 +80,6 @@ import com.wavora.app.ui.component.RippleIconButton
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.viewModel.NowPlayingScreenData
 import com.wavora.app.viewModel.UIEvent
-import org.jetbrains.compose.resources.painterResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.baseline_skip_next_24
 import wavora.composeapp.generated.resources.baseline_skip_previous_24
@@ -132,15 +137,13 @@ private fun MiniPlayerSeekBar(
                 .height(trackHeight)
                 .align(Alignment.Center)
                 .background(
-                    Color(0xFF1F1F2E),
+                    MaterialTheme.colorScheme.surfaceVariant,
                     RoundedCornerShape(50),
                 ),
         )
 
         // Progress - Wavora gradient
-        val wavoraGradient = Brush.horizontalGradient(
-            colors = listOf(Color(0xFFA259FF), Color(0xFF6A5CFF), Color(0xFF00D4FF)),
-        )
+        val wavoraGradient = themeAccentBrush()
         Box(
             Modifier
                 .width(maxWidth * progress)
@@ -158,7 +161,7 @@ private fun MiniPlayerSeekBar(
                 .offset(x = (maxWidth * progress) - (thumbSize / 2))
                 .size(thumbSize)
                 .align(Alignment.CenterStart)
-                .background(Color(0xFFA259FF), CircleShape),
+                .background(MaterialTheme.colorScheme.primary, CircleShape),
         )
     }
 }
@@ -186,7 +189,7 @@ fun CompactMiniLayout(
                 .fillMaxSize()
                 .animateContentSize(animationSpec = tween(300))
                 .hoverable(interactionSource),
-        color = Color(0xFF0B0B0F),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         // Wavora subtle gradient overlay
         Box(
@@ -194,7 +197,7 @@ fun CompactMiniLayout(
                 .fillMaxSize()
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x1AA259FF), Color(0x00000000)),
+                        colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), Color.Transparent),
                         radius = 800f,
                     ),
                 ),
@@ -222,12 +225,12 @@ fun CompactMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isPreviousAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         onClick = {
                             if (controllerState.isPreviousAvailable) {
                                 onUIEvent(UIEvent.Previous)
@@ -255,12 +258,12 @@ fun CompactMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isNextAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                         onClick = {
                             if (controllerState.isNextAvailable) {
                                 onUIEvent(UIEvent.Next)
@@ -307,7 +310,7 @@ fun MediumMiniLayout(
             Modifier
                 .fillMaxSize()
                 .animateContentSize(animationSpec = tween(300)),
-        color = Color(0xFF0B0B0F),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         // Wavora subtle gradient overlay
         Box(
@@ -315,7 +318,7 @@ fun MediumMiniLayout(
                 .fillMaxSize()
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x1AA259FF), Color(0x00000000)),
+                        colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), Color.Transparent),
                         radius = 800f,
                     ),
                 ),
@@ -337,8 +340,8 @@ fun MediumMiniLayout(
                     AsyncImage(
                         model = nowPlayingData.thumbnailURL,
                         contentDescription = "Album Art",
-                        placeholder = painterResource(Res.drawable.holder),
-                        error = painterResource(Res.drawable.holder),
+                        placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                        error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                         contentScale = ContentScale.Crop,
                         modifier =
                             Modifier
@@ -375,9 +378,9 @@ fun MediumMiniLayout(
                                     contentDescription = "Like",
                                     tint =
                                         if (controllerState.isLiked) {
-                                            Color(0xFFFF4081)
+                                            MaterialTheme.colorScheme.primary
                                         } else {
-                                            Color.White.copy(alpha = 0.7f)
+                                            MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                         },
                                     modifier = Modifier.size(18.dp),
                                 )
@@ -393,12 +396,12 @@ fun MediumMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isPreviousAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                             onClick = {
                                 if (controllerState.isPreviousAvailable) {
                                     onUIEvent(UIEvent.Previous)
@@ -426,12 +429,12 @@ fun MediumMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isNextAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                             onClick = {
                                 if (controllerState.isNextAvailable) {
                                     onUIEvent(UIEvent.Next)
@@ -461,7 +464,7 @@ fun MediumMiniLayout(
                                             Icons.AutoMirrored.Filled.VolumeOff
                                         },
                                     contentDescription = if (controllerState.volume > 0f) "Mute" else "Unmute",
-                                    tint = Color.White.copy(alpha = 0.7f),
+                                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                     modifier = Modifier.size(18.dp),
                                 )
                             }
@@ -517,7 +520,7 @@ fun MediumMiniLayout(
                                     textAlign = TextAlign.Center,
                                     text = currentLine.words,
                                     style = typo().bodySmall,
-                                    color = Color.White.copy(alpha = 0.9f),
+                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                                     maxLines = 1,
                                     overflow = TextOverflow.Ellipsis,
                                     fontSize = 11.sp,
@@ -566,7 +569,7 @@ fun SquareMiniLayout(
             Modifier
                 .fillMaxSize()
                 .animateContentSize(animationSpec = tween(300)),
-        color = Color(0xFF0B0B0F),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         // Wavora subtle gradient overlay
         Box(
@@ -574,7 +577,7 @@ fun SquareMiniLayout(
                 .fillMaxSize()
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x1AA259FF), Color(0x00000000)),
+                        colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), Color.Transparent),
                         radius = 800f,
                     ),
                 ),
@@ -593,8 +596,8 @@ fun SquareMiniLayout(
             AsyncImage(
                 model = nowPlayingData.thumbnailURL,
                 contentDescription = "Album Art",
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentScale = ContentScale.Crop,
                 modifier =
                     Modifier
@@ -615,7 +618,7 @@ fun SquareMiniLayout(
                 Text(
                     text = nowPlayingData.nowPlayingTitle,
                     style = typo().bodyLarge,
-                    color = Color(0xFFFFFFFF),
+                    color = MaterialTheme.colorScheme.onSurface,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 16.sp,
@@ -624,7 +627,7 @@ fun SquareMiniLayout(
                 Text(
                     text = nowPlayingData.artistName,
                     style = typo().bodyMedium,
-                    color = Color(0xFF3D3D5C),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     fontSize = 13.sp,
@@ -675,7 +678,7 @@ fun SquareMiniLayout(
                             textAlign = TextAlign.Center,
                             text = currentLine.words,
                             style = typo().bodySmall,
-                            color = Color.White.copy(alpha = 0.9f),
+                            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis,
                             fontSize = 12.sp,
@@ -717,9 +720,9 @@ fun SquareMiniLayout(
                         contentDescription = "Like",
                         tint =
                             if (controllerState.isLiked) {
-                                Color(0xFFFF4081)
+                                MaterialTheme.colorScheme.primary
                             } else {
-                                Color.White.copy(alpha = 0.7f)
+                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                             },
                         modifier = Modifier.size(24.dp),
                     )
@@ -735,12 +738,12 @@ fun SquareMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isPreviousAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                     onClick = {
                         if (controllerState.isPreviousAvailable) {
                             onUIEvent(UIEvent.Previous)
@@ -770,12 +773,12 @@ fun SquareMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isNextAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                     onClick = {
                         if (controllerState.isNextAvailable) {
                             onUIEvent(UIEvent.Next)
@@ -800,7 +803,7 @@ fun SquareMiniLayout(
                                 Icons.AutoMirrored.Filled.VolumeOff
                             },
                         contentDescription = if (controllerState.volume > 0f) "Mute" else "Unmute",
-                        tint = Color.White.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                         modifier = Modifier.size(24.dp),
                     )
                 }
@@ -827,13 +830,48 @@ fun EmptyMiniPlayerState() {
             Text(
                 text = "No track playing",
                 style = typo().bodyMedium.copy(fontSize = 13.sp),
-                color = Color.White.copy(alpha = 0.6f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = "Play something to see controls",
                 style = typo().bodySmall.copy(fontSize = 11.sp),
-                color = Color.White.copy(alpha = 0.4f),
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
+            )
+        }
+    }
+}
+
+@Composable
+private fun MiniPlayerAudioVisualizer(
+    isPlaying: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    val transition = rememberInfiniteTransition(label = "mini-player-audio-visualizer")
+    Row(
+        modifier = modifier.height(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(2.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        repeat(9) { index ->
+            val pulse by transition.animateFloat(
+                initialValue = 0.16f,
+                targetValue = 0.34f + ((index * 37) % 63) / 100f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = 320 + index * 47, delayMillis = index * 31),
+                        repeatMode = RepeatMode.Reverse,
+                    ),
+                label = "mini-player-visualizer-bar-$index",
+            )
+            val barHeight = if (isPlaying) pulse else 0.12f
+            Box(
+                modifier =
+                    Modifier
+                        .width(3.dp)
+                        .fillMaxHeight(barHeight)
+                        .clip(CircleShape)
+                        .background(themeAccentBrush()),
             )
         }
     }
@@ -863,7 +901,7 @@ fun ExpandedMiniLayout(
             Modifier
                 .fillMaxSize()
                 .animateContentSize(animationSpec = tween(300)),
-        color = Color(0xFF0B0B0F),
+        color = MaterialTheme.colorScheme.surface,
     ) {
         // Wavora subtle gradient overlay
         Box(
@@ -871,7 +909,7 @@ fun ExpandedMiniLayout(
                 .fillMaxSize()
                 .background(
                     brush = Brush.radialGradient(
-                        colors = listOf(Color(0x1AA259FF), Color(0x00000000)),
+                        colors = listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), Color.Transparent),
                         radius = 800f,
                     ),
                 ),
@@ -893,8 +931,8 @@ fun ExpandedMiniLayout(
                 AsyncImage(
                     model = nowPlayingData.thumbnailURL,
                     contentDescription = "Album Art",
-                    placeholder = painterResource(Res.drawable.holder),
-                    error = painterResource(Res.drawable.holder),
+                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                     contentScale = ContentScale.Crop,
                     modifier =
                         Modifier
@@ -912,7 +950,7 @@ fun ExpandedMiniLayout(
                     Text(
                         text = nowPlayingData.nowPlayingTitle,
                         style = typo().bodyMedium,
-                        color = Color(0xFFFFFFFF),
+                        color = MaterialTheme.colorScheme.onSurface,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 14.sp,
@@ -921,10 +959,14 @@ fun ExpandedMiniLayout(
                     Text(
                         text = nowPlayingData.artistName,
                         style = typo().bodySmall,
-                        color = Color(0xFF3D3D5C),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         fontSize = 12.sp,
+                    )
+                    MiniPlayerAudioVisualizer(
+                        isPlaying = controllerState.isPlaying,
+                        modifier = Modifier.padding(top = 5.dp),
                     )
                 }
 
@@ -953,9 +995,9 @@ fun ExpandedMiniLayout(
                                 contentDescription = "Like",
                                 tint =
                                     if (controllerState.isLiked) {
-                                        Color(0xFFFF4081)
+                                        MaterialTheme.colorScheme.primary
                                     } else {
-                                        Color.White.copy(alpha = 0.7f)
+                                        MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
                                     },
                                 modifier = Modifier.size(20.dp),
                             )
@@ -970,12 +1012,12 @@ fun ExpandedMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isPreviousAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                             onClick = {
                                 if (controllerState.isPreviousAvailable) {
                                     onUIEvent(UIEvent.Previous)
@@ -1005,12 +1047,12 @@ fun ExpandedMiniLayout(
                                 .wavoraIconGradient(
                                     brush =
                                         if (controllerState.isNextAvailable) {
-                                            wavoraIconGradientBrush
+                                            themeAccentBrush()
                                         } else {
-                                            SolidColor(Color(0xFF3D3D5C))
+                                            SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                         },
                                 ),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onPrimary,
                             onClick = {
                                 if (controllerState.isNextAvailable) {
                                     onUIEvent(UIEvent.Next)
@@ -1035,7 +1077,7 @@ fun ExpandedMiniLayout(
                                         Icons.AutoMirrored.Filled.VolumeOff
                                     },
                                 contentDescription = if (controllerState.volume > 0f) "Mute" else "Unmute",
-                                tint = Color.White.copy(alpha = 0.7f),
+                                tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -1092,7 +1134,7 @@ fun ExpandedMiniLayout(
                                 textAlign = TextAlign.Center,
                                 text = currentLine.words,
                                 style = typo().bodySmall,
-                                color = Color.White.copy(alpha = 0.9f),
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.9f),
                                 maxLines = 1,
                                 overflow = TextOverflow.Ellipsis,
                                 fontSize = 11.sp,

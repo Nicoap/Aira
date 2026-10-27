@@ -51,7 +51,7 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.drawscope.ContentDrawScope
 import androidx.compose.ui.graphics.drawscope.drawIntoCanvas
 import androidx.compose.ui.graphics.graphicsLayer
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
+import com.wavora.app.ui.theme.themeAccentBrush
 import androidx.compose.ui.layout.boundsInWindow
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalLayoutDirection
@@ -582,19 +582,19 @@ fun hsvToColor(
  * Use this instead of Modifier.background(brush = ...).clip(CircleShape) when only the
  * icon glyph itself should be gradient-filled, not a filled shape behind it.
  */
+@Composable
 fun Modifier.wavoraIconGradient(
-    brush: Brush = wavoraIconGradientBrush,
-    enabled: Boolean = true,
-): Modifier =
-    if (!enabled) {
-        this
-    } else {
-        this
-            .graphicsLayer(alpha = 0.99f)
-            .drawWithCache {
-                onDrawWithContent {
-                    drawContent()
-                    drawRect(brush = brush, blendMode = BlendMode.SrcAtop)
-                }
-            }
-    }
+   brush: Brush? = null,
+   enabled: Boolean = true,
+): Modifier {
+   if (!enabled) return this
+   val accentBrush = brush ?: themeAccentBrush()
+   return this
+       .graphicsLayer(alpha = 0.99f)
+       .drawWithCache {
+           onDrawWithContent {
+               drawContent()
+               drawRect(brush = accentBrush, blendMode = BlendMode.SrcAtop)
+           }
+       }
+}

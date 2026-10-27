@@ -63,6 +63,7 @@ import com.wavora.domain.utils.toSongEntity
 import com.wavora.domain.utils.toTrack
 import com.wavora.logger.Logger
 import com.my.kizzy.DiscordRPC
+import com.my.kizzy.DiscordRpcSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -82,6 +83,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.update
@@ -149,6 +151,10 @@ class JvmMediaPlayerHandlerImpl(
 
     override val player: MediaPlayerInterface = getKoin().get()
     private var discordRPC: DiscordRPC? = null
+    private var discordRpcUpdateJob: Job? = null
+    private var discordRpcPauseClearJob: Job? = null
+    private var discordRpcUpdateGeneration = 0L
+    private val DISCORD_RPC_PAUSE_TIMEOUT_MILLIS = 300_000L
     // Discord RPC is throttled: only update every 15 s (150 × 100 ms ticks).
     // When Discord is disabled discordRPC is null, so we skip the DataStore
     // read entirely instead of launching a no-op coroutine 10 times per second.
@@ -461,9 +467,11 @@ class JvmMediaPlayerHandlerImpl(
                             if (it == TRUE && discordRPC == null) {
                                 discordRPC = DiscordRPC(dataStoreManager.discordToken.first())
                                 nowPlayingState.value.songEntity?.let { song ->
-                                    updateDiscordRpc(song)
+                                    updateDiscordRpc(song, _controlState.value.isPlaying)
                                 }
                             } else if (it == FALSE) {
+                                discordRpcPauseClearJob?.cancel()
+                                discordRpcUpdateJob?.cancel()
                                 if (discordRPC?.isRpcRunning() == true) {
                                     discordRPC?.closeRPC()
                                 }
@@ -471,12 +479,27 @@ class JvmMediaPlayerHandlerImpl(
                             }
                         }
                 }
+            val discordRPCSettingsJob =
+                launch {
+                    merge(
+                        dataStoreManager.discordRpcButtonOneLabel,
+                        dataStoreManager.discordRpcButtonOneEnabled,
+                        dataStoreManager.discordRpcButtonOneUrl,
+                        dataStoreManager.discordRpcButtonTwoLabel,
+                        dataStoreManager.discordRpcButtonTwoEnabled,
+                        dataStoreManager.discordRpcButtonTwoUrl,
+                        dataStoreManager.discordRpcSmallImageUrl,
+                    ).collect {
+                        nowPlayingState.value.songEntity?.let(::updateDiscordRpc)
+                    }
+                }
             controlStateJob.join()
             skipSegmentsJob.join()
             playbackJob.join()
             playbackSpeedPitchJob.join()
             sponsorBlockCacheJob.join()
             discordRPCEnabledJob.join()
+            discordRPCSettingsJob.join()
         }
     }
 
@@ -2386,15 +2409,14 @@ class JvmMediaPlayerHandlerImpl(
         )
         _controlState.value = _controlState.value.copy(isPlaying = isPlaying)
         if (isPlaying) {
+            discordRpcPauseClearJob?.cancel()
             startProgressUpdate()
-            nowPlayingState.value.songEntity?.let { updateDiscordRpc(it) }
+            nowPlayingState.value.songEntity?.let { updateDiscordRpc(it, true) }
         } else {
             stopProgressUpdate()
             mayBeSaveRecentSong()
             mayBeSavePlaybackState()
-            if (discordRPC?.isRpcRunning() == true) {
-                discordRPC?.closeRPC()
-            }
+            nowPlayingState.value.songEntity?.let { updateDiscordRpc(it, false) }
         }
         updateNextPreviousTrackAvailability()
         updateMacOSPlaybackState(isPlaying)
@@ -2527,15 +2549,71 @@ class JvmMediaPlayerHandlerImpl(
         }
     }
 
-    private fun updateDiscordRpc(song: SongEntity) {
-        coroutineScope.launch {
-            val progress = getProgress()
-            val duration = getPlayerDuration()
-            val speed = cachedPlaybackSpeed
-            withContext(Dispatchers.IO) {
-                discordRPC?.updateSong(progress, duration, speed, song)
-            }
+    private fun updateDiscordRpc(
+        song: SongEntity,
+        isPlaying: Boolean = _controlState.value.isPlaying,
+    ) {
+        val rpc = discordRPC ?: return
+        discordRpcUpdateJob?.cancel()
+        val generation = ++discordRpcUpdateGeneration
+        if (isPlaying) {
+            discordRpcPauseClearJob?.cancel()
+        } else {
+            scheduleDiscordRpcPauseClear(song, rpc)
         }
+        discordRpcUpdateJob =
+            coroutineScope.launch {
+                val progress = getProgress()
+                val duration = getPlayerDuration()
+                val speed = cachedPlaybackSpeed
+                val rpcSettings =
+                    withContext(Dispatchers.IO) {
+                        DiscordRpcSettings(
+                            buttonOneLabel = dataStoreManager.discordRpcButtonOneLabel.first(),
+                            buttonOneUrl = dataStoreManager.discordRpcButtonOneUrl.first(),
+                            buttonOneEnabled = dataStoreManager.discordRpcButtonOneEnabled.first() == TRUE,
+                            buttonTwoLabel = dataStoreManager.discordRpcButtonTwoLabel.first(),
+                            buttonTwoUrl = dataStoreManager.discordRpcButtonTwoUrl.first(),
+                            buttonTwoEnabled = dataStoreManager.discordRpcButtonTwoEnabled.first() == TRUE,
+                            smallImageUrl = dataStoreManager.discordRpcSmallImageUrl.first(),
+                        )
+                    }
+                if (generation != discordRpcUpdateGeneration ||
+                    nowPlayingState.value.songEntity?.videoId != song.videoId
+                ) {
+                    return@launch
+                }
+                withContext(Dispatchers.IO) {
+                    rpc
+                        .updateSong(progress, duration, speed, song, rpcSettings, isPlaying)
+                        .onFailure { error ->
+                            Logger.e(TAG, "Discord RPC update failed: ${error.message ?: error}")
+                        }
+                }
+            }
+    }
+
+    private fun scheduleDiscordRpcPauseClear(
+        song: SongEntity,
+        rpc: DiscordRPC,
+    ) {
+        discordRpcPauseClearJob?.cancel()
+        discordRpcPauseClearJob =
+            coroutineScope.launch {
+                delay(DISCORD_RPC_PAUSE_TIMEOUT_MILLIS)
+                if (!_controlState.value.isPlaying &&
+                    nowPlayingState.value.songEntity?.videoId == song.videoId &&
+                    discordRPC === rpc
+                ) {
+                    try {
+                        rpc.clearActivity()
+                    } catch (error: kotlinx.coroutines.CancellationException) {
+                        throw error
+                    } catch (error: Exception) {
+                        Logger.e(TAG, "Failed to clear paused Discord activity: ${error.message ?: error}")
+                    }
+                }
+            }
     }
 
     override fun onTracksChanged(tracks: GenericTracks) {

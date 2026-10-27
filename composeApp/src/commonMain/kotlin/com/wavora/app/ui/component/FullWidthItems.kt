@@ -230,8 +230,8 @@ fun SongFullWidthItems(
                                         .diskCacheKey(thumb)
                                         .crossfade(true)
                                         .build(),
-                                placeholder = painterResource(Res.drawable.holder),
-                                error = painterResource(Res.drawable.holder),
+                                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                 contentDescription = null,
                                 contentScale = ContentScale.FillWidth,
                                 modifier =
@@ -396,8 +396,8 @@ fun SuggestItems(
                                     .diskCacheKey(thumb)
                                     .crossfade(true)
                                     .build(),
-                            placeholder = painterResource(Res.drawable.holder),
-                            error = painterResource(Res.drawable.holder),
+                            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                             contentDescription = null,
                             contentScale = ContentScale.FillWidth,
                             modifier =
@@ -548,8 +548,8 @@ fun PlaylistFullWidthItems(
                             .diskCacheKey(thumb)
                             .crossfade(true)
                             .build(),
-                    placeholder = painterResource(Res.drawable.holder),
-                    error = painterResource(Res.drawable.holder),
+                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                     contentDescription = null,
                     contentScale = ContentScale.FillWidth,
                     modifier =
@@ -667,8 +667,8 @@ fun ArtistFullWidthItems(
                             .diskCacheKey(thumbnails)
                             .crossfade(true)
                             .build(),
-                    placeholder = painterResource(Res.drawable.holder),
-                    error = painterResource(Res.drawable.holder),
+                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                     contentDescription = null,
                     contentScale = ContentScale.FillHeight,
                     modifier =

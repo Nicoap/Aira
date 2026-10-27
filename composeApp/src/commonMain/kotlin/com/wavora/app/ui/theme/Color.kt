@@ -1,6 +1,7 @@
 package com.wavora.app.ui.theme
 
-import androidx.compose.ui.graphics.Brush
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
 // ===== Wavora Brand Colors — source of truth =====
@@ -16,15 +17,6 @@ val wavoraTextDisabled = Color(0xFF6B6B7A)
 val wavoraGradientStart = Color(0xFFA259FF)
 val wavoraGradientMid = Color(0xFF6A5CFF)
 val wavoraGradientEnd = Color(0xFF00D4FF)
-
-// Single shared brush instance for the 3-stop brand gradient (violet -> mid -> cyan).
-// Used both for progress-bar/track fills (as a background) and, via
-// Modifier.wavoraIconGradient() in UIExt.kt, to paint icon glyphs directly with no
-// background shape behind them.
-val wavoraIconGradientBrush: Brush =
-    Brush.horizontalGradient(
-        colors = listOf(wavoraGradientStart, wavoraGradientMid, wavoraGradientEnd),
-    )
 
 // ===== Material Theme aliases (reference brand tokens) =====
 val md_theme_dark_primary = wavoraPrimary
@@ -66,8 +58,9 @@ val shimmerBackground = Color(0x7E383737)
 val shimmerLine = Color(0xFF4D4848)
 val overlay = Color(0x32242424)
 val blackMoreOverlay = Color(0x8f242424)
-// seed: replaced by wavoraSecondary for brand consistency (was #8ECAE6, an off-brand light blue)
-val seed = wavoraSecondary
+val seed: Color
+    @Composable
+    get() = MaterialTheme.colorScheme.primary
 val bottomBarSeedDark = Color(0xff53a7d0)
 val customGray = Color(0x40ECECEC)
 val customDarkGray = Color(0x40383535)

@@ -355,8 +355,8 @@ fun AlbumScreen(
                                                             .memoryCacheKey(uiState.thumbnail)
                                                             .crossfade(false)
                                                             .build(),
-                                                    placeholder = painterResource(Res.drawable.holder),
-                                                    error = painterResource(Res.drawable.holder),
+                                                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                                     contentDescription = null,
                                                     contentScale = ContentScale.Crop,
                                                     onSuccess = {
@@ -489,8 +489,8 @@ fun AlbumScreen(
                                                     .diskCacheKey(uiState.thumbnail)
                                                     .crossfade(true)
                                                     .build(),
-                                            placeholder = painterResource(Res.drawable.holder),
-                                            error = painterResource(Res.drawable.holder),
+                                            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                             contentDescription = null,
                                             contentScale = ContentScale.FillHeight,
                                             onSuccess = {

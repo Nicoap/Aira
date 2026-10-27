@@ -25,7 +25,6 @@ import com.wavora.app.ui.navigation.destination.home.HomeDestination
 import com.wavora.app.ui.navigation.destination.library.LibraryDestination
 import com.wavora.app.ui.navigation.destination.search.SearchDestination
 import com.wavora.app.ui.theme.typo
-import com.wavora.app.ui.theme.wavoraBorder
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import wavora.composeapp.generated.resources.*
@@ -83,8 +82,9 @@ fun AppBottomNavigationBar(
                 if (isTranslucentBackground) {
                     Color.Transparent
                 } else {
-                    Color.Black
+                    MaterialTheme.colorScheme.surface
                 },
+            contentColor = MaterialTheme.colorScheme.onSurface,
         ) {
             bottomNavScreens.forEach { screen ->
                 NavigationBarItem(
@@ -124,12 +124,15 @@ fun AppBottomNavigationBar(
                         )
                     },
                     icon = screen.icon,
-                    modifier =
-                        Modifier
-                            .windowInsetsPadding(
-                                NavigationBarDefaults.windowInsets,
-                            )
-                            .tvFocusIndicator(),
+                    colors =
+                        NavigationBarItemDefaults.colors(
+                            selectedIconColor = MaterialTheme.colorScheme.primary,
+                            selectedTextColor = MaterialTheme.colorScheme.onSurface,
+                            indicatorColor = MaterialTheme.colorScheme.primaryContainer,
+                            unselectedIconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            unselectedTextColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        ),
+                    modifier = Modifier.windowInsetsPadding(NavigationBarDefaults.windowInsets),
                 )
             }
         }
@@ -166,11 +169,11 @@ fun AppNavigationRail(
                 Modifier
                     .size(48.dp)
                     .clip(CircleShape)
-                    .background(wavoraBorder),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
                 contentAlignment = Alignment.Center,
             ) {
                 Image(
-                    painter = painterResource(Res.drawable.circle_app_icon),
+                    painter = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                     contentDescription = null,
                     modifier =
                         Modifier
@@ -195,7 +198,7 @@ fun AppNavigationRail(
                     )
                 },
                 selected = selectedIndex == index,
-                modifier = Modifier.tvFocusIndicator(),
+                modifier = Modifier,
                 onClick = {
                     if (selectedIndex == screen.ordinal) {
                         if (currentBackStackEntry?.destination?.hierarchy?.any {

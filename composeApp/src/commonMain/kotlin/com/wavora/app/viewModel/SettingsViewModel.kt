@@ -167,6 +167,35 @@ class SettingsViewModel(
 
     private val _richPresenceEnabled = MutableStateFlow(false)
     val richPresenceEnabled: StateFlow<Boolean> = _richPresenceEnabled
+    private val _mediaPreloadCount = MutableStateFlow(2)
+    val mediaPreloadCount: StateFlow<Int> = _mediaPreloadCount
+    private val _discordRpcButtonOneLabel = MutableStateFlow("Listen on Wavora")
+    val discordRpcButtonOneLabel: StateFlow<String> = _discordRpcButtonOneLabel
+    private val _discordRpcButtonOneEnabled = MutableStateFlow(true)
+    val discordRpcButtonOneEnabled: StateFlow<Boolean> = _discordRpcButtonOneEnabled
+    private val _discordRpcButtonOneUrl = MutableStateFlow("https://music.youtube.com/watch?v={videoId}")
+    val discordRpcButtonOneUrl: StateFlow<String> = _discordRpcButtonOneUrl
+    private val _discordRpcButtonTwoLabel = MutableStateFlow("Visit Wavora")
+    val discordRpcButtonTwoLabel: StateFlow<String> = _discordRpcButtonTwoLabel
+    private val _discordRpcButtonTwoEnabled = MutableStateFlow(true)
+    val discordRpcButtonTwoEnabled: StateFlow<Boolean> = _discordRpcButtonTwoEnabled
+    private val _discordRpcButtonTwoUrl = MutableStateFlow("https://github.com/Wavora-dev/Wavora")
+    val discordRpcButtonTwoUrl: StateFlow<String> = _discordRpcButtonTwoUrl
+    private val _discordRpcSmallImageUrl =
+        MutableStateFlow("https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png")
+    val discordRpcSmallImageUrl: StateFlow<String> = _discordRpcSmallImageUrl
+    private val _themeMode = MutableStateFlow(DataStoreManager.THEME_MODE_DARK)
+    val themeMode: StateFlow<String> = _themeMode
+    private val _themePrimaryColor = MutableStateFlow("#A259FF")
+    val themePrimaryColor: StateFlow<String> = _themePrimaryColor
+    private val _themeBackgroundColor = MutableStateFlow("auto")
+    val themeBackgroundColor: StateFlow<String> = _themeBackgroundColor
+    private val _themeSurfaceColor = MutableStateFlow("auto")
+    val themeSurfaceColor: StateFlow<String> = _themeSurfaceColor
+    private val _themeTextColor = MutableStateFlow("auto")
+    val themeTextColor: StateFlow<String> = _themeTextColor
+    private val _themeSecondaryTextColor = MutableStateFlow("auto")
+    val themeSecondaryTextColor: StateFlow<String> = _themeSecondaryTextColor
 
     private val _keepServiceAlive = MutableStateFlow<Boolean>(false)
     val keepServiceAlive: StateFlow<Boolean> = _keepServiceAlive
@@ -280,6 +309,9 @@ class SettingsViewModel(
         getExplicitContentEnabled()
         getDiscordLoggedIn()
         getDiscordRichPresenceEnabled()
+        getMediaPreloadCount()
+        getDiscordRpcSettings()
+        getThemeSettings()
         getKeepServiceAlive()
         getKeepYouTubePlaylistOffline()
         getCombineLocalAndYouTubeLiked()
@@ -474,6 +506,121 @@ class SettingsViewModel(
             delay(100)
             getDiscordRichPresenceEnabled()
         }
+    }
+
+    private fun getMediaPreloadCount() {
+        viewModelScope.launch {
+            dataStoreManager.mediaPreloadCount.collect { _mediaPreloadCount.value = it }
+        }
+    }
+
+    fun setMediaPreloadCount(count: Int) {
+        viewModelScope.launch { dataStoreManager.setMediaPreloadCount(count) }
+    }
+
+    private fun getDiscordRpcSettings() {
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonOneLabel.collect { _discordRpcButtonOneLabel.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonOneEnabled.collect {
+                _discordRpcButtonOneEnabled.value = it == DataStoreManager.TRUE
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonOneUrl.collect { _discordRpcButtonOneUrl.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonTwoLabel.collect { _discordRpcButtonTwoLabel.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonTwoEnabled.collect {
+                _discordRpcButtonTwoEnabled.value = it == DataStoreManager.TRUE
+            }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcButtonTwoUrl.collect { _discordRpcButtonTwoUrl.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.discordRpcSmallImageUrl.collect { _discordRpcSmallImageUrl.value = it }
+        }
+    }
+
+    fun setDiscordRpcButtonOneLabel(value: String) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonOneLabel(value) }
+    }
+
+    fun setDiscordRpcButtonOneEnabled(enabled: Boolean) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonOneEnabled(enabled) }
+    }
+
+    fun setDiscordRpcButtonOneUrl(value: String) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonOneUrl(value) }
+    }
+
+    fun setDiscordRpcButtonTwoLabel(value: String) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonTwoLabel(value) }
+    }
+
+    fun setDiscordRpcButtonTwoEnabled(enabled: Boolean) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonTwoEnabled(enabled) }
+    }
+
+    fun setDiscordRpcButtonTwoUrl(value: String) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcButtonTwoUrl(value) }
+    }
+
+    fun setDiscordRpcSmallImageUrl(value: String) {
+        viewModelScope.launch { dataStoreManager.setDiscordRpcSmallImageUrl(value) }
+    }
+
+    private fun getThemeSettings() {
+        viewModelScope.launch {
+            dataStoreManager.themeMode.collect { _themeMode.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.themePrimaryColor.collect { _themePrimaryColor.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.themeBackgroundColor.collect { _themeBackgroundColor.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.themeSurfaceColor.collect { _themeSurfaceColor.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.themeTextColor.collect { _themeTextColor.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.themeSecondaryTextColor.collect { _themeSecondaryTextColor.value = it }
+        }
+    }
+
+    fun setThemeMode(mode: String) {
+        viewModelScope.launch { dataStoreManager.setThemeMode(mode) }
+    }
+
+    fun setThemePrimaryColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setThemePrimaryColor(color) }
+    }
+
+    fun setThemeBackgroundColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setThemeBackgroundColor(color) }
+    }
+
+    fun setThemeSurfaceColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setThemeSurfaceColor(color) }
+    }
+
+    fun setThemeTextColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setThemeTextColor(color) }
+    }
+
+    fun setThemeSecondaryTextColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setThemeSecondaryTextColor(color) }
+    }
+
+    fun resetThemeToDefaults() {
+        viewModelScope.launch { dataStoreManager.resetThemeToDefaults() }
     }
 
     private fun getExplicitContentEnabled() {

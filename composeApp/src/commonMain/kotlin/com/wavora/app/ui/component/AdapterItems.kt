@@ -97,7 +97,7 @@ import wavora.composeapp.generated.resources.album
 import wavora.composeapp.generated.resources.app_name
 import wavora.composeapp.generated.resources.description
 import wavora.composeapp.generated.resources.holder
-import wavora.composeapp.generated.resources.holder_video
+import wavora.composeapp.generated.resources.app_icon
 import wavora.composeapp.generated.resources.playlist
 import wavora.composeapp.generated.resources.subscribers
 import wavora.composeapp.generated.resources.you
@@ -158,8 +158,8 @@ fun HomeItem(
                             .crossfade(550)
                             .build(),
                     contentDescription = null,
-                    placeholder = painterResource(Res.drawable.holder),
-                    error = painterResource(Res.drawable.holder),
+                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                     modifier =
                         Modifier
                             .size(36.dp)
@@ -371,7 +371,7 @@ fun HomeItemContentPlaylist(
                         }
 
                         else -> {
-                            painterResource(Res.drawable.holder)
+                            com.wavora.app.ui.theme.themedWavoraLogoPainter()
                         }
                     },
                 error =
@@ -393,7 +393,7 @@ fun HomeItemContentPlaylist(
                         }
 
                         else -> {
-                            painterResource(Res.drawable.holder)
+                            com.wavora.app.ui.theme.themedWavoraLogoPainter()
                         }
                     },
                 contentDescription = null,
@@ -557,7 +557,7 @@ fun QuickPicksItem(
                         .diskCacheKey(data.thumbnails.lastOrNull()?.url)
                         .diskCachePolicy(CachePolicy.ENABLED)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = stringResource(Res.string.description),
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -669,8 +669,8 @@ fun HomeItemSong(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -765,8 +765,8 @@ fun HomeItemVideo(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder_video),
-                error = painterResource(Res.drawable.holder_video),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -847,8 +847,8 @@ fun HomeItemArtist(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -963,8 +963,8 @@ fun ItemVideoChart(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder_video),
-                error = painterResource(Res.drawable.holder_video),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -1072,8 +1072,8 @@ fun ItemArtistChart(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =
@@ -1183,8 +1183,8 @@ fun ItemTrackChart(
                         .diskCacheKey(thumb)
                         .crossfade(550)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =

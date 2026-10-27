@@ -9,8 +9,10 @@ import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
 import androidx.compose.foundation.basicMarquee
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -76,6 +78,7 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.LinkAnnotation
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
 import androidx.compose.ui.text.buildAnnotatedString
@@ -105,6 +108,7 @@ import com.wavora.logger.Logger
 import com.wavora.app.Platform
 import com.wavora.app.expect.ui.fileSaverResult
 import com.wavora.app.expect.ui.openEqResult
+import com.wavora.app.expect.ui.VerticalScrollBar
 import multiplatform.network.cmptoast.showToast
 import com.wavora.app.extension.bytesToMB
 import com.wavora.app.extension.displayString
@@ -122,7 +126,6 @@ import com.wavora.app.ui.navigation.destination.home.ScrobblingDestination
 import com.wavora.app.ui.navigation.destination.login.DiscordLoginDestination
 import com.wavora.app.ui.navigation.destination.login.LoginDestination
 import com.wavora.app.ui.navigation.destination.login.SpotifyLoginDestination
-import com.wavora.app.ui.theme.DarkColors
 import com.wavora.app.ui.theme.md_theme_dark_primary
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraBorder
@@ -131,7 +134,6 @@ import com.wavora.app.ui.theme.wavoraPrimary
 import com.wavora.app.ui.theme.wavoraSecondary
 import com.wavora.app.ui.theme.wavoraSurface
 import com.wavora.app.ui.theme.wavoraTextDisabled
-import com.wavora.app.ui.theme.white
 import com.wavora.app.utils.VersionManager
 import com.wavora.app.viewModel.SettingAlertState
 import com.wavora.app.viewModel.SettingBasicAlertState
@@ -233,6 +235,14 @@ import wavora.composeapp.generated.resources.description_and_licenses
 import wavora.composeapp.generated.resources.developer_blog
 import wavora.composeapp.generated.resources.developer_blog_tagline
 import wavora.composeapp.generated.resources.discord_integration
+import wavora.composeapp.generated.resources.discord_rpc_button_one_label
+import wavora.composeapp.generated.resources.discord_rpc_button_one_enabled
+import wavora.composeapp.generated.resources.discord_rpc_button_one_url
+import wavora.composeapp.generated.resources.discord_rpc_button_two_label
+import wavora.composeapp.generated.resources.discord_rpc_button_two_enabled
+import wavora.composeapp.generated.resources.discord_rpc_button_two_url
+import wavora.composeapp.generated.resources.discord_rpc_small_image_url
+import wavora.composeapp.generated.resources.discord_rpc_url_hint
 import wavora.composeapp.generated.resources.donation
 import wavora.composeapp.generated.resources.download_quality
 import wavora.composeapp.generated.resources.downloaded_cache
@@ -280,6 +290,21 @@ import wavora.composeapp.generated.resources.lrclib
 import wavora.composeapp.generated.resources.lyrics
 import wavora.composeapp.generated.resources.main_lyrics_provider
 import wavora.composeapp.generated.resources.manage_your_youtube_accounts
+import wavora.composeapp.generated.resources.media_preload_count
+import wavora.composeapp.generated.resources.media_preload_count_description
+import wavora.composeapp.generated.resources.theme_mode
+import wavora.composeapp.generated.resources.theme_mode_description
+import wavora.composeapp.generated.resources.theme_dark
+import wavora.composeapp.generated.resources.theme_light
+import wavora.composeapp.generated.resources.theme_system
+import wavora.composeapp.generated.resources.theme_primary_color
+import wavora.composeapp.generated.resources.theme_background_color
+import wavora.composeapp.generated.resources.theme_surface_color
+import wavora.composeapp.generated.resources.theme_text_color
+import wavora.composeapp.generated.resources.theme_secondary_text_color
+import wavora.composeapp.generated.resources.theme_color_description
+import wavora.composeapp.generated.resources.reset_theme
+import wavora.composeapp.generated.resources.reset_theme_description
 import wavora.composeapp.generated.resources.wavora_dev
 import wavora.composeapp.generated.resources.monthly
 import wavora.composeapp.generated.resources.never
@@ -404,6 +429,29 @@ fun SettingScreen(
     val proxyPasswordMessage = stringResource(Res.string.proxy_password_message)
     val crossfadeDurationLabel = stringResource(Res.string.crossfade_duration)
     val crossfadeAuto = stringResource(Res.string.crossfade_auto)
+    val mediaPreloadCountLabel = stringResource(Res.string.media_preload_count)
+    val mediaPreloadCountDescription = stringResource(Res.string.media_preload_count_description)
+    val themeModeLabel = stringResource(Res.string.theme_mode)
+    val themeModeDescription = stringResource(Res.string.theme_mode_description)
+    val themeDark = stringResource(Res.string.theme_dark)
+    val themeLight = stringResource(Res.string.theme_light)
+    val themeSystem = stringResource(Res.string.theme_system)
+    val themePrimaryColorLabel = stringResource(Res.string.theme_primary_color)
+    val themeBackgroundColorLabel = stringResource(Res.string.theme_background_color)
+    val themeSurfaceColorLabel = stringResource(Res.string.theme_surface_color)
+    val themeTextColorLabel = stringResource(Res.string.theme_text_color)
+    val themeSecondaryTextColorLabel = stringResource(Res.string.theme_secondary_text_color)
+    val themeColorDescription = stringResource(Res.string.theme_color_description)
+    val resetThemeLabel = stringResource(Res.string.reset_theme)
+    val resetThemeDescription = stringResource(Res.string.reset_theme_description)
+    val discordRpcButtonOneLabelText = stringResource(Res.string.discord_rpc_button_one_label)
+    val discordRpcButtonOneEnabledText = stringResource(Res.string.discord_rpc_button_one_enabled)
+    val discordRpcButtonOneUrlText = stringResource(Res.string.discord_rpc_button_one_url)
+    val discordRpcButtonTwoLabelText = stringResource(Res.string.discord_rpc_button_two_label)
+    val discordRpcButtonTwoEnabledText = stringResource(Res.string.discord_rpc_button_two_enabled)
+    val discordRpcButtonTwoUrlText = stringResource(Res.string.discord_rpc_button_two_url)
+    val discordRpcSmallImageUrlText = stringResource(Res.string.discord_rpc_small_image_url)
+    val discordRpcUrlHint = stringResource(Res.string.discord_rpc_url_hint)
     val mainLyricsProviderLabel = stringResource(Res.string.main_lyrics_provider)
     val wavoraLyrics = stringResource(Res.string.wavora_lyrics)
     val youtubeTranscript = stringResource(Res.string.youtube_transcript)
@@ -545,6 +593,32 @@ fun SettingScreen(
     val enableLiquidGlass by viewModel.enableLiquidGlass.collectAsStateWithLifecycle()
     val discordLoggedIn by viewModel.discordLoggedIn.collectAsStateWithLifecycle()
     val richPresenceEnabled by viewModel.richPresenceEnabled.collectAsStateWithLifecycle()
+    val discordRpcButtonOneEnabled by viewModel.discordRpcButtonOneEnabled.collectAsStateWithLifecycle()
+    val mediaPreloadCount by viewModel.mediaPreloadCount.collectAsStateWithLifecycle()
+    val discordRpcButtonOneLabel by viewModel.discordRpcButtonOneLabel.collectAsStateWithLifecycle()
+    val discordRpcButtonOneUrl by viewModel.discordRpcButtonOneUrl.collectAsStateWithLifecycle()
+    val discordRpcButtonTwoLabel by viewModel.discordRpcButtonTwoLabel.collectAsStateWithLifecycle()
+    val discordRpcButtonTwoEnabled by viewModel.discordRpcButtonTwoEnabled.collectAsStateWithLifecycle()
+    val discordRpcButtonTwoUrl by viewModel.discordRpcButtonTwoUrl.collectAsStateWithLifecycle()
+    val discordRpcSmallImageUrl by viewModel.discordRpcSmallImageUrl.collectAsStateWithLifecycle()
+    val themeMode by viewModel.themeMode.collectAsStateWithLifecycle()
+    val themePrimaryColor by viewModel.themePrimaryColor.collectAsStateWithLifecycle()
+    val themeBackgroundColor by viewModel.themeBackgroundColor.collectAsStateWithLifecycle()
+    val themeSurfaceColor by viewModel.themeSurfaceColor.collectAsStateWithLifecycle()
+    val themeTextColor by viewModel.themeTextColor.collectAsStateWithLifecycle()
+    val themeSecondaryTextColor by viewModel.themeSecondaryTextColor.collectAsStateWithLifecycle()
+    val isDarkTheme =
+        when (themeMode) {
+            DataStoreManager.THEME_MODE_LIGHT -> false
+            DataStoreManager.THEME_MODE_SYSTEM -> isSystemInDarkTheme()
+            else -> true
+        }
+    val displayedThemeBackgroundColor =
+        themeBackgroundColor.takeUnless { it == "auto" }
+            ?: if (isDarkTheme) "#0B0B0F" else "#F8F7FA"
+    val displayedThemeSurfaceColor =
+        themeSurfaceColor.takeUnless { it == "auto" }
+            ?: if (isDarkTheme) "#12121A" else "#FFFFFF"
     val keepServiceAlive by viewModel.keepServiceAlive.collectAsStateWithLifecycle()
 
     val crossfadeEnabled by viewModel.crossfadeEnabled.collectAsStateWithLifecycle()
@@ -589,20 +663,140 @@ fun SettingScreen(
         viewModel.getThumbCacheSize(platformContext)
     }
 
-    LazyColumn(
-        contentPadding = innerPadding,
-        modifier =
-            Modifier
-                .padding(horizontal = 16.dp)
-                .hazeSource(hazeState),
-    ) {
-        item {
-            Spacer(Modifier.height(64.dp))
-        }
+    val settingsListState = rememberLazyListState()
+    Box(Modifier.fillMaxSize()) {
+        LazyColumn(
+            state = settingsListState,
+            contentPadding = innerPadding,
+            modifier =
+                Modifier
+                    .padding(horizontal = 16.dp)
+                    .hazeSource(hazeState),
+        ) {
+            item {
+                Spacer(Modifier.height(64.dp))
+            }
         item(key = "user_interface") {
             Column {
                 Spacer(Modifier.height(16.dp))
-                Text(text = stringResource(Res.string.user_interface), style = LocalAppTypography.current.labelMedium, color = white)
+                Text(text = stringResource(Res.string.user_interface), style = LocalAppTypography.current.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                SettingItem(
+                    title = themeModeLabel,
+                    subtitle = "$themeModeDescription (${when (themeMode) {
+                        DataStoreManager.THEME_MODE_LIGHT -> themeLight
+                        DataStoreManager.THEME_MODE_SYSTEM -> themeSystem
+                        else -> themeDark
+                    }})",
+                    onClick = {
+                        viewModel.setAlertData(
+                            SettingAlertState(
+                                title = themeModeLabel,
+                                selectOne =
+                                    SettingAlertState.SelectData(
+                                        listSelect =
+                                            listOf(
+                                                (themeMode == DataStoreManager.THEME_MODE_SYSTEM) to themeSystem,
+                                                (themeMode == DataStoreManager.THEME_MODE_DARK) to themeDark,
+                                                (themeMode == DataStoreManager.THEME_MODE_LIGHT) to themeLight,
+                                            ),
+                                    ),
+                                confirm =
+                                    change to { state ->
+                                        viewModel.setThemeMode(
+                                            when (state.selectOne?.getSelected()) {
+                                                themeSystem -> DataStoreManager.THEME_MODE_SYSTEM
+                                                themeLight -> DataStoreManager.THEME_MODE_LIGHT
+                                                else -> DataStoreManager.THEME_MODE_DARK
+                                            },
+                                        )
+                                    },
+                                dismiss = cancel,
+                            ),
+                        )
+                    },
+                )
+                listOf(
+                    Triple(themePrimaryColorLabel, themePrimaryColor, viewModel::setThemePrimaryColor),
+                    Triple(themeBackgroundColorLabel, displayedThemeBackgroundColor, viewModel::setThemeBackgroundColor),
+                    Triple(themeSurfaceColorLabel, displayedThemeSurfaceColor, viewModel::setThemeSurfaceColor),
+                    Triple(themeTextColorLabel, themeTextColor, viewModel::setThemeTextColor),
+                    Triple(themeSecondaryTextColorLabel, themeSecondaryTextColor, viewModel::setThemeSecondaryTextColor),
+                ).forEach { (label, value, saveColor) ->
+                    val fallbackColor = MaterialTheme.colorScheme.onSurface
+                    val colorPreview =
+                        remember(value, fallbackColor) {
+                            value.removePrefix("#").toLongOrNull(16)?.let { Color(0xFF000000L or it) }
+                                ?: fallbackColor
+                        }
+                    SettingItem(
+                        title = label,
+                        subtitle = "",
+                        onClick = {
+                            viewModel.setAlertData(
+                                SettingAlertState(
+                                    title = label,
+                                    message = themeColorDescription,
+                                    textField =
+                                        SettingAlertState.TextFieldData(
+                                            label = label,
+                                            value = value,
+                                            verifyCodeBlock = { input ->
+                                                (input.trim().equals("auto", ignoreCase = true) ||
+                                                    Regex("^#?[0-9a-fA-F]{6}$").matches(input.trim())) to invalid
+                                            },
+                                        ),
+                                    confirm =
+                                        set to { state ->
+                                            val color = state.textField?.value.orEmpty().trim()
+                                            saveColor(
+                                                if (color.equals("auto", ignoreCase = true)) {
+                                                    "auto"
+                                                } else if (color.startsWith("#")) {
+                                                    color.uppercase()
+                                                } else {
+                                                    "#${color.uppercase()}"
+                                                },
+                                            )
+                                        },
+                                    dismiss = cancel,
+                                ),
+                            )
+                        },
+                        otherView = {
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            ) {
+                                Box(
+                                    Modifier
+                                        .size(18.dp)
+                                        .clip(CircleShape)
+                                        .background(colorPreview)
+                                        .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                )
+                                Text(
+                                    text = value.uppercase(),
+                                    style = LocalAppTypography.current.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                )
+                            }
+                        },
+                    )
+                }
+                SettingItem(
+                    title = resetThemeLabel,
+                    subtitle = resetThemeDescription,
+                    onClick = {
+                        viewModel.setAlertData(
+                            SettingAlertState(
+                                title = resetThemeLabel,
+                                message = resetThemeDescription,
+                                confirm = resetThemeLabel to { viewModel.resetThemeToDefaults() },
+                                dismiss = cancel,
+                            ),
+                        )
+                    },
+                )
                 SettingItem(
                     title = stringResource(Res.string.translucent_bottom_navigation_bar),
                     subtitle = stringResource(Res.string.you_can_see_the_content_below_the_bottom_bar),
@@ -637,7 +831,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.content),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1027,7 +1221,7 @@ fun SettingScreen(
                     Text(
                         text = stringResource(Res.string.audio),
                         style = LocalAppTypography.current.labelMedium,
-                        color = white,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                     SettingItem(
@@ -1057,7 +1251,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.playback),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1085,6 +1279,32 @@ fun SettingScreen(
             }
         }
         // Crossfade Settings (all platforms)
+        if (getPlatform() == Platform.Desktop) {
+            item(key = "media_preload_count") {
+                SettingItem(
+                    title = mediaPreloadCountLabel,
+                    subtitle = mediaPreloadCountDescription,
+                    onClick = {
+                        viewModel.setAlertData(
+                            SettingAlertState(
+                                title = mediaPreloadCountLabel,
+                                selectOne =
+                                    SettingAlertState.SelectData(
+                                        listSelect = (0..5).map { (mediaPreloadCount == it) to it.toString() },
+                                    ),
+                                confirm =
+                                    change to { state ->
+                                        viewModel.setMediaPreloadCount(
+                                            state.selectOne?.getSelected()?.toIntOrNull() ?: mediaPreloadCount,
+                                        )
+                                    },
+                                dismiss = cancel,
+                            ),
+                        )
+                    },
+                )
+            }
+        }
         item(key = "crossfade_settings") {
             Column {
                 SettingItem(
@@ -1167,7 +1387,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.lyrics),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1330,7 +1550,7 @@ fun SettingScreen(
         }
         item(key = "AI") {
             Column {
-                Text(text = stringResource(Res.string.ai), style = LocalAppTypography.current.labelMedium, color = white, modifier = Modifier.padding(vertical = 8.dp))
+                Text(text = stringResource(Res.string.ai), style = LocalAppTypography.current.labelMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(vertical = 8.dp))
                 SettingItem(
                     title = stringResource(Res.string.ai_provider),
                     subtitle =
@@ -1505,7 +1725,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.spotify),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1553,7 +1773,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.discord_integration),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1583,6 +1803,141 @@ fun SettingScreen(
                         }
                     },
                 )
+                AnimatedVisibility(visible = discordLoggedIn && richPresenceEnabled) {
+                    Column {
+                        Text(
+                            text = discordRpcUrlHint,
+                            style = LocalAppTypography.current.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                        )
+                        SettingItem(
+                            title = discordRpcButtonOneEnabledText,
+                            subtitle = discordRpcButtonOneLabel,
+                            switch = discordRpcButtonOneEnabled to viewModel::setDiscordRpcButtonOneEnabled,
+                        )
+                        AnimatedVisibility(visible = discordRpcButtonOneEnabled) {
+                            Column {
+                                SettingItem(
+                                    title = discordRpcButtonOneLabelText,
+                                    subtitle = discordRpcButtonOneLabel,
+                                    onClick = {
+                                        viewModel.setAlertData(
+                                            SettingAlertState(
+                                                title = discordRpcButtonOneLabelText,
+                                                message = discordRpcUrlHint,
+                                                textField =
+                                                    SettingAlertState.TextFieldData(
+                                                        label = discordRpcButtonOneLabelText,
+                                                        value = discordRpcButtonOneLabel,
+                                                    ),
+                                                confirm = set to { state ->
+                                                    viewModel.setDiscordRpcButtonOneLabel(state.textField?.value.orEmpty())
+                                                },
+                                                dismiss = cancel,
+                                            ),
+                                        )
+                                    },
+                                )
+                                SettingItem(
+                                    title = discordRpcButtonOneUrlText,
+                                    subtitle = discordRpcButtonOneUrl,
+                                    onClick = {
+                                        viewModel.setAlertData(
+                                            SettingAlertState(
+                                                title = discordRpcButtonOneUrlText,
+                                                message = discordRpcUrlHint,
+                                                textField =
+                                                    SettingAlertState.TextFieldData(
+                                                        label = discordRpcButtonOneUrlText,
+                                                        value = discordRpcButtonOneUrl,
+                                                        verifyCodeBlock = { (it.isBlank() || it.startsWith("http")) to "Invalid URL format" },
+                                                    ),
+                                                confirm = set to { state ->
+                                                    viewModel.setDiscordRpcButtonOneUrl(state.textField?.value.orEmpty().trim())
+                                                },
+                                                dismiss = cancel,
+                                            ),
+                                        )
+                                    },
+                                )
+                            }
+                        }
+                        SettingItem(
+                            title = discordRpcButtonTwoEnabledText,
+                            subtitle = discordRpcButtonTwoLabel,
+                            switch = discordRpcButtonTwoEnabled to viewModel::setDiscordRpcButtonTwoEnabled,
+                        )
+                        AnimatedVisibility(visible = discordRpcButtonTwoEnabled) {
+                            Column {
+                                SettingItem(
+                                    title = discordRpcButtonTwoLabelText,
+                                    subtitle = discordRpcButtonTwoLabel,
+                                    onClick = {
+                                        viewModel.setAlertData(
+                                            SettingAlertState(
+                                                title = discordRpcButtonTwoLabelText,
+                                                message = discordRpcUrlHint,
+                                                textField =
+                                                    SettingAlertState.TextFieldData(
+                                                        label = discordRpcButtonTwoLabelText,
+                                                        value = discordRpcButtonTwoLabel,
+                                                    ),
+                                                confirm = set to { state ->
+                                                    viewModel.setDiscordRpcButtonTwoLabel(state.textField?.value.orEmpty())
+                                                },
+                                                dismiss = cancel,
+                                            ),
+                                        )
+                                    },
+                                )
+                                SettingItem(
+                                    title = discordRpcButtonTwoUrlText,
+                                    subtitle = discordRpcButtonTwoUrl,
+                                    onClick = {
+                                        viewModel.setAlertData(
+                                            SettingAlertState(
+                                                title = discordRpcButtonTwoUrlText,
+                                                message = discordRpcUrlHint,
+                                                textField =
+                                                    SettingAlertState.TextFieldData(
+                                                        label = discordRpcButtonTwoUrlText,
+                                                        value = discordRpcButtonTwoUrl,
+                                                        verifyCodeBlock = { (it.isBlank() || it.startsWith("http")) to "Invalid URL format" },
+                                                    ),
+                                                confirm = set to { state ->
+                                                    viewModel.setDiscordRpcButtonTwoUrl(state.textField?.value.orEmpty().trim())
+                                                },
+                                                dismiss = cancel,
+                                            ),
+                                        )
+                                    },
+                                )
+                            }
+                        }
+                        SettingItem(
+                            title = discordRpcSmallImageUrlText,
+                            subtitle = discordRpcSmallImageUrl,
+                            onClick = {
+                                viewModel.setAlertData(
+                                    SettingAlertState(
+                                        title = discordRpcSmallImageUrlText,
+                                        textField =
+                                            SettingAlertState.TextFieldData(
+                                                label = discordRpcSmallImageUrlText,
+                                                value = discordRpcSmallImageUrl,
+                                                verifyCodeBlock = { (it.isBlank() || it.startsWith("http")) to "Invalid URL format" },
+                                            ),
+                                        confirm = set to { state ->
+                                            viewModel.setDiscordRpcSmallImageUrl(state.textField?.value.orEmpty().trim())
+                                        },
+                                        dismiss = cancel,
+                                    ),
+                                )
+                            },
+                        )
+                    }
+                }
             }
         }
         item(key = "sponsor_block") {
@@ -1590,7 +1945,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.sponsorBlock),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -1668,7 +2023,7 @@ fun SettingScreen(
                     Text(
                         text = stringResource(Res.string.storage),
                         style = LocalAppTypography.current.labelMedium,
-                        color = white,
+                        color = MaterialTheme.colorScheme.onSurface,
                         modifier = Modifier.padding(vertical = 8.dp),
                     )
                     SettingItem(
@@ -1678,7 +2033,7 @@ fun SettingScreen(
                             viewModel.setBasicAlertData(
                                 SettingBasicAlertState(
                                     title = clearPlayerCache,
-                                    message = null,
+                                    message = discordRpcUrlHint,
                                     confirm =
                                         clear to {
                                             viewModel.clearPlayerCache()
@@ -1794,7 +2149,7 @@ fun SettingScreen(
                                             .width(
                                                 (fraction.otherApp * width).dp,
                                             ).background(
-                                                md_theme_dark_primary,
+                                                MaterialTheme.colorScheme.primary,
                                             ).fillMaxHeight(),
                                 )
                             }
@@ -1816,7 +2171,7 @@ fun SettingScreen(
                                             .width(
                                                 (fraction.playerCache * width).dp,
                                             ).background(
-                                                wavoraSecondary,
+                                                MaterialTheme.colorScheme.primary,
                                             ).fillMaxHeight(),
                                 )
                             }
@@ -1827,7 +2182,7 @@ fun SettingScreen(
                                             .width(
                                                 (fraction.canvasCache * width).dp,
                                             ).background(
-                                                wavoraGradientMid,
+                                                MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                             ).fillMaxHeight(),
                                 )
                             }
@@ -1849,7 +2204,7 @@ fun SettingScreen(
                                             .width(
                                                 (fraction.appDatabase * width).dp,
                                             ).background(
-                                                Color.White,
+                                                MaterialTheme.colorScheme.onSurface,
                                             ),
                                 )
                             }
@@ -1875,7 +2230,7 @@ fun SettingScreen(
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    md_theme_dark_primary,
+                                    MaterialTheme.colorScheme.primary,
                                 ),
                         )
                         Spacer(Modifier.width(8.dp))
@@ -1905,7 +2260,7 @@ fun SettingScreen(
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    wavoraSecondary,
+                                    MaterialTheme.colorScheme.primary,
                                 ),
                         )
                         Spacer(Modifier.width(8.dp))
@@ -1920,7 +2275,7 @@ fun SettingScreen(
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    wavoraGradientMid,
+                                    MaterialTheme.colorScheme.primary.copy(alpha = 0.7f),
                                 ),
                         )
                         Spacer(Modifier.width(8.dp))
@@ -1950,7 +2305,7 @@ fun SettingScreen(
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    Color.White,
+                                    MaterialTheme.colorScheme.onSurface,
                                 ),
                         )
                         Spacer(Modifier.width(8.dp))
@@ -1979,7 +2334,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.backup),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -2142,7 +2497,7 @@ fun SettingScreen(
                 Text(
                     text = stringResource(Res.string.about_us),
                     style = LocalAppTypography.current.labelMedium,
-                    color = white,
+                    color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(vertical = 8.dp),
                 )
                 SettingItem(
@@ -2218,6 +2573,14 @@ fun SettingScreen(
         item(key = "end") {
             EndOfPage()
         }
+        }
+        VerticalScrollBar(
+            modifier =
+                Modifier
+                    .align(Alignment.CenterEnd)
+                    .fillMaxHeight(),
+            scrollState = settingsListState,
+        )
     }
     val basisAlertData by viewModel.basicAlertData.collectAsStateWithLifecycle()
     if (basisAlertData != null) {
@@ -2293,14 +2656,14 @@ fun SettingScreen(
                                 onClick = { showYouTubeAccountDialog = false },
                                 colors =
                                     IconButtonDefaults.iconButtonColors().copy(
-                                        contentColor = Color.White,
+                                        contentColor = MaterialTheme.colorScheme.onSurface,
                                     ),
                                 modifier =
                                     Modifier
                                         .align(Alignment.CenterStart)
                                         .fillMaxHeight(),
                             ) {
-                                Icon(Icons.Outlined.Close, null, tint = Color.White)
+                                Icon(Icons.Outlined.Close, null, tint = MaterialTheme.colorScheme.onSurface)
                             }
                             Text(
                                 stringResource(Res.string.youtube_account),
@@ -2356,7 +2719,7 @@ fun SettingScreen(
                                     )
                                     Spacer(Modifier.width(12.dp))
                                     Column(Modifier.weight(1f)) {
-                                        Text(it.name, style = LocalAppTypography.current.labelMedium, color = white)
+                                        Text(it.name, style = LocalAppTypography.current.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                                         Text(it.email, style = LocalAppTypography.current.bodySmall)
                                     }
                                     Spacer(Modifier.width(12.dp))
@@ -2434,34 +2797,36 @@ fun SettingScreen(
                 )
             },
             text = {
-                if (alertState.message != null) {
+                if (alertState.message != null || alertState.textField != null) {
                     Column {
-                        Text(text = alertState.message)
-                        if (alertState.textField != null) {
+                        alertState.message?.let { Text(text = it) }
+                        alertState.textField?.let { textField ->
                             val verify =
-                                alertState.textField.verifyCodeBlock?.invoke(
-                                    alertState.textField.value,
+                                textField.verifyCodeBlock?.invoke(
+                                    textField.value,
                                 ) ?: (true to null)
                             TextField(
-                                value = alertState.textField.value,
+                                value = textField.value,
+                                singleLine = true,
                                 onValueChange = {
                                     viewModel.setAlertData(
                                         alertState.copy(
                                             textField =
-                                                alertState.textField.copy(
+                                                textField.copy(
                                                     value = it,
                                                 ),
                                         ),
                                     )
                                 },
                                 isError = !verify.first,
-                                label = { Text(text = alertState.textField.label) },
+                                textStyle = MaterialTheme.typography.bodyLarge.copy(fontFamily = FontFamily.Monospace),
+                                label = { Text(text = textField.label) },
                                 supportingText = {
                                     if (!verify.first) {
                                         Text(
                                             modifier = Modifier.fillMaxWidth(),
                                             text = verify.second ?: "",
-                                            color = DarkColors.error,
+                                            color = MaterialTheme.colorScheme.error,
                                         )
                                     }
                                 },
@@ -2626,6 +2991,8 @@ fun SettingScreen(
                 },
             )
         val coroutineScope = rememberCoroutineScope()
+        val licenseChipContainerColor = MaterialTheme.colorScheme.surfaceVariant
+        val licenseChipContentColor = MaterialTheme.colorScheme.onSurface
         ModalBottomSheet(
             modifier =
                 Modifier
@@ -2633,7 +3000,7 @@ fun SettingScreen(
             onDismissRequest = {
                 showThirdPartyLibraries = false
             },
-            containerColor = Color.Black,
+            containerColor = MaterialTheme.colorScheme.surface,
             dragHandle = {},
             scrimColor = Color.Black,
             sheetState = sheetState,
@@ -2659,9 +3026,9 @@ fun SettingScreen(
                         licenseChipColors =
                             object : ChipColors {
                                 override val containerColor: Color
-                                    get() = Color.DarkGray
+                                    get() = licenseChipContainerColor
                                 override val contentColor: Color
-                                    get() = Color.White
+                                    get() = licenseChipContentColor
                             },
                     ),
                 header = {

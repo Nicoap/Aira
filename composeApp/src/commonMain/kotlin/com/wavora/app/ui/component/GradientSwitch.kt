@@ -15,9 +15,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
+import com.wavora.app.ui.theme.themeAccentBrush
 
 /**
  * Toggle switch with the wavora violet -> cyan gradient on its track when checked,
@@ -45,7 +46,7 @@ fun GradientSwitch(
         label = "GradientSwitchThumbOffset",
     )
     val trackColorWhenUnchecked by animateColorAsState(
-        targetValue = if (checked) Color.Transparent else Color(0xFF3D3D5C),
+        targetValue = if (checked) Color.Transparent else MaterialTheme.colorScheme.surfaceVariant,
         animationSpec = tween(durationMillis = 150),
         label = "GradientSwitchTrackColor",
     )
@@ -63,7 +64,7 @@ fun GradientSwitch(
                 .background(trackColorWhenUnchecked)
                 .then(
                     if (checked) {
-                        Modifier.background(wavoraIconGradientBrush)
+                        Modifier.background(themeAccentBrush())
                     } else {
                         Modifier
                     },
@@ -77,7 +78,9 @@ fun GradientSwitch(
                     .padding(start = thumbOffset)
                     .size(thumbSize)
                     .clip(CircleShape)
-                    .background(Color.White),
+                    .background(
+                        if (checked) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
         )
     }
 }

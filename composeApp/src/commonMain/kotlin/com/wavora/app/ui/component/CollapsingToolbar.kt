@@ -78,7 +78,7 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import org.jetbrains.compose.resources.painterResource
 import wavora.composeapp.generated.resources.Res
-import wavora.composeapp.generated.resources.holder_video
+import wavora.composeapp.generated.resources.app_icon
 
 private val paddingMedium = 0.dp
 
@@ -245,8 +245,8 @@ private fun Header(
                     it.result.image.toImageBitmap(),
                 )
             },
-            placeholder = painterResource(Res.drawable.holder_video),
-            error = painterResource(Res.drawable.holder_video),
+            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
             contentDescription = null,
             contentScale = ContentScale.Crop,
             modifier =

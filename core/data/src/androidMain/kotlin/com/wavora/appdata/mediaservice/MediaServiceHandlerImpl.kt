@@ -67,6 +67,7 @@ import com.wavora.domain.utils.toSongEntity
 import com.wavora.domain.utils.toTrack
 import com.wavora.logger.Logger
 import com.my.kizzy.DiscordRPC
+import com.my.kizzy.DiscordRpcSettings
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -86,6 +87,7 @@ import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.merge
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.update
@@ -369,6 +371,20 @@ internal class MediaServiceHandlerImpl(
                                     updateDiscordRpc(song)
                                 }
                             }
+            val discordRPCSettingsJob =
+                            launch {
+                                merge(
+                                dataStoreManager.discordRpcButtonOneLabel,
+                                dataStoreManager.discordRpcButtonOneEnabled,
+                                dataStoreManager.discordRpcButtonOneUrl,
+                                dataStoreManager.discordRpcButtonTwoLabel,
+                                dataStoreManager.discordRpcButtonTwoEnabled,
+                                dataStoreManager.discordRpcButtonTwoUrl,
+                                dataStoreManager.discordRpcSmallImageUrl,
+                                ).collect {
+                                nowPlayingState.value.songEntity?.let(::updateDiscordRpc)
+                                }
+                            }
                         } else if (it == FALSE) {
                             if (discordRPC?.isRpcRunning() == true) {
                                 discordRPC?.closeRPC()
@@ -382,6 +398,7 @@ internal class MediaServiceHandlerImpl(
             playbackJob.join()
             playbackSpeedPitchJob.join()
             discordRPCEnabledJob.join()
+            discordRPCSettingsJob.join()
         }
     }
 
@@ -2468,7 +2485,17 @@ internal class MediaServiceHandlerImpl(
             val duration = getPlayerDuration()
             val speed = dataStoreManager.playbackSpeed.first()
             withContext(Dispatchers.IO) {
-                discordRPC?.updateSong(progress, duration, speed, song)
+                val rpcSettings =
+                    DiscordRpcSettings(
+                        buttonOneLabel = dataStoreManager.discordRpcButtonOneLabel.first(),
+                        buttonOneUrl = dataStoreManager.discordRpcButtonOneUrl.first(),
+                        buttonOneEnabled = dataStoreManager.discordRpcButtonOneEnabled.first() == TRUE,
+                        buttonTwoLabel = dataStoreManager.discordRpcButtonTwoLabel.first(),
+                        buttonTwoUrl = dataStoreManager.discordRpcButtonTwoUrl.first(),
+                        buttonTwoEnabled = dataStoreManager.discordRpcButtonTwoEnabled.first() == TRUE,
+                        smallImageUrl = dataStoreManager.discordRpcSmallImageUrl.first(),
+                    )
+                discordRPC?.updateSong(progress, duration, speed, song, rpcSettings)
             }
         }
     }

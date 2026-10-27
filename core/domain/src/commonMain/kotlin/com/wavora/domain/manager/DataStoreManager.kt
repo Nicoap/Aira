@@ -432,6 +432,64 @@ interface DataStoreManager {
 
     suspend fun setRichPresenceEnabled(enabled: Boolean)
 
+    val mediaPreloadCount: Flow<Int>
+
+    suspend fun setMediaPreloadCount(count: Int)
+
+    val discordRpcButtonOneLabel: Flow<String>
+
+    suspend fun setDiscordRpcButtonOneLabel(label: String)
+
+    val discordRpcButtonOneEnabled: Flow<String>
+
+    suspend fun setDiscordRpcButtonOneEnabled(enabled: Boolean)
+
+    val discordRpcButtonOneUrl: Flow<String>
+
+    suspend fun setDiscordRpcButtonOneUrl(url: String)
+
+    val discordRpcButtonTwoLabel: Flow<String>
+
+    suspend fun setDiscordRpcButtonTwoLabel(label: String)
+
+    val discordRpcButtonTwoEnabled: Flow<String>
+
+    suspend fun setDiscordRpcButtonTwoEnabled(enabled: Boolean)
+
+    val discordRpcButtonTwoUrl: Flow<String>
+
+    suspend fun setDiscordRpcButtonTwoUrl(url: String)
+
+    val discordRpcSmallImageUrl: Flow<String>
+
+    suspend fun setDiscordRpcSmallImageUrl(url: String)
+
+    val themeMode: Flow<String>
+
+    suspend fun setThemeMode(mode: String)
+
+    val themePrimaryColor: Flow<String>
+
+    suspend fun setThemePrimaryColor(color: String)
+
+    val themeBackgroundColor: Flow<String>
+
+    suspend fun setThemeBackgroundColor(color: String)
+
+    val themeSurfaceColor: Flow<String>
+
+    suspend fun setThemeSurfaceColor(color: String)
+
+    val themeTextColor: Flow<String>
+
+    suspend fun setThemeTextColor(color: String)
+
+    val themeSecondaryTextColor: Flow<String>
+
+    suspend fun setThemeSecondaryTextColor(color: String)
+
+    suspend fun resetThemeToDefaults()
+
     val localTrackingEnabled: Flow<String>
 
     suspend fun setLocalTrackingEnabled(enabled: Boolean)
@@ -474,6 +532,9 @@ interface DataStoreManager {
 
         const val TRUE = "TRUE"
         const val FALSE = "FALSE"
+        const val THEME_MODE_SYSTEM = "system"
+        const val THEME_MODE_LIGHT = "light"
+        const val THEME_MODE_DARK = "dark"
 
         const val CROSSFADE_DURATION_AUTO = 0
 

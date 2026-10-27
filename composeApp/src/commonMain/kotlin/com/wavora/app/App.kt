@@ -178,6 +178,7 @@ fun App(
 ) {
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
     val navController = rememberNavController()
+    val themeSettings: DataStoreManager = koinInject()
 
     val sleepTimerState by viewModel.sleepTimerState.collectAsStateWithLifecycle()
     val nowPlayingData by viewModel.nowPlayingState.collectAsStateWithLifecycle()
@@ -187,6 +188,12 @@ fun App(
 
     val isTranslucentBottomBar by viewModel.getTranslucentBottomBar().collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val isLiquidGlassEnabled by viewModel.getEnableLiquidGlass().collectAsStateWithLifecycle(DataStoreManager.FALSE)
+    val themeMode by themeSettings.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
+    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
+    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsStateWithLifecycle("auto")
+    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsStateWithLifecycle("auto")
+    val themeTextColor by themeSettings.themeTextColor.collectAsStateWithLifecycle("auto")
+    val themeSecondaryTextColor by themeSettings.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
     // MiniPlayer visibility logic
     var isShowMiniPlayer by rememberSaveable {
         mutableStateOf(true)
@@ -429,7 +436,14 @@ fun App(
         }
     }
 
-    AppTheme {
+    AppTheme(
+        mode = themeMode,
+        primaryColorHex = themePrimaryColor,
+        backgroundColorHex = themeBackgroundColor,
+        surfaceColorHex = themeSurfaceColor,
+        textColorHex = themeTextColor,
+        secondaryTextColorHex = themeSecondaryTextColor,
+    ) {
         Scaffold(
             bottomBar = {
                 if (!isTablet) {

@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -29,22 +30,13 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.Shape
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.wavora.app.ui.theme.md_theme_dark_background
-import com.wavora.app.ui.theme.wavoraGradientEnd
-import com.wavora.app.ui.theme.wavoraGradientStart
 import kotlinx.coroutines.delay
-
-// Hoisted so the default `brush` parameter below doesn't allocate a new Brush on every
-// call site that omits it -- Kotlin evaluates default-parameter expressions at each
-// call, so a function-call default would otherwise run Brush.sweepGradient(...) again
-// on every recomposition that doesn't pass an explicit brush.
-private val defaultBorderAnimationBrush =
-    Brush.sweepGradient(listOf(wavoraGradientStart, wavoraGradientEnd, wavoraGradientStart))
 
 /**
  * A [Surface] with an infinite border animation.
@@ -55,7 +47,7 @@ private val defaultBorderAnimationBrush =
 @Composable
 fun InfiniteBorderAnimationView(
     isAnimated: Boolean = false,
-    brush: Brush = defaultBorderAnimationBrush,
+    brush: Brush? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
     contentPadding: Dp = 0.dp,
     borderWidth: Dp = 1.dp,
@@ -63,6 +55,10 @@ fun InfiniteBorderAnimationView(
     oneCircleDurationMillis: Int = 3000,
     content: @Composable () -> Unit,
 ) {
+    val primary = MaterialTheme.colorScheme.primary
+    val gradientEnd = lerp(primary, MaterialTheme.colorScheme.onSurface, 0.16f)
+    val borderAnimationBrush =
+        brush ?: remember(primary, gradientEnd) { Brush.sweepGradient(listOf(primary, gradientEnd, primary)) }
     // Only run the infinite transition when the animation is actually visible.
     // Previously the transition always ran (even on unselected chips), wasting CPU.
     val infiniteTransition = rememberInfiniteTransition(label = "Infinite Color Animation")
@@ -92,7 +88,7 @@ fun InfiniteBorderAnimationView(
                     scale(scale = scaleAnimationValue) {
                         rotate(degrees = degrees) {
                             drawCircle(
-                                brush = brush,
+                                brush = borderAnimationBrush,
                                 radius = size.width,
                                 blendMode = BlendMode.SrcIn,
                             )
@@ -106,7 +102,7 @@ fun InfiniteBorderAnimationView(
             modifier =
                 Modifier
                     .background(
-                        color = if (isAnimated) md_theme_dark_background else backgroundColor,
+                        color = backgroundColor,
                     ).padding(
                         contentPadding,
                     ),
@@ -120,7 +116,7 @@ fun InfiniteBorderAnimationView(
 @Composable
 fun LimitedBorderAnimationView(
     isAnimated: Boolean = false,
-    brush: Brush = defaultBorderAnimationBrush,
+    brush: Brush? = null,
     backgroundColor: Color = MaterialTheme.colorScheme.background,
     contentPadding: Dp = 0.dp,
     borderWidth: Dp = 1.dp,
@@ -129,6 +125,10 @@ fun LimitedBorderAnimationView(
     interactionNumber: Int = 1,
     content: @Composable () -> Unit,
 ) {
+    val primary = MaterialTheme.colorScheme.primary
+    val gradientEnd = lerp(primary, MaterialTheme.colorScheme.onSurface, 0.16f)
+    val borderAnimationBrush =
+        brush ?: remember(primary, gradientEnd) { Brush.sweepGradient(listOf(primary, gradientEnd, primary)) }
     var shouldAnimate by rememberSaveable {
         mutableStateOf(false)
     }
@@ -173,7 +173,7 @@ fun LimitedBorderAnimationView(
                         ) {
                             rotate(degrees = degrees) {
                                 drawCircle(
-                                    brush = brush,
+                                    brush = borderAnimationBrush,
                                     radius = size.width,
                                     blendMode = BlendMode.SrcIn,
                                 )

@@ -23,6 +23,8 @@ interface ArtistRepository {
         followedStatus: Int,
     )
 
+    suspend fun syncFollowedArtists(): Result<Unit>
+
     fun getFollowedArtists(): Flow<List<ArtistEntity>>
 
     suspend fun updateArtistInLibrary(

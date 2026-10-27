@@ -9,6 +9,7 @@ import com.my.kizzy.gateway.entities.Resume
 import com.my.kizzy.gateway.entities.op.OpCode
 import com.my.kizzy.gateway.entities.op.OpCode.DISPATCH
 import com.my.kizzy.gateway.entities.op.OpCode.HEARTBEAT
+import com.my.kizzy.gateway.entities.op.OpCode.HEARTBEAT_ACK
 import com.my.kizzy.gateway.entities.op.OpCode.HELLO
 import com.my.kizzy.gateway.entities.op.OpCode.IDENTIFY
 import com.my.kizzy.gateway.entities.op.OpCode.INVALID_SESSION
@@ -26,10 +27,10 @@ import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import io.ktor.websocket.readText
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.receiveAsFlow
@@ -55,6 +56,8 @@ open class DiscordWebSocket(
     private val device: String = "Generic Android Device",
 ) : CoroutineScope {
     private val gatewayUrl = "wss://gateway.discord.gg/?v=9&encoding=json"
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+    private val sendMutex = kotlinx.coroutines.sync.Mutex()
     private var websocket: DefaultClientWebSocketSession? = null
     private var sequence = 0
     private var sessionId: String? = null
@@ -72,81 +75,54 @@ open class DiscordWebSocket(
             encodeDefaults = true
         }
 
-    private var reconnectionJob: Job? = null
-    private var currentReconnectDelay = INITIAL_RECONNECT_DELAY
+    private var connectionJob: Job? = null
 
-    override val coroutineContext: CoroutineContext
-        get() = SupervisorJob() + Dispatchers.Default
+    override val coroutineContext: CoroutineContext = scope.coroutineContext
 
     fun connect() {
-        if (connected) {
-            Logger.i(TAG, "Gateway already connected.")
+        if (connectionJob?.isActive == true) {
+            Logger.i(TAG, "Gateway connection loop is already running.")
             return
         }
-        reconnectionJob?.cancel()
-        reconnectionJob =
-            launch {
-                try {
-                    val url = resumeGatewayUrl ?: gatewayUrl
-                    Logger.i(TAG, "Connecting to Discord Gateway at $url")
-                    websocket =
-                        client.webSocketSession(url) {
-                            header("User-Agent", "Discord-Android/314013;RNA")
-                            header("Accept-Language", "en-US")
-                            header("Cache-Control", "no-cache")
-                            header("Pragma", "no-cache")
-                        }
-                    connected = false // will be set to true only after READY is received
-                    Logger.i(TAG, "Successfully connected to Discord Gateway TCP layer.")
-                    currentReconnectDelay = INITIAL_RECONNECT_DELAY
-                    // start receiving messages
-                    websocket!!
-                        .incoming
-                        .receiveAsFlow()
-                        .collect {
-                            when (it) {
-                                is Frame.Text -> {
-                                    val jsonString = it.readText()
-                                    onMessage(json.decodeFromString(jsonString))
-                                }
-
-                                else -> {}
+        connectionJob =
+            scope.launch {
+                var reconnectDelay = INITIAL_RECONNECT_DELAY
+                while (isActive) {
+                    try {
+                        val url = resumeGatewayUrl ?: gatewayUrl
+                        Logger.i(TAG, "Connecting to Discord Gateway at $url")
+                        val session =
+                            client.webSocketSession(url) {
+                                header("User-Agent", "Discord-Android/314013;RNA")
+                                header("Accept-Language", "en-US")
+                                header("Cache-Control", "no-cache")
+                                header("Pragma", "no-cache")
+                            }
+                        websocket = session
+                        connected = false
+                        Logger.i(TAG, "Discord Gateway WebSocket established.")
+                        session.incoming.receiveAsFlow().collect { frame ->
+                            if (frame is Frame.Text) {
+                                onMessage(json.decodeFromString(frame.readText()))
                             }
                         }
-                    handleClose()
-                } catch (e: Exception) {
-                    Logger.e(TAG, "Gateway connection error: ${e.stackTraceToString()}")
-                    scheduleReconnection()
+                        reconnectDelay = INITIAL_RECONNECT_DELAY
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        Logger.e(TAG, "Gateway connection error: ${e.stackTraceToString()}")
+                    } finally {
+                        heartbeatJob?.cancel()
+                        heartbeatJob = null
+                        connected = false
+                        websocket = null
+                    }
+                    if (isActive) {
+                        delay(reconnectDelay)
+                        reconnectDelay = (reconnectDelay * 2).coerceAtMost(MAX_RECONNECT_DELAY)
+                    }
                 }
             }
-    }
-
-    private fun scheduleReconnection() {
-        if (reconnectionJob?.isActive == true) {
-            return
-        }
-        heartbeatJob?.cancel()
-        connected = false
-        reconnectionJob =
-            launch {
-                delay(currentReconnectDelay)
-                Logger.i(TAG, "Attempting to reconnect...")
-                connect()
-                currentReconnectDelay = (currentReconnectDelay * 2).coerceAtMost(MAX_RECONNECT_DELAY)
-            }
-    }
-
-    private suspend fun handleClose() {
-        heartbeatJob?.cancel()
-        connected = false
-        val close = websocket?.closeReason?.await()
-        Logger.w(TAG, "Gateway closed with code: ${close?.code}, reason: ${close?.message}, can_reconnect: ${close?.code?.toInt() == 4000}")
-        if (close?.code?.toInt() == 4000) {
-            delay(200.milliseconds)
-            connect()
-        } else {
-            scheduleReconnection()
-        }
     }
 
     private suspend fun onMessage(payload: Payload) {
@@ -161,6 +137,7 @@ open class DiscordWebSocket(
             HEARTBEAT -> {
                 sendHeartBeat()
             }
+            HEARTBEAT_ACK -> {}
             RECONNECT -> {
                 reconnectWebSocket()
             }
@@ -187,6 +164,7 @@ open class DiscordWebSocket(
 
             "RESUMED" -> {
                 Logger.i(TAG, "Gateway: Session Resumed")
+                connected = true
             }
 
             else -> {}
@@ -194,7 +172,10 @@ open class DiscordWebSocket(
     }
 
     private suspend inline fun handleInvalidSession() {
-        Logger.w(TAG, "Gateway: Handling Invalid Session. Sending Identify after 150ms")
+        Logger.w(TAG, "Gateway: Session invalidated. Resetting resume state and identifying again.")
+        sessionId = null
+        resumeGatewayUrl = null
+        sequence = 0
         delay(150)
         sendIdentify()
     }
@@ -207,7 +188,7 @@ open class DiscordWebSocket(
         }
         heartbeatInterval = json.decodeFromJsonElement<Heartbeat>(this.d!!).heartbeatInterval
         Logger.i(TAG, "Gateway: Setting heartbeatInterval=$heartbeatInterval")
-        startHeartbeatJob(heartbeatInterval)
+        startHeartbeatJob(heartbeatInterval.coerceAtLeast(1L))
     }
 
     private suspend fun sendHeartBeat() {
@@ -258,8 +239,8 @@ open class DiscordWebSocket(
         heartbeatJob =
             launch {
                 while (isActive) {
-                    sendHeartBeat()
                     delay(interval)
+                    sendHeartBeat()
                 }
             }
     }
@@ -271,48 +252,59 @@ open class DiscordWebSocket(
     private fun isSocketConnectedToAccount(): Boolean =
         connected && websocket?.isActive == true && !sessionId.isNullOrBlank()
 
-    @OptIn(DelicateCoroutinesApi::class)
-    fun isWebSocketConnected(): Boolean = websocket?.incoming != null && websocket?.outgoing?.isClosedForSend == false
+    fun isWebSocketConnected(): Boolean = isSocketConnectedToAccount()
 
     private suspend inline fun <reified T> send(
         op: OpCode,
         d: T?,
     ) {
-        if (websocket?.isActive == true) {
-            val payload =
-                json.encodeToString(
-                    Payload(
-                        op = op,
-                        d = json.encodeToJsonElement(d),
-                    ),
-                )
-            if (op == IDENTIFY) {
-                Logger.i(TAG, "Gateway sending payload: [REDACTED IDENTIFY PAYLOAD]")
-            } else {
-                Logger.i(TAG, "Gateway sending payload: $payload")
+        sendMutex.lock()
+        try {
+            val session = websocket
+            if (session?.isActive == true) {
+                val payload =
+                    json.encodeToString(
+                        Payload(
+                            op = op,
+                            d = json.encodeToJsonElement(d),
+                        ),
+                    )
+                if (op == IDENTIFY) {
+                    Logger.i(TAG, "Gateway sending payload: [REDACTED IDENTIFY PAYLOAD]")
+                } else {
+                    Logger.i(TAG, "Gateway sending payload: $payload")
+                }
+                session.send(Frame.Text(payload))
             }
-            websocket?.send(Frame.Text(payload))
+        } finally {
+            sendMutex.unlock()
         }
     }
 
     fun close() {
-        reconnectionJob?.cancel()
+        connectionJob?.cancel()
         heartbeatJob?.cancel()
         heartbeatJob = null
-        this.cancel()
+        scope.cancel()
         resumeGatewayUrl = null
         sessionId = null
         connected = false
         runBlocking {
             websocket?.close()
+            client.close()
             Logger.e(TAG, "Gateway: Connection to gateway closed")
         }
     }
 
     suspend fun sendActivity(presence: Presence) {
         // TODO : Figure out a better way to wait for socket to be connected to account
-        while (!isSocketConnectedToAccount()) {
-            delay(10.milliseconds)
+        if (!isSocketConnectedToAccount()) {
+            connect()
+            kotlinx.coroutines.withTimeout(15.seconds) {
+                while (!isSocketConnectedToAccount()) {
+                    delay(50.milliseconds)
+                }
+            }
         }
         Logger.i(TAG, "Gateway: Sending $PRESENCE_UPDATE")
         send(

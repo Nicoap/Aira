@@ -13,6 +13,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.size
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.MaterialTheme
 import com.wavora.app.ui.theme.typo
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -64,9 +65,9 @@ fun BlogPromoDialog(
         },
         icon = {
             Image(
-                    painter = painterResource(Res.drawable.circle_app_icon),
-                    contentDescription = "App Icon",
-                    modifier = Modifier.size(48.dp),
+                painter = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                contentDescription = "App Icon",
+                modifier = Modifier.size(48.dp),
             )
         },
         title = {

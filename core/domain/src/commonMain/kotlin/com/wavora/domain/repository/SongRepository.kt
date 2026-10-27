@@ -52,6 +52,8 @@ interface SongRepository {
         likeStatus: Int,
     )
 
+    suspend fun syncLikedSongs(): Result<Unit>
+
     fun updateSongInLibrary(
         inLibrary: LocalDateTime,
         videoId: String,

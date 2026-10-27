@@ -21,6 +21,7 @@ import com.wavora.scraper.models.body.LikeBody
 import com.wavora.scraper.models.body.NextBody
 import com.wavora.scraper.models.body.PlayerBody
 import com.wavora.scraper.models.body.SearchBody
+import com.wavora.scraper.models.body.SubscribeBody
 import com.wavora.scraper.models.response.DownloadProgress
 import com.wavora.scraper.models.response.RemoteConfig
 import com.wavora.scraper.utils.parseCookieString
@@ -888,6 +889,17 @@ class Ytmusic {
                 LikeBody(
                     context = WEB_REMIX.toContext(locale, visitorData),
                     target = LikeBody.Target(videoId),
+                ),
+            )
+        }
+
+    suspend fun subscribeArtist(channelId: String) =
+        httpClient.post("subscription/subscribe") {
+            ytClient(WEB_REMIX, true)
+            setBody(
+                SubscribeBody(
+                    channelIds = listOf(channelId),
+                    context = WEB_REMIX.toContext(locale, visitorData),
                 ),
             )
         }

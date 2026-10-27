@@ -950,8 +950,8 @@ fun SuggestItemRow(
                         .diskCacheKey(url)
                         .crossfade(true)
                         .build(),
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier =

@@ -14,6 +14,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf
@@ -22,7 +23,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.PointerIcon
 import androidx.compose.ui.input.pointer.pointerHoverIcon
 import androidx.compose.ui.input.pointer.pointerInput
@@ -30,6 +30,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.WindowState
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wavora.app.viewModel.SharedViewModel
+import com.wavora.app.ui.theme.AppTheme
+import com.wavora.domain.manager.DataStoreManager
+import org.koin.compose.koinInject
 import java.awt.Cursor
 import java.awt.MouseInfo
 import androidx.compose.foundation.layout.Arrangement
@@ -58,6 +61,13 @@ fun MiniPlayerRoot(
     val nowPlayingData by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
     val controllerState by sharedViewModel.controllerState.collectAsStateWithLifecycle()
     val timeline by sharedViewModel.timeline.collectAsStateWithLifecycle()
+    val dataStoreManager: DataStoreManager = koinInject()
+    val themeMode by dataStoreManager.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
+    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
+    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("auto")
+    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("auto")
+    val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("auto")
+    val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
 
     val lyricsData by remember {
         derivedStateOf {
@@ -68,12 +78,20 @@ fun MiniPlayerRoot(
     // Check if there's any track playing
     val hasTrack = nowPlayingData.nowPlayingTitle.isNotBlank()
 
-    Surface(
-        modifier = Modifier.fillMaxWidth().wrapContentHeight(),
-        color = Color(0xFF0B0B0F),
-        shape = RoundedCornerShape(12.dp),
+    AppTheme(
+        mode = themeMode,
+        primaryColorHex = themePrimaryColor,
+        backgroundColorHex = themeBackgroundColor,
+        surfaceColorHex = themeSurfaceColor,
+        textColorHex = themeTextColor,
+        secondaryTextColorHex = themeSecondaryTextColor,
     ) {
-        Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
+        Surface(
+            modifier = Modifier.fillMaxWidth().wrapContentHeight(),
+            color = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(12.dp),
+        ) {
+            Box(modifier = Modifier.fillMaxWidth().wrapContentHeight()) {
             if (!hasTrack) {
                 // Show empty state
                 EmptyMiniPlayerState()
@@ -137,7 +155,7 @@ fun MiniPlayerRoot(
                 Icon(
                     imageVector = Icons.Filled.Close,
                     contentDescription = "Close",
-                    tint = Color.White.copy(alpha = 0.7f),
+                    tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f),
                     modifier = Modifier.size(16.dp),
                 )
             }
@@ -198,11 +216,12 @@ fun MiniPlayerRoot(
                             modifier = Modifier
                                 .size(4.dp)
                                 .clip(CircleShape)
-                                .background(Color.White.copy(alpha = 0.3f))
+                                .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
                         )
                     }
                 }
             }
         }
     }
+}
 }

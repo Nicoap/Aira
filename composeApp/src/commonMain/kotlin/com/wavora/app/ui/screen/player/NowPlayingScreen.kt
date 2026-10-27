@@ -82,6 +82,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetValue
@@ -177,10 +178,7 @@ import com.wavora.app.ui.theme.overlay
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraAccentDark
 import com.wavora.app.ui.theme.wavoraBackground
-import com.wavora.app.ui.theme.wavoraBorder
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
-import com.wavora.app.ui.theme.wavoraPrimary
-import com.wavora.app.ui.theme.wavoraSecondary
+import com.wavora.app.ui.theme.themeAccentBrush
 import com.wavora.app.viewModel.LyricsProvider
 import com.wavora.app.viewModel.NowPlayingBottomSheetUIEvent
 import com.wavora.app.viewModel.NowPlayingBottomSheetViewModel
@@ -209,7 +207,7 @@ import wavora.composeapp.generated.resources.baseline_playlist_add_24
 import wavora.composeapp.generated.resources.crossfading
 import wavora.composeapp.generated.resources.description
 import wavora.composeapp.generated.resources.holder
-import wavora.composeapp.generated.resources.holder_video
+import wavora.composeapp.generated.resources.app_icon
 import wavora.composeapp.generated.resources.like_and_dislike
 import wavora.composeapp.generated.resources.line_synced
 import wavora.composeapp.generated.resources.lyrics
@@ -585,7 +583,7 @@ fun NowPlayingScreenContent(
     }
     val rainbowColor = hsvToColor(rainbowHue, 1f, 1f)
     val sliderTrackColor by animateColorAsState(
-        targetValue = if (isCrossfadingState) rainbowColor else wavoraPrimary,
+        targetValue = if (isCrossfadingState) rainbowColor else MaterialTheme.colorScheme.primary,
         animationSpec = tween(300),
         label = "sliderCrossfadeColor",
     )
@@ -823,8 +821,8 @@ fun NowPlayingScreenContent(
                         .build(),
                 contentDescription = null,
                 contentScale = ContentScale.FillHeight,
-                placeholder = painterResource(Res.drawable.holder),
-                error = painterResource(Res.drawable.holder),
+                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                 modifier =
                     Modifier
                         .align(Alignment.Center)
@@ -969,8 +967,8 @@ fun NowPlayingScreenContent(
                                             .build(),
                                     contentDescription = null,
                                     contentScale = ContentScale.Crop,
-                                    placeholder = painterResource(Res.drawable.holder),
-                                    error = painterResource(Res.drawable.holder),
+                                    placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                    error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                     modifier =
                                         Modifier
                                             .fillMaxSize()
@@ -1161,8 +1159,8 @@ fun NowPlayingScreenContent(
                                                 )
                                             },
                                             contentScale = ContentScale.Crop,
-                                            placeholder = painterResource(Res.drawable.holder),
-                                            error = painterResource(Res.drawable.holder),
+                                            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                             modifier =
                                                 Modifier
                                                     .align(Alignment.Center)
@@ -1375,8 +1373,8 @@ fun NowPlayingScreenContent(
                                                     .build(),
                                             contentDescription = pageTrack.title,
                                             contentScale = ContentScale.Crop,
-                                            placeholder = painterResource(Res.drawable.holder),
-                                            error = painterResource(Res.drawable.holder),
+                                            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                             // Feed the per-page palette using the SAME bitmap
                                             // we just rendered so the Layer 0 gradient backdrop
                                             // matches what the user sees on screen.
@@ -1597,8 +1595,8 @@ fun NowPlayingScreenContent(
                                                         .diskCacheKey(screenDataState.thumbnailURL + "BIGGER")
                                                         .crossfade(true)
                                                         .build(),
-                                                placeholder = painterResource(Res.drawable.holder),
-                                                error = painterResource(Res.drawable.holder),
+                                                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                                 contentDescription = null,
                                                 contentScale = ContentScale.FillWidth,
                                                 modifier =
@@ -1752,8 +1750,8 @@ fun NowPlayingScreenContent(
                                                                         ).clip(
                                                                             RoundedCornerShape(8.dp),
                                                                         ),
-                                                                color = wavoraPrimary,
-                                                                trackColor = wavoraBorder,
+                                                                color = MaterialTheme.colorScheme.primary,
+                                                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                                                 strokeCap = StrokeCap.Round,
                                                             )
                                                         }
@@ -1770,8 +1768,8 @@ fun NowPlayingScreenContent(
                                                                         ).clip(
                                                                             RoundedCornerShape(8.dp),
                                                                         ),
-                                                                color = wavoraSecondary,
-                                                                trackColor = wavoraBorder,
+                                                                color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
+                                                                trackColor = MaterialTheme.colorScheme.surfaceVariant,
                                                                 strokeCap = StrokeCap.Round,
                                                                 drawStopIndicator = {},
                                                             )
@@ -1816,14 +1814,14 @@ fun NowPlayingScreenContent(
                                                             if (timelineState.isCrossfading) {
                                                                 SolidColor(sliderTrackColor)
                                                             } else {
-                                                                wavoraIconGradientBrush
+                                                                themeAccentBrush()
                                                             }
                                                         Box(
                                                             modifier =
                                                                 Modifier
                                                                     .fillMaxWidth()
                                                                     .height(5.dp)
-                                                                    .background(wavoraBorder, RoundedCornerShape(4.dp)),
+                                                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
                                                         ) {
                                                             Box(
                                                                 modifier =
@@ -1853,7 +1851,7 @@ fun NowPlayingScreenContent(
                                                                 SliderDefaults.colors().copy(
                                                                     thumbColor = sliderTrackColor,
                                                                     activeTrackColor = sliderTrackColor,
-                                                                    inactiveTrackColor = wavoraBorder,
+                                                                    inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                                                                 ),
                                                             enabled = true,
                                                         )
@@ -2104,8 +2102,8 @@ fun NowPlayingScreenContent(
                                                                 .diskCacheKey(screenDataState.thumbnailURL + "BIGGER")
                                                                 .crossfade(true)
                                                                 .build(),
-                                                        placeholder = painterResource(Res.drawable.holder),
-                                                        error = painterResource(Res.drawable.holder),
+                                                        placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                                        error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                                         contentDescription = null,
                                                         contentScale = ContentScale.FillWidth,
                                                         modifier =
@@ -2433,8 +2431,8 @@ fun NowPlayingScreenContent(
                                                 .diskCacheKey(thumb)
                                                 .crossfade(550)
                                                 .build(),
-                                        placeholder = painterResource(Res.drawable.holder_video),
-                                        error = painterResource(Res.drawable.holder_video),
+                                        placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                        error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                         contentDescription = null,
                                         contentScale = ContentScale.Crop,
                                         modifier =
@@ -2661,7 +2659,7 @@ fun NowPlayingScreenContent(
                                 Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                                     CircularProgressIndicator(
                                         modifier = Modifier.size(18.dp),
-                                        color = wavoraPrimary,
+                                        color = MaterialTheme.colorScheme.primary,
                                         strokeWidth = 3.dp,
                                     )
                                 }
@@ -2699,7 +2697,7 @@ fun NowPlayingScreenContent(
                                 Modifier
                                     .fillMaxWidth()
                                     .height(1.dp)
-                                    .background(wavoraBorder, RoundedCornerShape(4.dp)),
+                                    .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
                         ) {
                             Box(
                                 modifier =
@@ -2707,7 +2705,7 @@ fun NowPlayingScreenContent(
                                         .fillMaxWidth(collapsedFraction)
                                         .fillMaxHeight()
                                         .background(
-                                            brush = wavoraIconGradientBrush,
+                                            brush = themeAccentBrush(),
                                             shape = RoundedCornerShape(4.dp),
                                         ),
                             )

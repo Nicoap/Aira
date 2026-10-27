@@ -5,6 +5,7 @@ import com.wavora.appdata.db.datasource.LocalDataSource
 import com.wavora.appdata.extension.getFullDataFromDB
 import com.wavora.appdata.mapping.toListTrack
 import com.wavora.appdata.mapping.toSongItemForDownload
+import com.wavora.appdata.mapping.toTrack
 import com.wavora.appdata.mapping.toWatchEndpoint
 import com.wavora.domain.model.entities.QueueEntity
 import com.wavora.domain.model.entities.SongEntity
@@ -16,6 +17,7 @@ import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.manager.DataStoreManager.Values.TRUE
 import com.wavora.domain.repository.SongRepository
 import com.wavora.domain.utils.Resource
+import com.wavora.domain.utils.toSongEntity
 import com.wavora.scraper.YouTube
 import com.wavora.scraper.models.SongItem
 import com.wavora.scraper.models.WatchEndpoint
@@ -135,18 +137,48 @@ internal class SongRepositoryImpl(
         likeStatus: Int,
     ) = withContext(Dispatchers.IO) {
         localDataSource.updateLiked(likeStatus, videoId)
-//        if (dataStoreManager.combineLocalAndYouTubeLiked.first() == TRUE) {
-//            if (likeStatus == 1) {
-//                addToYouTubeLiked(videoId).collect { result ->
-//                    Logger.d(TAG, "updateLikeStatus -> addToYouTubeLiked: $result")
-//                }
-//            } else {
-//                removeFromYouTubeLiked(videoId).collect { result ->
-//                    Logger.d(TAG, "updateLikeStatus -> removeFromYouTubeLiked: $result")
-//                }
-//            }
-//        }
+        if (likeStatus == 1) {
+            youTube.addToLiked(videoId).fold(
+                onSuccess = { status ->
+                    if (status !in 200..299) {
+                        Logger.e(TAG, "YouTube Music like sync failed with HTTP $status")
+                    }
+                },
+                onFailure = { error ->
+                    Logger.e(TAG, "YouTube Music like sync failed: ${error.message ?: error}")
+                },
+            )
+        }
     }
+
+    override suspend fun syncLikedSongs(): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val remoteSongs = youTube.getLikedSongs().getOrThrow()
+                val localLikedSongs =
+                    getFullDataFromDB { limit, offset ->
+                        localDataSource.getLikedSongs(limit, offset)
+                    }
+                val remoteVideoIds = remoteSongs.mapTo(mutableSetOf()) { it.id }
+
+                localLikedSongs
+                    .asSequence()
+                    .map { it.videoId }
+                    .filterNot { it in remoteVideoIds }
+                    .forEach { videoId ->
+                        val status = youTube.addToLiked(videoId).getOrThrow()
+                        check(status in 200..299) {
+                            "YouTube Music returned HTTP $status while syncing liked song $videoId"
+                        }
+                    }
+
+                remoteSongs.forEach { song ->
+                    val entity: SongEntity = song.toTrack().toSongEntity()
+                    localDataSource.insertSong(entity)
+                    localDataSource.updateLiked(1, entity.videoId)
+                }
+            }
+        }
 
     override fun updateSongInLibrary(
         inLibrary: LocalDateTime,

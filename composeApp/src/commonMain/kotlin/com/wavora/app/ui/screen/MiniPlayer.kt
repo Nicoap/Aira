@@ -51,6 +51,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.ProgressIndicatorDefaults
 import androidx.compose.material3.Slider
@@ -110,10 +111,7 @@ import com.wavora.app.ui.component.PlayerControlLayout
 import com.wavora.app.ui.component.liquidGlass
 import com.wavora.app.ui.theme.transparent
 import com.wavora.app.ui.theme.typo
-import com.wavora.app.ui.theme.wavoraBorder
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
-import com.wavora.app.ui.theme.wavoraPrimary
-import com.wavora.app.ui.theme.wavoraSecondary
+import com.wavora.app.ui.theme.themeAccentBrush
 import com.wavora.app.ui.theme.wavoraSurface
 import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.app.viewModel.UIEvent
@@ -431,8 +429,8 @@ fun MiniPlayer(
                                         .data(songEntity?.thumbnails)
                                         .crossfade(550)
                                         .build(),
-                                placeholder = painterResource(Res.drawable.holder),
-                                error = painterResource(Res.drawable.holder),
+                                placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                                error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                                 contentDescription = null,
                                 contentScale = ContentScale.FillWidth,
                                 onSuccess = {
@@ -543,7 +541,7 @@ fun MiniPlayer(
                             Box(modifier = Modifier.size(48.dp), contentAlignment = Alignment.Center) {
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(18.dp),
-                                    color = wavoraPrimary,
+                                    color = MaterialTheme.colorScheme.primary,
                                     strokeWidth = 3.dp,
                                 )
                             }
@@ -579,14 +577,14 @@ fun MiniPlayer(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(3.dp)
-                            .background(wavoraBorder, RoundedCornerShape(4.dp)),
+                            .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
                     ) {
                         Box(
                             modifier = Modifier
                                 .fillMaxWidth(animatedProgress)
                                 .fillMaxHeight()
                                 .background(
-                                    brush = wavoraIconGradientBrush,
+                                    brush = themeAccentBrush(),
                                     shape = RoundedCornerShape(4.dp),
                                 ),
                         )
@@ -637,8 +635,8 @@ fun MiniPlayer(
                                     .data(songEntity?.thumbnails)
                                     .crossfade(550)
                                     .build(),
-                            placeholder = painterResource(Res.drawable.holder),
-                            error = painterResource(Res.drawable.holder),
+                            placeholder = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
+                            error = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
                             contentDescription = null,
                             contentScale = ContentScale.FillWidth,
                             onSuccess = {
@@ -793,7 +791,7 @@ fun MiniPlayer(
                                                             .fillMaxWidth(fraction)
                                                             .fillMaxHeight()
                                                             .background(
-                                                                brush = wavoraIconGradientBrush,
+                                                                brush = themeAccentBrush(),
                                                                 shape = RoundedCornerShape(4.dp),
                                                             ),
                                                 )
@@ -813,8 +811,8 @@ fun MiniPlayer(
                                                     remember { MutableInteractionSource() },
                                                 colors =
                                                     SliderDefaults.colors().copy(
-                                                        thumbColor = wavoraPrimary,
-                                                        activeTrackColor = wavoraPrimary,
+                                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                                        activeTrackColor = MaterialTheme.colorScheme.primary,
                                                         inactiveTrackColor = Color.Transparent,
                                                     ),
                                                 enabled = true,
@@ -917,7 +915,7 @@ fun MiniPlayer(
                                             Modifier
                                                 .fillMaxWidth()
                                                 .height(5.dp)
-                                                .background(wavoraBorder, RoundedCornerShape(4.dp)),
+                                                .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
                                     ) {
                                         Box(
                                             modifier =
@@ -925,7 +923,7 @@ fun MiniPlayer(
                                                     .fillMaxWidth(fraction)
                                                     .fillMaxHeight()
                                                     .background(
-                                                        brush = wavoraIconGradientBrush,
+                                                        brush = themeAccentBrush(),
                                                         shape = RoundedCornerShape(4.dp),
                                                     ),
                                         )
@@ -949,8 +947,8 @@ fun MiniPlayer(
                                         // different color languages (this one used to be white/gray).
                                         colors =
                                             SliderDefaults.colors().copy(
-                                                thumbColor = wavoraPrimary,
-                                                activeTrackColor = wavoraPrimary,
+                                                thumbColor = MaterialTheme.colorScheme.primary,
+                                                activeTrackColor = MaterialTheme.colorScheme.primary,
                                                 inactiveTrackColor = Color.Transparent,
                                             ),
                                         enabled = true,

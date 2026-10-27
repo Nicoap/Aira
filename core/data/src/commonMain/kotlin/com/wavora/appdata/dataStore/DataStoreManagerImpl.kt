@@ -1508,6 +1508,161 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val mediaPreloadCount: Flow<Int> =
+        settingsDataStore.data.map { preferences ->
+            (preferences[MEDIA_PRELOAD_COUNT] ?: 2).coerceIn(0, 5)
+        }
+
+    override suspend fun setMediaPreloadCount(count: Int) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[MEDIA_PRELOAD_COUNT] = count.coerceIn(0, 5)
+            }
+        }
+    }
+
+    override val discordRpcButtonOneLabel: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_ONE_LABEL] ?: "Listen on Wavora" }
+
+    override suspend fun setDiscordRpcButtonOneLabel(label: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_ONE_LABEL] = label }
+        }
+    }
+
+    override val discordRpcButtonOneEnabled: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_ONE_ENABLED] ?: TRUE }
+
+    override suspend fun setDiscordRpcButtonOneEnabled(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_ONE_ENABLED] = if (enabled) TRUE else FALSE }
+        }
+    }
+
+    override val discordRpcButtonOneUrl: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_ONE_URL] ?: "https://music.youtube.com/watch?v={videoId}" }
+
+    override suspend fun setDiscordRpcButtonOneUrl(url: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_ONE_URL] = url }
+        }
+    }
+
+    override val discordRpcButtonTwoLabel: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_LABEL] ?: "Visit Wavora" }
+
+    override suspend fun setDiscordRpcButtonTwoLabel(label: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_TWO_LABEL] = label }
+        }
+    }
+
+    override val discordRpcButtonTwoEnabled: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_ENABLED] ?: TRUE }
+
+    override suspend fun setDiscordRpcButtonTwoEnabled(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_TWO_ENABLED] = if (enabled) TRUE else FALSE }
+        }
+    }
+
+    override val discordRpcButtonTwoUrl: Flow<String> =
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_URL] ?: "https://github.com/Wavora-dev/Wavora" }
+
+    override suspend fun setDiscordRpcButtonTwoUrl(url: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_BUTTON_TWO_URL] = url }
+        }
+    }
+
+    override val discordRpcSmallImageUrl: Flow<String> =
+        settingsDataStore.data.map {
+            it[DISCORD_RPC_SMALL_IMAGE_URL]
+                ?: "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png"
+        }
+
+    override suspend fun setDiscordRpcSmallImageUrl(url: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DISCORD_RPC_SMALL_IMAGE_URL] = url }
+        }
+    }
+
+    override val themeMode: Flow<String> =
+        settingsDataStore.data.map { it[THEME_MODE] ?: DataStoreManager.THEME_MODE_DARK }
+
+    override suspend fun setThemeMode(mode: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit {
+                it[THEME_MODE] =
+                    mode.takeIf {
+                        it in setOf(
+                            DataStoreManager.THEME_MODE_SYSTEM,
+                            DataStoreManager.THEME_MODE_LIGHT,
+                            DataStoreManager.THEME_MODE_DARK,
+                        )
+                    } ?: DataStoreManager.THEME_MODE_DARK
+            }
+        }
+    }
+
+    override val themePrimaryColor: Flow<String> =
+        settingsDataStore.data.map { it[THEME_PRIMARY_COLOR] ?: "#A259FF" }
+
+    override suspend fun setThemePrimaryColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_PRIMARY_COLOR] = color }
+        }
+    }
+
+    override val themeBackgroundColor: Flow<String> =
+        settingsDataStore.data.map { it[THEME_BACKGROUND_COLOR] ?: "auto" }
+
+    override suspend fun setThemeBackgroundColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_BACKGROUND_COLOR] = color }
+        }
+    }
+
+    override val themeSurfaceColor: Flow<String> =
+        settingsDataStore.data.map { it[THEME_SURFACE_COLOR] ?: "auto" }
+
+    override suspend fun setThemeSurfaceColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_SURFACE_COLOR] = color }
+        }
+    }
+
+    override val themeTextColor: Flow<String> =
+        settingsDataStore.data.map { it[THEME_TEXT_COLOR] ?: "auto" }
+
+    override suspend fun setThemeTextColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_TEXT_COLOR] = color }
+        }
+    }
+
+    override val themeSecondaryTextColor: Flow<String> =
+        settingsDataStore.data.map { it[THEME_SECONDARY_TEXT_COLOR] ?: "auto" }
+
+    override suspend fun setThemeSecondaryTextColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_SECONDARY_TEXT_COLOR] = color }
+        }
+    }
+
+    override suspend fun resetThemeToDefaults() {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit {
+                it.remove(THEME_MODE)
+                it.remove(THEME_PRIMARY_COLOR)
+                it.remove(THEME_BACKGROUND_COLOR)
+                it.remove(THEME_SURFACE_COLOR)
+                it.remove(THEME_TEXT_COLOR)
+                it.remove(THEME_SECONDARY_TEXT_COLOR)
+            }
+        }
+    }
+
     override val localTrackingEnabled: Flow<String> =
         settingsDataStore.data.map { preferences ->
             preferences[LOCAL_TRACKING_ENABLED] ?: FALSE
@@ -1682,6 +1837,20 @@ internal class DataStoreManagerImpl(
 
         val DISCORD_TOKEN = stringPreferencesKey("discord_token")
         val RICH_PRESENCE = stringPreferencesKey("rich_presence")
+        val MEDIA_PRELOAD_COUNT = intPreferencesKey("media_preload_count")
+        val DISCORD_RPC_BUTTON_ONE_LABEL = stringPreferencesKey("discord_rpc_button_one_label")
+        val DISCORD_RPC_BUTTON_ONE_ENABLED = stringPreferencesKey("discord_rpc_button_one_enabled")
+        val DISCORD_RPC_BUTTON_ONE_URL = stringPreferencesKey("discord_rpc_button_one_url")
+        val DISCORD_RPC_BUTTON_TWO_LABEL = stringPreferencesKey("discord_rpc_button_two_label")
+        val DISCORD_RPC_BUTTON_TWO_ENABLED = stringPreferencesKey("discord_rpc_button_two_enabled")
+        val DISCORD_RPC_BUTTON_TWO_URL = stringPreferencesKey("discord_rpc_button_two_url")
+        val DISCORD_RPC_SMALL_IMAGE_URL = stringPreferencesKey("discord_rpc_small_image_url")
+        val THEME_MODE = stringPreferencesKey("theme_mode")
+        val THEME_PRIMARY_COLOR = stringPreferencesKey("theme_primary_color")
+        val THEME_BACKGROUND_COLOR = stringPreferencesKey("theme_background_color")
+        val THEME_SURFACE_COLOR = stringPreferencesKey("theme_surface_color")
+        val THEME_TEXT_COLOR = stringPreferencesKey("theme_text_color")
+        val THEME_SECONDARY_TEXT_COLOR = stringPreferencesKey("theme_secondary_text_color")
 
         val LOCAL_TRACKING_ENABLED = stringPreferencesKey("local_tracking_enabled")
 

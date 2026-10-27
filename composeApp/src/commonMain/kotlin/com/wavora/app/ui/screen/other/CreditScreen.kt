@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -72,7 +73,7 @@ fun CreditScreen(
 
         // App icon
         Image(
-            painter = painterResource(Res.drawable.app_icon),
+            painter = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
             contentDescription = "App Icon",
             modifier =
                 Modifier

@@ -48,7 +48,59 @@ internal class ArtistRepositoryImpl(
     override suspend fun updateFollowedStatus(
         channelId: String,
         followedStatus: Int,
-    ) = withContext(Dispatchers.IO) { localDataSource.updateFollowed(followedStatus, channelId) }
+    ) = withContext(Dispatchers.IO) {
+        localDataSource.updateFollowed(followedStatus, channelId)
+        if (followedStatus == 1) {
+            youTube.subscribeArtist(channelId).fold(
+                onSuccess = { status ->
+                    if (status !in 200..299) {
+                        Logger.e("Artist", "YouTube Music subscription sync failed with HTTP $status")
+                    }
+                },
+                onFailure = { error ->
+                    Logger.e("Artist", "YouTube Music subscription sync failed: ${error.message ?: error}")
+                },
+            )
+        }
+    }
+
+    override suspend fun syncFollowedArtists(): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val remoteArtists = youTube.getLibrarySubscriptions().getOrThrow()
+                val localFollowedArtists =
+                    getFullDataFromDB { limit, offset ->
+                        localDataSource.getFollowedArtists(limit, offset)
+                    }
+                val remoteChannelIds = remoteArtists.mapTo(mutableSetOf()) { it.id }
+                val localChannelIds = localFollowedArtists.mapTo(mutableSetOf()) { it.channelId }
+
+                localFollowedArtists
+                    .filterNot { it.channelId in remoteChannelIds }
+                    .forEach { artist ->
+                        val status = youTube.subscribeArtist(artist.channelId).getOrThrow()
+                        check(status in 200..299) {
+                            "YouTube Music returned HTTP $status while syncing followed artist ${artist.channelId}"
+                        }
+                    }
+
+                remoteArtists.forEach { artist ->
+                    val existing = localDataSource.getArtist(artist.id)
+                    if (existing == null) {
+                        localDataSource.insertArtist(
+                            ArtistEntity(
+                                channelId = artist.id,
+                                name = artist.title,
+                                thumbnails = artist.thumbnail,
+                                followed = true,
+                            ),
+                        )
+                    } else if (!existing.followed && artist.id !in localChannelIds) {
+                        localDataSource.updateFollowed(1, artist.id)
+                    }
+                }
+            }
+        }
 
     override fun getFollowedArtists(): Flow<List<ArtistEntity>> =
         flow {

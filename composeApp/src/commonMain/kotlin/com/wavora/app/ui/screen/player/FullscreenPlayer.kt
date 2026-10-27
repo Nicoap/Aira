@@ -45,6 +45,7 @@ import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
@@ -66,9 +67,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import com.wavora.app.extension.wavoraIconGradient
 import androidx.compose.ui.graphics.SolidColor
-import com.wavora.app.ui.theme.wavoraBorder
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
-import com.wavora.app.ui.theme.wavoraPrimary
+import com.wavora.app.ui.theme.themeAccentBrush
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
@@ -424,7 +423,7 @@ fun FullscreenPlayer(
                                             .wavoraIconGradient(
                                                 brush =
                                                     if (controllerState.isPreviousAvailable) {
-                                                        wavoraIconGradientBrush
+                                                        themeAccentBrush()
                                                     } else {
                                                         SolidColor(Color(0xFF3D3D5C))
                                                     },
@@ -548,7 +547,7 @@ fun FullscreenPlayer(
                                             .wavoraIconGradient(
                                                 brush =
                                                     if (controllerState.isNextAvailable) {
-                                                        wavoraIconGradientBrush
+                                                        themeAccentBrush()
                                                     } else {
                                                         SolidColor(Color(0xFF3D3D5C))
                                                     },
@@ -607,7 +606,7 @@ fun FullscreenPlayer(
                                                     Modifier
                                                         .fillMaxWidth()
                                                         .height(5.dp)
-                                                        .background(wavoraBorder, RoundedCornerShape(4.dp)),
+                                                        .background(MaterialTheme.colorScheme.surfaceVariant, RoundedCornerShape(4.dp)),
                                             ) {
                                                 Box(
                                                     modifier =
@@ -615,7 +614,7 @@ fun FullscreenPlayer(
                                                             .fillMaxWidth(fraction)
                                                             .fillMaxHeight()
                                                             .background(
-                                                                brush = wavoraIconGradientBrush,
+                                                                brush = themeAccentBrush(),
                                                                 shape = RoundedCornerShape(4.dp),
                                                             ),
                                                 )
@@ -635,9 +634,9 @@ fun FullscreenPlayer(
                                                     remember { MutableInteractionSource() },
                                                 colors =
                                                     SliderDefaults.colors().copy(
-                                                        thumbColor = wavoraPrimary,
-                                                        activeTrackColor = wavoraPrimary,
-                                                        inactiveTrackColor = wavoraBorder,
+                                                        thumbColor = MaterialTheme.colorScheme.primary,
+                                                        activeTrackColor = MaterialTheme.colorScheme.primary,
+                                                        inactiveTrackColor = MaterialTheme.colorScheme.surfaceVariant,
                                                     ),
                                                 enabled = true,
                                             )

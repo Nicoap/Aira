@@ -21,20 +21,19 @@ import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material.icons.rounded.SkipNext
 import androidx.compose.material.icons.rounded.SkipPrevious
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.unit.dp
 import com.wavora.app.extension.wavoraIconGradient
-import com.wavora.app.ui.theme.wavoraIconGradientBrush
+import com.wavora.app.ui.theme.themeAccentBrush
 import com.wavora.domain.mediaservice.handler.ControlState
 import com.wavora.domain.mediaservice.handler.RepeatState
-import com.wavora.app.ui.theme.seed
 import com.wavora.app.ui.theme.transparent
 import com.wavora.app.viewModel.UIEvent
 import org.jetbrains.compose.resources.stringResource
@@ -89,14 +88,14 @@ fun PlayerControlLayout(
                     if (!isShuffle) {
                         Icon(
                             imageVector = Icons.Rounded.Shuffle,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             contentDescription = stringResource(Res.string.shuffle),
                             modifier = Modifier.size(smallIcon.first),
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Rounded.Shuffle,
-                            tint = seed,
+                            tint = MaterialTheme.colorScheme.primary,
                             contentDescription = stringResource(Res.string.shuffle),
                             modifier = Modifier.size(smallIcon.first),
                         )
@@ -125,7 +124,7 @@ fun PlayerControlLayout(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.SkipPrevious,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     contentDescription = stringResource(Res.string.previous_track),
                     modifier =
                         Modifier
@@ -135,9 +134,9 @@ fun PlayerControlLayout(
                             .wavoraIconGradient(
                                 brush =
                                     if (controllerState.isPreviousAvailable) {
-                                        wavoraIconGradientBrush
+                                        themeAccentBrush()
                                     } else {
-                                        SolidColor(Color(0xFF3D3D5C))
+                                        SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                     },
                             ),
                 )
@@ -164,14 +163,14 @@ fun PlayerControlLayout(
                     if (!isPlaying) {
                         Icon(
                             imageVector = Icons.Rounded.PlayCircle,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             contentDescription = stringResource(Res.string.play),
                             modifier = Modifier.size(bigIcon.first).wavoraIconGradient(),
                         )
                     } else {
                         Icon(
                             imageVector = Icons.Rounded.PauseCircle,
-                            tint = Color.White,
+                            tint = MaterialTheme.colorScheme.onSurface,
                             contentDescription = stringResource(Res.string.pause),
                             modifier = Modifier.size(bigIcon.first).wavoraIconGradient(),
                         )
@@ -200,7 +199,7 @@ fun PlayerControlLayout(
             ) {
                 Icon(
                     imageVector = Icons.Rounded.SkipNext,
-                    tint = Color.White,
+                    tint = MaterialTheme.colorScheme.onSurface,
                     contentDescription = stringResource(Res.string.next_track),
                     modifier =
                         Modifier
@@ -208,9 +207,9 @@ fun PlayerControlLayout(
                             .wavoraIconGradient(
                                 brush =
                                     if (controllerState.isNextAvailable) {
-                                        wavoraIconGradientBrush
+                                        themeAccentBrush()
                                     } else {
-                                        SolidColor(Color(0xFF3D3D5C))
+                                        SolidColor(MaterialTheme.colorScheme.onSurfaceVariant)
                                     },
                             ),
                 )
@@ -237,7 +236,7 @@ fun PlayerControlLayout(
                         is RepeatState.None -> {
                             Icon(
                                 imageVector = Icons.Rounded.Repeat,
-                                tint = Color.White,
+                                tint = MaterialTheme.colorScheme.onSurface,
                                 contentDescription = stringResource(Res.string.repeat_off),
                                 modifier = Modifier.size(smallIcon.first),
                             )
@@ -246,7 +245,7 @@ fun PlayerControlLayout(
                         RepeatState.All -> {
                             Icon(
                                 imageVector = Icons.Rounded.Repeat,
-                                tint = seed,
+                                tint = MaterialTheme.colorScheme.primary,
                                 contentDescription = stringResource(Res.string.repeat_all),
                                 modifier = Modifier.size(smallIcon.first),
                             )
@@ -255,7 +254,7 @@ fun PlayerControlLayout(
                         RepeatState.One -> {
                             Icon(
                                 imageVector = Icons.Rounded.RepeatOne,
-                                tint = seed,
+                                tint = MaterialTheme.colorScheme.primary,
                                 contentDescription = stringResource(Res.string.repeat_one),
                                 modifier = Modifier.size(smallIcon.first),
                             )

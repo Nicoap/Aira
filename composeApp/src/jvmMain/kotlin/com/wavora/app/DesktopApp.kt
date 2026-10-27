@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -28,11 +29,13 @@ import com.kdroid.composetray.utils.SingleInstanceManager
 import com.wavora.appdata.di.loader.loadAllModules
 import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.mediaservice.handler.MediaPlayerHandler
+import com.wavora.domain.mediaservice.handler.PlayerEvent
 import com.wavora.domain.mediaservice.handler.ToastType
 import com.wavora.domain.mediaservice.session.PlayerSessionAdapter
 import com.wavora.app.di.viewModelModule
 import com.wavora.app.ui.component.CustomTitleBar
 import com.wavora.app.ui.component.SplashScreen
+import com.wavora.app.ui.theme.AppTheme
 import com.wavora.app.ui.mini_player.MiniPlayerManager
 import com.wavora.app.ui.mini_player.MiniPlayerWindow
 import com.wavora.app.utils.VersionManager
@@ -45,7 +48,10 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import multiplatform.network.cmptoast.ToastHost
@@ -62,7 +68,7 @@ import org.koin.core.context.startKoin
 import org.koin.mp.KoinPlatform.getKoin
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.app_name
-import wavora.composeapp.generated.resources.circle_app_icon
+import wavora.composeapp.generated.resources.system_app_icon
 import wavora.composeapp.generated.resources.close_miniplayer
 import wavora.composeapp.generated.resources.explicit_content_blocked
 import wavora.composeapp.generated.resources.open_app
@@ -86,6 +92,7 @@ private class AppReady(
 
 @OptIn(ExperimentalMaterial3Api::class)
 fun runDesktopApp(args: Array<String> = emptyArray()) {
+    WindowsSystemMediaSession.initializeWindowsAppUserModelId()
     // Install crash dialog handler first — catches all uncaught exceptions
     CrashDialog.install()
 
@@ -230,6 +237,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     Logger.d(TAG, "===== DIAGNOSTICO ARRANQUE DE PROCESO - PUNTO 3: justo antes de application{} / crear ventana principal =====")
     application {
         var appReady by remember { mutableStateOf<AppReady?>(null) }
+        var splashPrimaryColor by remember { mutableStateOf("#A259FF") }
         // WAVORA SPLASH FIX (Objetivo 1, Problema 4): antes, apenas `appReady`
         // dejaba de ser null, `SplashWindow` se desmontaba en el mismo frame que
         // `MainAppWindow` aparecía — un corte seco. Ahora `SplashScreen` corre su
@@ -294,6 +302,11 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                         startKoin {
                             loadAllModules()
                             loadKoinModules(viewModelModule)
+                        }
+                        val loadedThemePrimaryColor =
+                            getKoin().get<DataStoreManager>().themePrimaryColor.first()
+                        withContext(Dispatchers.Main) {
+                            splashPrimaryColor = loadedThemePrimaryColor
                         }
                         com.wavora.app.diagnostics.StartupTiming.end("startKoin + loadAllModules")
 
@@ -365,7 +378,11 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                             sharedViewModel.setIntent(intent)
                         }
 
-                        result = AppReady(mediaPlayerHandler, sharedViewModel)
+                        result =
+                            AppReady(
+                                mediaPlayerHandler,
+                                sharedViewModel,
+                            )
                         break
                     } catch (e: Throwable) {
                         lastError = e
@@ -407,6 +424,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                 visible = currentAppReady == null,
                 onExitFinished = { splashExited = true },
                 canForceClose = canForceClose,
+                primaryColorHex = splashPrimaryColor,
             )
         }
         if (currentAppReady != null && splashExited) {
@@ -495,6 +513,7 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
     visible: Boolean,
     onExitFinished: () -> Unit,
     canForceClose: Boolean,
+    primaryColorHex: String,
 ) {
     val windowState =
         remember {
@@ -517,7 +536,9 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
         alwaysOnTop = !canForceClose,
         state = windowState,
     ) {
-        SplashScreen(visible = visible, onExitFinished = onExitFinished)
+        AppTheme(primaryColorHex = primaryColorHex) {
+            SplashScreen(visible = visible, onExitFinished = onExitFinished)
+        }
     }
 }
 
@@ -532,6 +553,13 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
     mediaPlayerHandler: MediaPlayerHandler,
     sharedViewModel: SharedViewModel,
 ) {
+    val themeSettings = remember { getKoin().get<DataStoreManager>() }
+    val themeMode by themeSettings.themeMode.collectAsState(DataStoreManager.THEME_MODE_DARK)
+    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsState("#A259FF")
+    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsState("auto")
+    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsState("auto")
+    val themeTextColor by themeSettings.themeTextColor.collectAsState("auto")
+    val themeSecondaryTextColor by themeSettings.themeSecondaryTextColor.collectAsState("auto")
     // Main Window - restore saved size and position
     val windowPrefs = java.util.prefs.Preferences.userRoot().node("Wavora/MainWindow")
     val savedWidth = windowPrefs.getFloat("width", 1280f)
@@ -563,7 +591,7 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
     val openMiniPlayer = stringResource(Res.string.open_miniplayer)
     val closeMiniPlayer = stringResource(Res.string.close_miniplayer)
     Tray(
-        icon = painterResource(Res.drawable.circle_app_icon),
+        icon = painterResource(Res.drawable.system_app_icon),
         tooltip = stringResource(Res.string.app_name),
         primaryAction = {
             isVisible = true
@@ -610,12 +638,56 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
             isVisible = false
         },
         title = stringResource(Res.string.app_name),
-        icon = painterResource(Res.drawable.circle_app_icon),
+        icon = painterResource(Res.drawable.system_app_icon),
         undecorated = true,
         transparent = true,
         state = windowState,
         visible = isVisible,
     ) {
+        LaunchedEffect(mediaPlayerHandler, window) {
+            val commandScope = this
+            val mediaSession =
+                withContext(Dispatchers.IO) {
+                    WindowsSystemMediaSession.open(window) { command ->
+                        commandScope.launch {
+                            when (command) {
+                                WindowsMediaCommand.Play -> {
+                                    if (!mediaPlayerHandler.controlState.value.isPlaying) {
+                                        mediaPlayerHandler.onPlayerEvent(PlayerEvent.PlayPause)
+                                    }
+                                }
+
+                                WindowsMediaCommand.Pause -> {
+                                    if (mediaPlayerHandler.controlState.value.isPlaying) {
+                                        mediaPlayerHandler.onPlayerEvent(PlayerEvent.PlayPause)
+                                    }
+                                }
+
+                                WindowsMediaCommand.Stop -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Stop)
+                                WindowsMediaCommand.Next -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Next)
+                                WindowsMediaCommand.Previous -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Previous)
+                            }
+                        }
+                    }
+                } ?: return@LaunchedEffect
+
+            try {
+                combine(mediaPlayerHandler.nowPlaying, mediaPlayerHandler.controlState) { song, state ->
+                    WindowsMediaSnapshot(
+                        title = song?.metadata?.title,
+                        artist = song?.metadata?.artist,
+                        album = song?.metadata?.albumTitle,
+                        artworkUri = song?.metadata?.artworkUri,
+                        isPlaying = state.isPlaying,
+                        canGoNext = state.isNextAvailable,
+                        canGoPrevious = state.isPreviousAvailable,
+                    )
+                }.collect(mediaSession::update)
+            } finally {
+                withContext(Dispatchers.IO) { mediaSession.close() }
+            }
+        }
+
         Column(
             modifier =
                 Modifier
@@ -623,14 +695,23 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
                     .clip(RoundedCornerShape(12.dp)),
         ) {
             if (!isUseDecorated) {
-                CustomTitleBar(
-                    title = stringResource(Res.string.app_name),
-                    windowState = windowState,
-                    window = window,
-                    onCloseRequest = {
-                        isVisible = false
-                    },
-                )
+                AppTheme(
+                    mode = themeMode,
+                    primaryColorHex = themePrimaryColor,
+                    backgroundColorHex = themeBackgroundColor,
+                    surfaceColorHex = themeSurfaceColor,
+                    textColorHex = themeTextColor,
+                    secondaryTextColorHex = themeSecondaryTextColor,
+                ) {
+                    CustomTitleBar(
+                        title = stringResource(Res.string.app_name),
+                        windowState = windowState,
+                        window = window,
+                        onCloseRequest = {
+                            isVisible = false
+                        },
+                    )
+                }
             }
 
             val context = LocalPlatformContext.current

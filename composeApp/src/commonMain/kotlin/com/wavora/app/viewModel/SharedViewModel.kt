@@ -18,6 +18,7 @@ import com.wavora.domain.model.model.intent.GenericIntent
 import com.wavora.domain.model.model.streams.TimeLine
 import com.wavora.domain.model.model.update.UpdateData
 import com.wavora.domain.repository.AlbumRepository
+import com.wavora.domain.repository.ArtistRepository
 import com.wavora.domain.repository.LocalPlaylistRepository
 import com.wavora.domain.repository.PlaylistRepository
 import com.wavora.domain.repository.SongRepository
@@ -37,6 +38,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import org.koin.core.component.inject
+import com.wavora.logger.Logger
 import kotlin.reflect.KClass
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.updated
@@ -59,6 +61,7 @@ class SharedViewModel(
     private val localPlaylistRepository: LocalPlaylistRepository,
     private val playlistRepository: PlaylistRepository,
     private val cacheRepository: CacheRepository,
+    private val artistRepository: ArtistRepository,
 ) : BaseViewModel() {
 
     // ── Sub-ViewModels injected via Koin ──────────────────────────────────
@@ -155,6 +158,14 @@ class SharedViewModel(
 
     // ── Init: wire song-change events from player → nowPlaying ────────────
     init {
+        viewModelScope.launch {
+            songRepository.syncLikedSongs().onFailure { error ->
+                Logger.e("YouTubeMusicSync", "Liked-song sync failed: ${error.message ?: error}")
+            }
+            artistRepository.syncFollowedArtists().onFailure { error ->
+                Logger.e("YouTubeMusicSync", "Artist-subscription sync failed: ${error.message ?: error}")
+            }
+        }
         viewModelScope.launch {
             // Forward song changes to NowPlayingViewModel
             mediaPlayerHandler.nowPlayingState

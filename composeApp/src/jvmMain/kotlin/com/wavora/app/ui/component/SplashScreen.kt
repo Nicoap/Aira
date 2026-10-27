@@ -15,6 +15,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -27,14 +28,11 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.TransformOrigin
+import androidx.compose.ui.graphics.lerp
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.unit.dp
-import com.wavora.app.ui.theme.wavoraBackground
-import com.wavora.app.ui.theme.wavoraGradientEnd
-import com.wavora.app.ui.theme.wavoraGradientMid
-import com.wavora.app.ui.theme.wavoraPrimary
 import org.jetbrains.compose.resources.painterResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.app_icon
@@ -92,6 +90,9 @@ fun SplashScreen(
     }
 
     val infiniteTransition = rememberInfiniteTransition(label = "splash_breathing")
+    val accentColor = MaterialTheme.colorScheme.primary
+    val glowColor = lerp(accentColor, MaterialTheme.colorScheme.onSurface, 0.24f)
+    val innerGlowColor = lerp(accentColor, MaterialTheme.colorScheme.surface, 0.32f)
 
     // Núcleo interior: respiración lenta (3400ms) — la más "presente" de las
     // dos, ya que este halo es el que lleva casi todo el peso visual.
@@ -256,9 +257,9 @@ fun SplashScreen(
                     Brush.radialGradient(
                         colors =
                             listOf(
-                                wavoraGradientEnd.copy(alpha = outerAlpha),
-                                wavoraGradientEnd.copy(alpha = outerAlpha * 0.4f),
-                                wavoraGradientEnd.copy(alpha = 0f),
+                                glowColor.copy(alpha = outerAlpha),
+                                glowColor.copy(alpha = outerAlpha * 0.4f),
+                                glowColor.copy(alpha = 0f),
                             ),
                         center = center + driftOffset,
                         radius = radius * 1.15f,
@@ -298,9 +299,9 @@ fun SplashScreen(
                     Brush.radialGradient(
                         colors =
                             listOf(
-                                wavoraPrimary.copy(alpha = innerAlpha),
-                                wavoraGradientMid.copy(alpha = innerAlpha * 0.85f),
-                                wavoraGradientMid.copy(alpha = 0f),
+                                accentColor.copy(alpha = innerAlpha),
+                                innerGlowColor.copy(alpha = innerAlpha * 0.85f),
+                                innerGlowColor.copy(alpha = 0f),
                             ),
                         center = center + driftOffset,
                         radius = radius * 1.15f,
@@ -323,7 +324,7 @@ fun SplashScreen(
                     },
         ) {
             drawCircle(
-                color = wavoraGradientEnd.copy(alpha = outerAlpha * 0.9f),
+                color = glowColor.copy(alpha = outerAlpha * 0.9f),
                 radius = size.minDimension / 2f,
                 style = Stroke(width = 1.5.dp.toPx()),
             )
@@ -333,7 +334,7 @@ fun SplashScreen(
         // y nítido; respiración mucho más sutil que los halos. +20% de tamaño
         // respecto a la versión anterior (176dp -> 211dp).
         Image(
-            painter = painterResource(Res.drawable.app_icon),
+            painter = com.wavora.app.ui.theme.themedWavoraLogoPainter(),
             contentDescription = null,
             modifier =
                 Modifier
@@ -393,6 +394,3 @@ private fun DrawScope.blobPath(
         close()
     }
 }
-
-/** Color de fondo sólido para la ventana de splash — mismo fondo que el resto de la app. */
-val splashBackgroundColor: Color get() = wavoraBackground
