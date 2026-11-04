@@ -155,9 +155,13 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     } catch (e: Throwable) {
         System.err.println("No se pudo loguear el diagnostico de arranque de proceso: ${e.message}")
     }
-    com.wavora.app.diagnostics.ProcessCensus.snapshot(label = "arranque (antes de Koin)")
-    com.wavora.app.diagnostics.ProcessCensus.startPeriodicSnapshots(auditScope)
-    com.wavora.app.diagnostics.CpuThreadSampler.startSampling(auditScope)
+    // Diagnostics sample processes/threads every 5s - only useful when debugging.
+    // Opt in with the environment variable WAVORA_DIAG=1.
+    if (System.getenv("WAVORA_DIAG") == "1") {
+        com.wavora.app.diagnostics.ProcessCensus.snapshot(label = "arranque (antes de Koin)")
+        com.wavora.app.diagnostics.ProcessCensus.startPeriodicSnapshots(auditScope)
+        com.wavora.app.diagnostics.CpuThreadSampler.startSampling(auditScope)
+    }
 
     System.setProperty("compose.swing.render.on.graphics", "true")
     System.setProperty("compose.interop.blending", "true")
@@ -167,7 +171,10 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     val isWindows = System.getProperty("os.name", "").contains("Windows", ignoreCase = true)
     if (isWindows) {
         System.setProperty("compose.layers.type", "SWING")
-        System.setProperty("skiko.renderApi", "SOFTWARE")
+        // GPU rendering by default (software rendering was the main cause of UI lag).
+        // RenderGuard falls back to SOFTWARE automatically if the previous launch never
+        // reached a rendered frame, or when WAVORA_RENDER=software is set.
+        System.setProperty("skiko.renderApi", RenderGuard.chooseRenderApi())
     } else {
         System.setProperty("compose.layers.type", "COMPONENT")
     }
@@ -206,6 +213,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
         deepLinkArg?.let { DesktopDeepLinkHandler.writePendingUri(it) }
         return
     }
+    RenderGuard.markStarting()
 
     // First instance only: deliver our own deep link (non-macOS passes URI via args).
     // Safe to call even before Koin/SharedViewModel exist: DesktopDeepLinkHandler
@@ -643,7 +651,13 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
         transparent = true,
         state = windowState,
         visible = isVisible,
+        onKeyEvent = { handleAppShortcut(it, sharedViewModel) },
     ) {
+        LaunchedEffect(Unit) {
+            // Wait for a few real frames, then mark this launch as healthy.
+            repeat(3) { androidx.compose.runtime.withFrameNanos { } }
+            RenderGuard.confirmRendered()
+        }
         LaunchedEffect(mediaPlayerHandler, window) {
             val commandScope = this
             val mediaSession =
@@ -730,6 +744,13 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
                                 },
                             ),
                         )
+                    }.memoryCache {
+                        // Coil defaults to 25% of the max heap (hundreds of MB). Covers are
+                        // small, 96 MB is plenty and keeps RAM low.
+                        coil3.memory.MemoryCache
+                            .Builder()
+                            .maxSizeBytes(96L * 1024 * 1024)
+                            .build()
                     }.diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
                     .diskCache(

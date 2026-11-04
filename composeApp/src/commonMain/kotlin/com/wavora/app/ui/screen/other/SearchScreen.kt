@@ -613,13 +613,7 @@ fun SearchScreen(
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
                         }
-                        PullToRefreshBox(
-                            modifier =
-                                Modifier
-                                    .fillMaxSize()
-                                    .padding(vertical = 10.dp),
-                            state = pullToRefreshState,
-                            onRefresh = {
+                        val searchRefresh: () -> Unit = {
                                 val query = searchText.trim()
                                 if (query.isNotEmpty()) {
                                     isSearchSubmitted = true
@@ -635,7 +629,19 @@ fun SearchScreen(
                                         SearchType.PODCASTS -> searchViewModel.searchPodcast(query)
                                     }
                                 }
-                            },
+                        }
+                        com.wavora.app.ui.component.DesktopWheelPullToRefresh(
+                            state = pullToRefreshState,
+                            isRefreshing = uiState is SearchScreenUIState.Loading,
+                            onRefresh = searchRefresh,
+                        )
+                        PullToRefreshBox(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .padding(vertical = 10.dp),
+                            state = pullToRefreshState,
+                            onRefresh = searchRefresh,
                             isRefreshing = uiState is SearchScreenUIState.Loading,
                             indicator = {
                                 PullToRefreshDefaults.Indicator(

@@ -204,6 +204,14 @@ fun App(
         mutableStateOf(false)
     }
 
+    // Desktop: side panel stretched over the whole window (lyrics + queue pane)
+    var isNowPlayingMaximized by rememberSaveable {
+        mutableStateOf(false)
+    }
+    LaunchedEffect(isShowNowPlaylistScreen) {
+        if (!isShowNowPlaylistScreen) isNowPlayingMaximized = false
+    }
+
     // Fullscreen
     var isInFullscreen by rememberSaveable {
         mutableStateOf(false)
@@ -601,7 +609,7 @@ fun App(
                         }
                         if (isTablet && isTabletLandscape && !isInFullscreen) {
                             AnimatedVisibility(
-                                isShowNowPlaylistScreen,
+                                isShowNowPlaylistScreen && !isNowPlayingMaximized,
                                 enter = expandHorizontally() + fadeIn(),
                                 exit = fadeOut() + shrinkHorizontally(),
                             ) {
@@ -628,12 +636,35 @@ fun App(
                                             sharedViewModel = viewModel,
                                             isExpanded = true,
                                             dismissIcon = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                                        ) {
-                                            isShowNowPlaylistScreen = false
-                                        }
+                                            onDismiss = { isShowNowPlaylistScreen = false },
+                                            onToggleMaximize = { isNowPlayingMaximized = true },
+                                        )
                                     }
                                 }
                             }
+                        }
+                    }
+                
+                    androidx.compose.runtime.SideEffect {
+                        com.wavora.app.ui.component.RowNavigation.openArtist = { id ->
+                            navController.navigate(com.wavora.app.ui.navigation.destination.list.ArtistDestination(channelId = id))
+                        }
+                    }
+                    // Maximized Now Playing (desktop side panel stretched over the window)
+                    AnimatedVisibility(
+                        visible = isShowNowPlaylistScreen && isNowPlayingMaximized && isTablet && isTabletLandscape && !isInFullscreen,
+                        enter = fadeIn(),
+                        exit = fadeOut(),
+                    ) {
+                        Box(
+                            Modifier
+                                .fillMaxSize()
+                                .background(Color.Black),
+                        ) {
+                            com.wavora.app.ui.screen.player.NowPlayingMaximizedScreen(
+                                navController = navController,
+                                onCollapse = { isNowPlayingMaximized = false },
+                            )
                         }
                     }
                 }

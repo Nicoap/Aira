@@ -88,6 +88,9 @@ import wavora.composeapp.generated.resources.your_top_albums
 import wavora.composeapp.generated.resources.your_top_artists
 import wavora.composeapp.generated.resources.your_top_tracks
 import com.wavora.app.ui.theme.LocalAppTypography
+import androidx.compose.foundation.layout.fillMaxSize
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -151,7 +154,9 @@ fun LibraryDynamicPlaylistScreen(
         Logger.w("LibraryDynamicPlaylistScreen", "Check tempTopAlbums: $tempTopAlbums")
     }
 
-    LazyColumn(
+    val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
         modifier = Modifier.hazeSource(hazeState),
         contentPadding = innerPadding,
     ) {
@@ -373,6 +378,8 @@ fun LibraryDynamicPlaylistScreen(
             EndOfPage()
         }
     }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
     if (showBottomSheet) {
         NowPlayingBottomSheet(
             onDismiss = {

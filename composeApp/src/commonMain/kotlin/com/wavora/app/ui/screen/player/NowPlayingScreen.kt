@@ -237,6 +237,7 @@ import wavora.composeapp.generated.resources.show_subtitles
 import wavora.composeapp.generated.resources.song_info
 import kotlin.math.roundToLong
 import com.wavora.app.ui.theme.LocalAppTypography
+import androidx.compose.material.icons.filled.OpenInFull
 
 private const val TAG = "NowPlayingScreen"
 private val RICH_SYNC_TIMESTAMP_REGEX = Regex("""<\d{2}:\d{2}\.\d{2,3}>\s*""")
@@ -297,6 +298,8 @@ fun NowPlayingScreenContent(
     isExpanded: Boolean,
     dismissIcon: ImageVector,
     onDismiss: () -> Unit = {},
+    // Desktop side panel only: when set, a button in the header maximizes the panel.
+    onToggleMaximize: (() -> Unit)? = null,
 ) {
     val screenInfo = getScreenSizeInfo()
 
@@ -1468,6 +1471,22 @@ fun NowPlayingScreenContent(
                         }
                     },
                     actions = {
+                        // Maximize the side panel over the whole window (desktop)
+                        if (getPlatform() == Platform.Desktop && onToggleMaximize != null) {
+                            IconButton(
+                                modifier =
+                                    Modifier
+                                        .clip(CircleShape)
+                                        .wavoraIconGradient(),
+                                onClick = onToggleMaximize,
+                            ) {
+                                Icon(
+                                    imageVector = androidx.compose.material.icons.Icons.Filled.OpenInFull,
+                                    contentDescription = "Maximize",
+                                    tint = Color.White,
+                                )
+                            }
+                        }
                         // Desktop mini player button (JVM only)
                         if (getPlatform() == Platform.Desktop) {
                             IconButton(

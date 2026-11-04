@@ -35,6 +35,10 @@ internal class DownloadUtils(
     val downloadingVideoIds = MutableStateFlow<MutableSet<String>>(mutableSetOf())
 
     init {
+        // Keep the user-chosen download folder in sync with settings.
+        coroutineScope.launch {
+            dataStoreManager.downloadFolder.collect { DownloadFolder.custom = it }
+        }
     }
 
     override suspend fun downloadTrack(
@@ -89,8 +93,8 @@ internal class DownloadUtils(
     }
 
     override fun removeDownload(videoId: String) {
-        File(getDownloadPath())
-            .listFiles()
+        downloadSearchPaths()
+            .flatMap { File(it).listFiles()?.toList().orEmpty() }
             .filter {
                 it.name.contains(videoId)
             }.forEach {
@@ -105,7 +109,9 @@ internal class DownloadUtils(
     }
 
     override fun removeAllDownloads() {
-        File(getDownloadPath()).listFiles().forEach {
+        // Only touch files that look like Wavora downloads (<videoId>[.ext], optionally with the
+        // video prefix): the folder can be one the user picked (e.g. Music) and must not be wiped.
+        downloadSearchPaths().flatMap { File(it).listFiles()?.toList().orEmpty() }.filter { looksLikeWavoraDownload(it) }.forEach {
             it.delete()
             coroutineScope.launch {
                 songRepository.updateDownloadState(
@@ -119,4 +125,23 @@ internal class DownloadUtils(
     }
 }
 
-fun getDownloadPath(): String = System.getProperty("user.home") + File.separator + ".wavora" + File.separator + "downloads"
+/** Holder for the user-chosen download folder ("" = default). Kept in sync by DownloadUtils. */
+object DownloadFolder {
+    @Volatile
+    var custom: String = ""
+
+    val default: String
+        get() = System.getProperty("user.home") + File.separator + ".wavora" + File.separator + "downloads"
+}
+
+fun getDownloadPath(): String = DownloadFolder.custom.takeIf { it.isNotBlank() } ?: DownloadFolder.default
+
+/** Folders that can contain downloads: the chosen one plus the default (old downloads stay playable). */
+fun downloadSearchPaths(): List<String> = listOf(getDownloadPath(), DownloadFolder.default).distinct()
+
+private val DOWNLOAD_ID_REGEX = Regex("[A-Za-z0-9_-]{11}")
+
+internal fun looksLikeWavoraDownload(file: File): Boolean {
+    val base = file.name.removePrefix(MERGING_DATA_TYPE.VIDEO).substringBefore('.')
+    return file.isFile && DOWNLOAD_ID_REGEX.matches(base)
+}

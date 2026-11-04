@@ -228,7 +228,11 @@ class VlcPlayerAdapter(
     // below alternates between them so the two players that are ever simultaneously alive
     // (current + the one it's crossfading into) are never sourced from the same libVLC
     // instance. Does not change crossfade timing, curve, or any other logic.
-    private val mediaPlayerFactorySecondary: MediaPlayerFactory
+    // Created lazily: this second libVLC instance only exists to keep crossfading players apart,
+    // so it is not even instantiated (saving a whole libVLC worth of RAM) while crossfade is off.
+    private lateinit var secondaryFactoryProvider: () -> MediaPlayerFactory
+    private val secondaryFactoryDelegate = lazy { secondaryFactoryProvider() }
+    private val mediaPlayerFactorySecondary: MediaPlayerFactory get() = secondaryFactoryDelegate.value
     private val factoryToggle = java.util.concurrent.atomic.AtomicLong(0)
     @Volatile
     private var maxPrecacheCount = 2
@@ -271,7 +275,7 @@ class VlcPlayerAdapter(
         }
 
         mediaPlayerFactory = MediaPlayerFactory(discovery, *factoryArgs.toTypedArray())
-        mediaPlayerFactorySecondary = MediaPlayerFactory(discovery, *factoryArgs.toTypedArray())
+        secondaryFactoryProvider = { MediaPlayerFactory(discovery, *factoryArgs.toTypedArray()) }
 
         restoreEqualizerFromDataStore()
 
@@ -664,6 +668,33 @@ class VlcPlayerAdapter(
     private var retryVideoId: String? = null
     private val maxRetryCount = 2
 
+    // Natural end-of-track detection / auto-skip of unplayable tracks.
+    // YouTube streams (video ones especially) often end with libVLC firing stopped() instead of
+    // finished(); the old stopped() "recovery" then re-opened the track at its last second
+    // (the "loop" at the end) and, once retries ran out, playback just sat there until the user
+    // skipped manually.
+    @Volatile
+    private var lastEndHandledAtNanos = 0L
+    private var consecutiveAutoSkips = 0
+
+    // Video tracks whose video stream failed in VLC: play them as audio from now on so the
+    // track still plays instead of stopping with a misleading "check your internet" error.
+    private val audioOnlyFallbackIds: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
+    private fun isNearTrackEnd(): Boolean {
+        val duration = cachedDuration
+        return duration > 0 && cachedPosition >= duration - 10_000L
+    }
+
+    private fun skipUnplayableTrack(reason: String): Boolean {
+        if (consecutiveAutoSkips >= 3 || !internalPlayWhenReady || !hasNextMediaItem()) return false
+        consecutiveAutoSkips++
+        Logger.w(TAG, "Auto-skipping to the next track (" + consecutiveAutoSkips + "/3): " + reason)
+        lastEndHandledAtNanos = System.nanoTime()
+        seekToNext()
+        return true
+    }
+
     // Playlist management
     private val playlist = mutableListOf<GenericMediaItem>()
     private var localCurrentMediaItemIndex = -1
@@ -678,8 +709,8 @@ class VlcPlayerAdapter(
     fun getCurrentPlayer(): VlcPlayer? = currentPlayer
 
     // Video surface state - UI collects this to display video
-    private val _currentVideoSurface = MutableStateFlow<Component?>(null)
-    val currentVideoSurface: StateFlow<Component?> = _currentVideoSurface.asStateFlow()
+    private val _currentVideoSurface = MutableStateFlow<VlcVideoFrameSurface?>(null)
+    val currentVideoSurface: StateFlow<VlcVideoFrameSurface?> = _currentVideoSurface.asStateFlow()
 
     // ========== Playback Source ==========
     private data class PlayableSource(
@@ -1388,7 +1419,7 @@ class VlcPlayerAdapter(
             Logger.w(TAG, "Error releasing VLC factory: ${e.message}")
         }
         try {
-            mediaPlayerFactorySecondary.release()
+            if (secondaryFactoryDelegate.isInitialized()) mediaPlayerFactorySecondary.release()
         } catch (e: Exception) {
             Logger.w(TAG, "Error releasing secondary VLC factory: ${e.message}")
         }
@@ -1533,6 +1564,9 @@ class VlcPlayerAdapter(
                             }
                             if (source == null || source.url.isEmpty()) {
                                 Logger.e(TAG, "Failed to extract playable URL for $videoId after retry")
+                                // Do not freeze on a track we cannot resolve (this was a main reason for the
+                                // "next track never starts" reports): move on, at most 3 in a row.
+                                if (skipUnplayableTrack("no playable stream for " + videoId)) return@launch
                                 transitionToState(InternalState.ERROR)
                                 return@launch
                             }
@@ -1660,6 +1694,10 @@ class VlcPlayerAdapter(
             // video already had (smaller, since audio is cheap to buffer and we still
             // want manual track switches to feel fast) fixes it at the source instead
             // of hiding it with a longer fade or a fixed delay.
+            // Audio-only players are headless (no video surface). If the stream still carries a
+            // video track (embedded cover art, muxed video), libVLC would open its OWN window
+            // showing just the picture. Never decode/render video for audio playback.
+            options.add(":no-video")
             options.add(":network-caching=$AUDIO_NETWORK_CACHING_MS")
             options.add(":http-reconnect")
         }
@@ -1677,13 +1715,13 @@ class VlcPlayerAdapter(
      */
     private fun createMediaPlayerInternal(source: PlayableSource): VlcPlayer {
         // Alternates factories on every call — see mediaPlayerFactorySecondary comment above.
-        val useSecondary = factoryToggle.getAndIncrement() % 2L == 1L
+        val useSecondary = crossfadeEnabled && factoryToggle.getAndIncrement() % 2L == 1L
         val factory = if (useSecondary) mediaPlayerFactorySecondary else mediaPlayerFactory
         val factoryLabel = if (useSecondary) "secondary" else "primary"
 
         if (source.isVideo) {
             Logger.d(TAG, "Creating video player with callback surface")
-            val videoPanel = VlcVideoSurfacePanel()
+            val videoPanel = VlcVideoFrameSurface(maxDimension = 1280)
 
             val embeddedPlayer = factory.mediaPlayers().newEmbeddedMediaPlayer()
             val surface = videoPanel.createVideoSurface(factory)
@@ -1768,6 +1806,26 @@ class VlcPlayerAdapter(
                                 retryVideoId = currentVideoId
                                 retryCount = 0
                             }
+                            val failingItem = playlist.getOrNull(localCurrentMediaItemIndex)
+                            if (failingItem != null &&
+                                failingItem.isVideo() &&
+                                currentVideoId !in audioOnlyFallbackIds &&
+                                dataStoreManager.watchVideoInsteadOfPlayingAudio.first() == DataStoreManager.TRUE
+                            ) {
+                                // The video stream is the fragile part (expired/blocked URL, codec): keep the music going.
+                                audioOnlyFallbackIds.add(currentVideoId)
+                                Logger.w(TAG, "Video failed for " + currentVideoId + " - falling back to audio only")
+                                try {
+                                    streamRepository.invalidateFormat(currentVideoId)
+                                    streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$currentVideoId")
+                                    precachedPlayers.remove(currentVideoId)?.player?.release()
+                                    loadAndPlayTrackInternal(localCurrentMediaItemIndex, cachedPosition.coerceAtLeast(0L), shouldPlay = true)
+                                    return@launch
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    Logger.e(TAG, "Audio fallback failed: ${e.message}", e)
+                                }
+                            }
                             if (retryCount < maxRetryCount) {
                                 retryCount++
                                 Logger.w(TAG, "Retrying playback (attempt $retryCount/$maxRetryCount) for $currentVideoId")
@@ -1786,12 +1844,24 @@ class VlcPlayerAdapter(
                                 }
                             }
                             Logger.e(TAG, "Max retries ($maxRetryCount) exhausted for $currentVideoId")
+                            // Do not sit on a dead track: move on (limited to 3 in a row).
+                            if (skipUnplayableTrack("error() retries exhausted")) return@launch
                         }
+                        // libVLC knows WHY it failed (HTTP 403 on an expired URL, unsupported codec,
+                        // DNS...). The app used to show a generic "check your internet" toast for
+                        // every one of those, which hid the real problem - log it.
+                        val vlcReason =
+                            try {
+                                uk.co.caprica.vlcj.binding.lib.LibVlc.libvlc_errmsg()
+                            } catch (_: Throwable) {
+                                null
+                            }
+                        Logger.e(TAG, "VLC error on " + currentVideoId + ": " + (vlcReason ?: "no libvlc message"))
                         val error =
                             PlayerError(
                                 errorCode = PlayerConstants.ERROR_CODE_TIMEOUT,
                                 errorCodeName = "VLC_ERROR",
-                                message = "Playback error",
+                                message = vlcReason ?: "Playback error",
                             )
                         listeners.forEach { it.onPlayerError(error) }
                         transitionToState(InternalState.ERROR)
@@ -1808,6 +1878,7 @@ class VlcPlayerAdapter(
                             // Reset retry counter on successful playback
                             retryCount = 0
                             retryVideoId = null
+                            consecutiveAutoSkips = 0
                         }
                     }
                 }
@@ -1842,6 +1913,16 @@ class VlcPlayerAdapter(
                         if (isCrossfading) return@launch
                         if (!internalPlayWhenReady) return@launch
 
+                        // finished() (or an auto-skip) already moved on: nothing to recover.
+                        if (System.nanoTime() - lastEndHandledAtNanos < 5_000_000_000L) return@launch
+                        // A stop at the very end of the stream IS the end of the track.
+                        if (isNearTrackEnd()) {
+                            Logger.w(TAG, "stopped() at the end of the stream - treating it as end of track")
+                            transitionToState(InternalState.ENDED)
+                            handleTrackEndInternal()
+                            return@launch
+                        }
+
                         val currentVideoId = playlist.getOrNull(localCurrentMediaItemIndex)?.mediaId
                         if (currentVideoId != null) {
                             if (retryVideoId != currentVideoId) {
@@ -1868,6 +1949,8 @@ class VlcPlayerAdapter(
                                     if (e is CancellationException) throw e
                                     Logger.e(TAG, "Stopped-recovery failed: ${e.message}", e)
                                 }
+                            } else {
+                                skipUnplayableTrack("stopped() recovery exhausted")
                             }
                         }
                     }
@@ -2026,6 +2109,8 @@ class VlcPlayerAdapter(
             Logger.d(TAG, "handleTrackEndInternal: crossfade in progress, ignoring track end")
             return
         }
+
+        lastEndHandledAtNanos = System.nanoTime()
 
         val shouldCrossfade =
             crossfadeEnabled &&
@@ -3443,14 +3528,20 @@ class VlcPlayerAdapter(
         Logger.w(TAG, "Extracting playable URL for ${mediaItem.mediaId}")
         val shouldFindVideo =
             mediaItem.isVideo() &&
+                mediaItem.mediaId !in audioOnlyFallbackIds &&
                 dataStoreManager.watchVideoInsteadOfPlayingAudio.first() == DataStoreManager.TRUE
         val videoId = mediaItem.mediaId
 
         // Check downloads first
+        // The download folder is configurable; make sure we use the saved value even if the
+        // downloader has not been created yet, and keep looking in the default folder too.
+        com.wavora.media_jvm.download.DownloadFolder.custom = dataStoreManager.downloadFolder.first()
         val downloadFiles =
-            File(getDownloadPath()).listFiles()?.filter {
-                it.name.contains(videoId)
-            }
+            com.wavora.media_jvm.download.downloadSearchPaths()
+                .flatMap { File(it).listFiles()?.toList().orEmpty() }
+                .filter {
+                    it.name.contains(videoId)
+                }
         if (!downloadFiles.isNullOrEmpty()) {
             val audioFile = downloadFiles.firstOrNull { !it.name.contains(MERGING_DATA_TYPE.VIDEO) }
             if (audioFile != null && audioFile.length() > 0 && audioFile.exists()) {
@@ -3465,7 +3556,8 @@ class VlcPlayerAdapter(
             val videoUrl = format.videoUrl
 
             if (shouldFindVideo && !videoUrl.isNullOrEmpty()) {
-                val is403Video = streamRepository.is403Url(videoUrl).firstOrNull() != false
+                // A failed check (null) is not a 403: try the video, the error handler falls back to audio.
+                val is403Video = streamRepository.is403Url(videoUrl).firstOrNull() == true
                 if (!is403Video) {
                     // Return video URL with audio as slave for merging
                     val audioSlave =
@@ -3507,7 +3599,9 @@ class VlcPlayerAdapter(
                 Logger.d(TAG, "Stream Video $videoUrl")
                 return PlayableSource(isVideo = true, url = videoUrl)
             }
-        } else {
+        }
+        run {
+            // Also reached for video tracks when no video stream could be found: play the audio.
             val audioUrl =
                 streamRepository
                     .getStream(
@@ -3532,7 +3626,7 @@ class VlcPlayerAdapter(
  */
 class VlcPlayer(
     val mediaPlayer: MediaPlayer,
-    val videoSurface: Component? = null,
+    val videoSurface: VlcVideoFrameSurface? = null,
 ) {
     companion object {
         private const val TAG = "VlcPlayer"
@@ -3731,37 +3825,78 @@ class VlcPlayer(
     }
 }
 
+
 /**
- * JPanel that renders VLC video frames via callback.
- * Works on all platforms including macOS (unlike Canvas-based approach which
- * requires a native window handle that macOS VLC can't use).
+ * Compose-friendly VLC video sink. NO Swing/AWT involved.
  *
- * VLC renders frames to a BufferedImage via native buffer callbacks,
- * then this panel paints the image scaled to fit.
+ * The old implementation was a JPanel hosted inside a heavyweight SwingPanel, which
+ * caused the video to draw above other windows, ignore Compose clipping/layout, vanish
+ * when the panel was re-parented (side panel closed/reopened) and flood the EDT with
+ * repaint() calls on every single decoded frame.
+ *
+ * This class only receives frames from libVLC and keeps the latest one in a byte array.
+ * Rendering is done by the UI layer (see VlcVideoFrame in media-jvm-ui) directly on a
+ * Compose canvas, so clipping, z-order and resizing behave like any other composable.
+ *
+ * Optimizations:
+ *  - VLC itself scales the output down to [maxDimension] (longest side) before handing
+ *    us the buffer, so we never copy full 1080p/4K frames around.
+ *  - Frames are throttled to [maxFps]; skipped frames are not even copied.
+ *  - Double buffer: one bulk copy per published frame, no per-frame allocations.
  */
-class VlcVideoSurfacePanel : JPanel() {
-    @Volatile
-    private var videoImage: BufferedImage? = null
+class VlcVideoFrameSurface(
+    private val maxDimension: Int = 1280,
+    maxFps: Int = 30,
+) {
+    private val lock = Any()
+    private var front = ByteArray(0)
+    private var back = ByteArray(0)
+    private val minIntervalNanos = 1_000_000_000L / maxFps.coerceAtLeast(1)
+    private var lastPublishNanos = 0L
 
     @Volatile
-    private var videoWidth = 0
+    var videoWidth = 0
+        private set
 
     @Volatile
-    private var videoHeight = 0
+    var videoHeight = 0
+        private set
 
-    // Strong references to prevent JNA from garbage collecting native callback pointers.
-    // JNA wraps these in CallbackReference with weak refs; without strong refs here,
-    // the GC can collect them while VLC native code still holds the function pointer → SIGSEGV.
+    @Volatile
+    var hasFrame = false
+        private set
+
+    private val _frameVersion = MutableStateFlow(0L)
+
+    /** Increments every time a new frame is available. */
+    val frameVersion: StateFlow<Long> = _frameVersion.asStateFlow()
+
+    // Strong references: JNA only keeps weak refs to callbacks, GC would crash libVLC.
     private val bufferFormatCb =
         object : BufferFormatCallback {
             override fun getBufferFormat(
                 sourceWidth: Int,
                 sourceHeight: Int,
             ): BufferFormat {
-                videoWidth = sourceWidth
-                videoHeight = sourceHeight
-                videoImage = BufferedImage(sourceWidth, sourceHeight, BufferedImage.TYPE_INT_ARGB)
-                return RV32BufferFormat(sourceWidth, sourceHeight)
+                var w = sourceWidth.coerceAtLeast(2)
+                var h = sourceHeight.coerceAtLeast(2)
+                val longest = maxOf(w, h)
+                if (longest > maxDimension) {
+                    val s = maxDimension.toDouble() / longest
+                    w = (w * s).toInt().coerceAtLeast(2)
+                    h = (h * s).toInt().coerceAtLeast(2)
+                }
+                w = w and 1.inv()
+                h = h and 1.inv()
+                synchronized(lock) {
+                    videoWidth = w
+                    videoHeight = h
+                    val size = w * h * 4
+                    front = ByteArray(size)
+                    back = ByteArray(size)
+                    hasFrame = false
+                }
+                return RV32BufferFormat(w, h)
             }
 
             override fun newFormatSize(
@@ -3787,14 +3922,24 @@ class VlcVideoSurfacePanel : JPanel() {
                 p3: Int,
                 p4: Int,
             ) {
-                val img = videoImage ?: return
+                val now = System.nanoTime()
+                if (now - lastPublishNanos < minIntervalNanos) return
                 try {
-                    val rgbArray = (img.raster.dataBuffer as DataBufferInt).data
-                    val intBuffer = p1[0].asIntBuffer()
-                    intBuffer.get(rgbArray, 0, minOf(rgbArray.size, intBuffer.remaining()))
-                    repaint()
+                    synchronized(lock) {
+                        val size = back.size
+                        val src = p1[0].duplicate()
+                        if (size == 0 || src.capacity() < size) return
+                        src.rewind()
+                        src.get(back, 0, size)
+                        val tmp = front
+                        front = back
+                        back = tmp
+                        hasFrame = true
+                    }
+                    lastPublishNanos = now
+                    _frameVersion.value = _frameVersion.value + 1
                 } catch (_: Exception) {
-                    // Buffer size mismatch during format change - skip frame
+                    // Format change in flight - skip frame
                 }
             }
 
@@ -3807,63 +3952,21 @@ class VlcVideoSurfacePanel : JPanel() {
             }
         }
 
-    // The CallbackVideoSurface itself also must be strongly referenced
     @Volatile
     private var videoSurfaceRef: Any? = null
 
-    init {
-        background = Color.BLACK
-        isOpaque = true
-    }
-
-    /**
-     * Create a callback video surface bound to this panel.
-     * The surface and all callbacks are strongly referenced by this panel
-     * to prevent JNA garbage collection.
-     */
     fun createVideoSurface(factory: MediaPlayerFactory): uk.co.caprica.vlcj.player.embedded.videosurface.VideoSurface {
-        val surface =
-            factory.videoSurfaces().newVideoSurface(
-                bufferFormatCb,
-                renderCb,
-                true, // lock buffers for thread safety
-            )
+        val surface = factory.videoSurfaces().newVideoSurface(bufferFormatCb, renderCb, true)
         videoSurfaceRef = surface
         return surface
     }
 
-    override fun getPreferredSize(): java.awt.Dimension =
-        if (videoWidth > 0 && videoHeight > 0) {
-            java.awt.Dimension(videoWidth, videoHeight)
-        } else {
-            java.awt.Dimension(640, 360)
+    /**
+     * Runs [block] with the latest frame (BGRA, 4 bytes per pixel, opaque) while holding
+     * the buffer lock. The array must not be retained outside [block].
+     */
+    fun <T> readFrame(block: (pixels: ByteArray, width: Int, height: Int) -> T): T? =
+        synchronized(lock) {
+            if (!hasFrame || videoWidth <= 0 || videoHeight <= 0) null else block(front, videoWidth, videoHeight)
         }
-
-    override fun getMinimumSize(): java.awt.Dimension = java.awt.Dimension(1, 1)
-
-    override fun getMaximumSize(): java.awt.Dimension = java.awt.Dimension(Int.MAX_VALUE, Int.MAX_VALUE)
-
-    override fun paintComponent(g: Graphics) {
-        super.paintComponent(g)
-        val img = videoImage ?: return
-        val g2 = g as Graphics2D
-        g2.setRenderingHint(
-            RenderingHints.KEY_INTERPOLATION,
-            RenderingHints.VALUE_INTERPOLATION_BILINEAR,
-        )
-        // Maintain aspect ratio, center in panel
-        val panelW = width.toDouble()
-        val panelH = height.toDouble()
-        val imgW = img.width.toDouble()
-        val imgH = img.height.toDouble()
-        if (imgW <= 0 || imgH <= 0) return
-
-        val scale = minOf(panelW / imgW, panelH / imgH)
-        val drawW = (imgW * scale).toInt()
-        val drawH = (imgH * scale).toInt()
-        val x = ((panelW - drawW) / 2).toInt()
-        val y = ((panelH - drawH) / 2).toInt()
-
-        g2.drawImage(img, x, y, drawW, drawH, null)
-    }
 }

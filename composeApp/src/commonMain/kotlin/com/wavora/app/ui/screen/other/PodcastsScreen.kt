@@ -100,6 +100,7 @@ import wavora.composeapp.generated.resources.holder
 import wavora.composeapp.generated.resources.no_description
 import wavora.composeapp.generated.resources.podcasts
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -161,7 +162,8 @@ fun PodcastScreen(
             is PodcastUIState.Success -> {
                 val data = state.data
                 val id = state.id
-                LazyColumn(
+                Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -430,6 +432,8 @@ fun PodcastScreen(
                         EndOfPage()
                     }
                 }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = lazyState)
+}
                 // Animated TopAppBar when scrolling
                 AnimatedVisibility(
                     visible = shouldHideTopBar,

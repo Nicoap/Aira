@@ -186,41 +186,28 @@ fun AppTheme(
 
 @Composable
 fun themedWavoraLogoColorFilter(): ColorFilter {
-    val background = MaterialTheme.colorScheme.background
     val accent = MaterialTheme.colorScheme.primary
 
-    println(
-        "Wavora logo filter: " +
-            "background=$background, " +
-            "accent=$accent"
-    )
-
-    return remember(background, accent) {
-        val r = 0.299f
-        val g = 0.587f
-        val b = 0.114f
-
-        val dr = accent.red - background.red
-        val dg = accent.green - background.green
-        val db = accent.blue - background.blue
-
+    return remember(accent) {
+        // theme_logo_mask.png: white star (opaque), black face (opaque), transparent outside.
+        // Result: logo painted 100% in the accent color; the face stays cut out.
+        //   RGB = accent (constant)
+        //   alpha = R + A - 1  -> white+opaque = 1, black(face) = 0, transparent = 0,
+        //                          anti-aliased edges keep their soft alpha.
+        // NOTE: Compose ColorMatrix translation column (5th) is in 0..255, NOT 0..1 -
+        // the previous version used 0..1 offsets, which made the logo practically invisible.
         ColorFilter.colorMatrix(
             ColorMatrix(
                 floatArrayOf(
-                    dr * r, dr * g, dr * b, 0f, background.red,
-                    dg * r, dg * g, dg * b, 0f, background.green,
-                    db * r, db * g, db * b, 0f, background.blue,
-                    0f, 0f, 0f, 1f, 0f
-                )
-            )
+                    0f, 0f, 0f, 0f, accent.red * 255f,
+                    0f, 0f, 0f, 0f, accent.green * 255f,
+                    0f, 0f, 0f, 0f, accent.blue * 255f,
+                    1f, 0f, 0f, 1f, -255f,
+                ),
+            ),
         )
     }
 }
-
-
-
-
-
 
 @Composable
 fun themedWavoraLogoPainter(): Painter {

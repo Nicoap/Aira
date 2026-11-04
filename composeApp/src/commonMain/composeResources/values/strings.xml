@@ -721,4 +721,9 @@
     <string name="notification_primer_title">Stay in control from the notification shade</string>
     <string name="notification_primer_description">Wavora can show playback controls — play, pause, skip — right in your notifications, so you can control your music without opening the app. We'll only ask Android for this once.</string>
     <string name="notification_primer_allow">Allow</string>
+    <string name="no_lyrics_for_track">No lyrics for this track</string>
+    <string name="download_folder">Download folder</string>
+    <string name="download_folder_default">Default (.wavora/downloads in your user folder)</string>
+    <string name="download_folder_reset">Reset download folder</string>
+    <string name="download_folder_reset_hint">Go back to the default folder. Already downloaded tracks keep playing.</string>
 </resources>

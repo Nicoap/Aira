@@ -47,6 +47,8 @@ import wavora.composeapp.generated.resources.equalizer_preamp
 import wavora.composeapp.generated.resources.equalizer_presets
 import wavora.composeapp.generated.resources.equalizer_reset
 import kotlin.math.roundToInt
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -84,7 +86,9 @@ fun EqualizerScreen(
             return@Column
         }
 
-        LazyColumn(
+        val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
             modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp),
@@ -184,6 +188,8 @@ fun EqualizerScreen(
                 )
             }
         }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
     }
 }
 

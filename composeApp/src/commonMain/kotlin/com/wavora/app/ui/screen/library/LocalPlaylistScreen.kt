@@ -200,6 +200,7 @@ import com.wavora.app.ui.theme.LocalAppTypography
 import com.wavora.app.ui.theme.wavoraBorder
 import com.wavora.app.ui.theme.wavoraSecondary
 import com.wavora.app.ui.theme.wavoraTextSecondary
+import com.wavora.app.expect.ui.VerticalScrollBar
 
 // "AI suggestions" accent gradient (blue -> pink), intentionally distinct from the
 // wavoraIconGradientBrush violet/cyan brand gradient used for playback -- it's a
@@ -454,7 +455,9 @@ fun LocalPlaylistScreen(
         }
     var overscrollJob by remember { mutableStateOf<Job?>(null) }
 //    Box {
-    LazyColumn(
+    val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn( 
         modifier =
             Modifier
                 .fillMaxWidth()
@@ -1395,6 +1398,8 @@ fun LocalPlaylistScreen(
             EndOfPage()
         }
     }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = lazyState)
+}
     if (itemBottomSheetShow && currentItem != null) {
         val track = currentItem ?: return
         NowPlayingBottomSheet(

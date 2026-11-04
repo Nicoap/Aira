@@ -111,6 +111,8 @@ import wavora.composeapp.generated.resources.your_top_albums
 import wavora.composeapp.generated.resources.your_top_artists
 import wavora.composeapp.generated.resources.your_top_tracks
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -178,7 +180,9 @@ fun AnalyticsScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
+        val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
             modifier =
                 Modifier
                     .fillMaxSize(),
@@ -830,6 +834,8 @@ fun AnalyticsScreen(
                 EndOfPage()
             }
         }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
 
         var dayRangeMenuExpanded by rememberSaveable { mutableStateOf(false) }
         // Top App Bar with haze effect

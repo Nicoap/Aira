@@ -99,6 +99,21 @@ class SettingsViewModel(
 
     private var _downloadVideoEnabled: MutableStateFlow<String?> = MutableStateFlow(null)
     val downloadVideoEnabled: StateFlow<String?> = _downloadVideoEnabled
+
+    private val _downloadFolder = MutableStateFlow("")
+    val downloadFolder: StateFlow<String> = _downloadFolder
+
+    fun getDownloadFolder() {
+        viewModelScope.launch {
+            dataStoreManager.downloadFolder.collect { _downloadFolder.value = it }
+        }
+    }
+
+    fun setDownloadFolder(path: String) {
+        viewModelScope.launch {
+            dataStoreManager.setDownloadFolder(path)
+        }
+    }
     private var _videoQuality: MutableStateFlow<String?> = MutableStateFlow(null)
     val videoQuality: StateFlow<String?> = _videoQuality
     private var _thumbCacheSize = MutableStateFlow<Long?>(null)
@@ -282,6 +297,7 @@ class SettingsViewModel(
         getPlayVideoInsteadOfAudio()
         getIgnoreAudioFocusLoss()
         getDownloadVideoEnabled()
+        getDownloadFolder()
         getVideoQuality()
         getSpotifyLogIn()
         getSpotifyLyrics()

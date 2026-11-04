@@ -507,6 +507,19 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val downloadFolder: Flow<String> =
+        settingsDataStore.data.map { preferences ->
+            preferences[DOWNLOAD_FOLDER] ?: ""
+        }
+
+    override suspend fun setDownloadFolder(path: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { settings ->
+                settings[DOWNLOAD_FOLDER] = path
+            }
+        }
+    }
+
     override val playerVolume: Flow<Float> =
         settingsDataStore.data.map { preferences ->
             preferences[PLAYER_VOLUME] ?: 1.0f
@@ -1767,6 +1780,7 @@ internal class DataStoreManagerImpl(
             stringPreferencesKey("ignore_audio_focus_loss")
         val DOWNLOAD_VIDEO_ENABLED =
             stringPreferencesKey("download_video_enabled")
+        val DOWNLOAD_FOLDER = stringPreferencesKey("download_folder")
         val VIDEO_QUALITY = stringPreferencesKey("video_quality")
         val PLAYER_VOLUME = floatPreferencesKey("player_volume")
         val EQUALIZER_ENABLED = stringPreferencesKey("equalizer_enabled")

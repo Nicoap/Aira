@@ -56,6 +56,8 @@ import wavora.composeapp.generated.resources.baseline_arrow_back_ios_new_24
 import wavora.composeapp.generated.resources.error
 import wavora.composeapp.generated.resources.recently_added
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -72,7 +74,9 @@ fun RecentlySongsScreen(
     val isPlaying by sharedViewModel.controllerState.map { it.isPlaying }.collectAsState(initial = false)
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
+        val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
             modifier =
                 Modifier
                     .fillMaxSize()
@@ -209,6 +213,8 @@ fun RecentlySongsScreen(
                 EndOfPage()
             }
         }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
 
         // Top App Bar with haze effect
         TopAppBar(

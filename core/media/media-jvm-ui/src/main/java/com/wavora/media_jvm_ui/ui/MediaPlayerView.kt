@@ -41,7 +41,7 @@ import com.wavora.domain.model.model.metadata.Lyrics
 import com.wavora.domain.model.model.streams.TimeLine
 import com.wavora.domain.mediaservice.handler.MediaPlayerHandler
 import com.wavora.media_jvm.VlcPlayerAdapter
-import com.wavora.media_jvm.VlcVideoSurfacePanel
+import com.wavora.media_jvm.VlcVideoFrameSurface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -52,77 +52,127 @@ import uk.co.caprica.vlcj.player.base.MediaPlayerEventAdapter
 import java.awt.Dimension
 import javax.swing.JPanel
 
+/**
+ * Shared libVLC instance for Spotify-Canvas style looping videos.
+ * Previously a brand-new MediaPlayerFactory (= a full libVLC instance, tens of MB of RAM)
+ * was created and released for EVERY canvas. Now one lightweight instance is shared,
+ * reference-counted, and released a few seconds after the last canvas goes away.
+ */
+private object CanvasVlc {
+    private val lock = Any()
+    private var factory: MediaPlayerFactory? = null
+    private var refs = 0
+    private var releaseTask: java.util.TimerTask? = null
+    private val timer by lazy { java.util.Timer("wavora-canvas-vlc-release", true) }
+
+    val executor: java.util.concurrent.ExecutorService =
+        java.util.concurrent.Executors.newSingleThreadExecutor { r ->
+            Thread(r, "wavora-canvas-vlc").apply { isDaemon = true }
+        }
+
+    fun acquire(): MediaPlayerFactory =
+        synchronized(lock) {
+            releaseTask?.cancel()
+            releaseTask = null
+            refs++
+            factory ?: MediaPlayerFactory(
+                "--no-audio",
+                "--no-video-title-show",
+                "--no-osd",
+                "--quiet",
+            ).also { factory = it }
+        }
+
+    fun release() {
+        synchronized(lock) {
+            refs = (refs - 1).coerceAtLeast(0)
+            if (refs == 0) {
+                releaseTask?.cancel()
+                releaseTask =
+                    object : java.util.TimerTask() {
+                        override fun run() {
+                            executor.execute {
+                                synchronized(lock) {
+                                    if (refs == 0) {
+                                        factory?.release()
+                                        factory = null
+                                    }
+                                }
+                            }
+                        }
+                    }.also { timer.schedule(it, 8_000L) }
+            }
+        }
+    }
+}
+
+private class CanvasVlcSession(
+    url: String,
+    surface: VlcVideoFrameSurface,
+) {
+    @Volatile
+    private var cancelled = false
+
+    @Volatile
+    private var player: MediaPlayer? = null
+
+    @Volatile
+    private var acquired = false
+
+    init {
+        CanvasVlc.executor.execute {
+            if (cancelled) return@execute
+            try {
+                val factory = CanvasVlc.acquire()
+                acquired = true
+                val p = factory.mediaPlayers().newEmbeddedMediaPlayer()
+                p.videoSurface().set(surface.createVideoSurface(factory))
+                p.audio().setMute(true)
+                // Native looping: no event listener / replay from the callback thread needed.
+                p.controls().setRepeat(true)
+                player = p
+                if (cancelled) return@execute
+                p.media().play(url)
+            } catch (_: Throwable) {
+                // libVLC missing / failed: the canvas just stays black, never crash the UI.
+            }
+        }
+    }
+
+    fun release() {
+        cancelled = true
+        CanvasVlc.executor.execute {
+            try {
+                player?.let {
+                    it.controls().stop()
+                    it.release()
+                }
+            } catch (_: Throwable) {
+            }
+            player = null
+            if (acquired) {
+                acquired = false
+                CanvasVlc.release()
+            }
+        }
+    }
+}
+
 @Composable
 fun MediaPlayerViewWithUrl(
     url: String,
     modifier: Modifier,
 ) {
-    val scope = rememberCoroutineScope()
-    var videoPanel by remember { mutableStateOf<VlcVideoSurfacePanel?>(null) }
-    var vlcFactory by remember { mutableStateOf<MediaPlayerFactory?>(null) }
-    var vlcPlayer by remember { mutableStateOf<MediaPlayer?>(null) }
-
+    val surface = remember(url) { VlcVideoFrameSurface(maxDimension = 854, maxFps = 30) }
     DisposableEffect(url) {
-        scope.launch(Dispatchers.Swing) {
-            val factory = MediaPlayerFactory()
-            vlcFactory = factory
-            val panel = VlcVideoSurfacePanel()
-
-            val player = factory.mediaPlayers().newEmbeddedMediaPlayer()
-            val surface = panel.createVideoSurface(factory)
-            player.videoSurface().set(surface)
-            vlcPlayer = player
-
-            player.events().addMediaPlayerEventListener(
-                object : MediaPlayerEventAdapter() {
-                    override fun finished(mediaPlayer: MediaPlayer) {
-                        // VLCJ deadlocks if you call player methods from the event callback thread.
-                        // Dispatch replay onto the Swing EDT to avoid the deadlock.
-                        scope.launch(Dispatchers.Swing) {
-                            mediaPlayer.media().play(url)
-                        }
-                    }
-                },
-            )
-
-            videoPanel = panel
-            player.media().play(url)
-        }
-        onDispose {
-            vlcPlayer?.release()
-            vlcFactory?.release()
-            videoPanel = null
-            vlcPlayer = null
-            vlcFactory = null
-        }
+        val session = CanvasVlcSession(url, surface)
+        onDispose { session.release() }
     }
-
-    Box(
-        modifier
-            .then(
-                Modifier
-                    .graphicsLayer { clip = true },
-            ),
-    ) {
-        val panel = videoPanel
-        if (panel != null) {
-            key(panel) {
-                SwingPanel(
-                    factory = {
-                        JPanel(java.awt.BorderLayout()).apply {
-                            background = java.awt.Color.BLACK
-                            isOpaque = true
-                            add(panel, java.awt.BorderLayout.CENTER)
-                        }
-                    },
-                    modifier =
-                        Modifier
-                            .fillMaxSize()
-                            .align(Alignment.Center),
-                )
-            }
-        }
-    }
+    VlcVideoFrame(
+        surface = surface,
+        modifier = modifier,
+        crop = true,
+    )
 }
 
 private val RICH_SYNC_TIMESTAMP_REGEX = Regex("""<\d{2}:\d{2}\.\d{2,3}>\s*""")
@@ -235,22 +285,13 @@ fun MediaPlayerViewWithSubtitleJvm(
             )
         } else {
             val canvas = videoCanvas
-            if (canvas != null && sizePx.first > 0 && sizePx.second > 0) {
-                key(canvas) {
-                    SwingPanel(
-                        factory = {
-                            JPanel(java.awt.BorderLayout()).apply {
-                                background = java.awt.Color.BLACK
-                                isOpaque = true
-                                preferredSize = Dimension(sizePx.first, sizePx.second)
-                                add(canvas, java.awt.BorderLayout.CENTER)
-                            }
-                        },
-                        modifier =
-                            Modifier
-                                .fillMaxSize(),
-                    )
-                }
+            if (canvas != null) {
+                // Compose-native rendering: no SwingPanel, no re-parenting, no z-order issues.
+                VlcVideoFrame(
+                    surface = canvas,
+                    modifier = Modifier.fillMaxSize(),
+                    crop = false,
+                )
             }
         }
         if (lyricsData != null && shouldShowSubtitle) {

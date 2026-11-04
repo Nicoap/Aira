@@ -49,6 +49,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.baseline_arrow_back_ios_new_24
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalGridScrollBar
+import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -83,7 +85,9 @@ fun MoreAlbumsScreen(
         when (state) {
             is MoreAlbumsUIState.Success -> {
                 val data = state.albumItems
-                LazyVerticalGrid(
+                val autoScrollbarState = rememberLazyGridState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyVerticalGrid(state = autoScrollbarState, 
                     columns = GridCells.Fixed(2),
                     modifier =
                         Modifier
@@ -121,6 +125,8 @@ fun MoreAlbumsScreen(
                         EndOfPage()
                     }
                 }
+VerticalGridScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
                 TopAppBar(
                     modifier =
                         Modifier

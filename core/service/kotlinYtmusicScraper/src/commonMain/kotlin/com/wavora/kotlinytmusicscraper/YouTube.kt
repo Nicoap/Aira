@@ -1197,8 +1197,20 @@ class YouTube {
                     ?.find {
                         it?.videoPrimaryInfoRenderer != null
                     }?.videoPrimaryInfoRenderer
+            // Like/dislike counts are an optional extra: a blank id (HTTP 400) or a failing dislike
+            // API must not make the whole song-info request fail.
             val returnYouTubeDislikeResponse =
-                ytMusic.returnYouTubeDislike(videoId).body<ReturnYouTubeDislikeResponse>()
+                if (videoId.isBlank()) {
+                    ReturnYouTubeDislikeResponse()
+                } else {
+                    try {
+                        ytMusic.returnYouTubeDislike(videoId).body<ReturnYouTubeDislikeResponse>()
+                    } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        ReturnYouTubeDislikeResponse()
+                    }
+                }
             return@runCatching SongInfo(
                 videoId = videoId,
                 author =

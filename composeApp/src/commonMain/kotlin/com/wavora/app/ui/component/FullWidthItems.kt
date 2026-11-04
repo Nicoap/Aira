@@ -102,6 +102,10 @@ import wavora.composeapp.generated.resources.radio
 import wavora.composeapp.generated.resources.you
 import kotlin.math.roundToInt
 import com.wavora.app.ui.theme.LocalAppTypography
+import androidx.compose.foundation.hoverable
+import androidx.compose.foundation.interaction.collectIsHoveredAsState
+import androidx.compose.ui.input.pointer.pointerHoverIcon
+import androidx.compose.ui.draw.clipToBounds
 
 /**
  * This is the song item in the playlist or other places.
@@ -132,6 +136,8 @@ fun SongFullWidthItems(
             Res.readBytes("files/audio_playing_animation.json").decodeToString(),
         )
     }
+    val rowHover = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val rowHovered by rowHover.collectIsHoveredAsState()
     val offsetX = remember { Animatable(initialValue = 0f) }
     var heightDp by remember { mutableStateOf(0.dp) }
 
@@ -164,6 +170,7 @@ fun SongFullWidthItems(
             modifier =
                 modifier
                     .offset { IntOffset(offsetX.value.roundToInt(), 0) }
+                    .hoverable(rowHover)
                     .clickable {
                         onClickListener?.invoke(track?.videoId ?: songEntity?.videoId ?: "")
                     }.animateContentSize()
@@ -218,6 +225,7 @@ fun SongFullWidthItems(
                                         iterations = Compottie.IterateForever,
                                     ),
                                 contentDescription = "Lottie animation",
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.material3.MaterialTheme.colorScheme.primary),
                             )
                         } else if (index == null) {
                             val thumb = track?.thumbnails?.lastOrNull()?.url ?: songEntity?.thumbnails
@@ -301,28 +309,64 @@ fun SongFullWidthItems(
                                 Spacer(modifier = Modifier.width(5.dp))
                             }
                         }
-                        Text(
-                            text =
-                                (
-                                    track?.artists?.toListName()?.connectArtists()
-                                        ?: songEntity?.artistName?.connectArtists()
-                                ) ?: "",
-                            style = LocalAppTypography.current.bodySmall,
-                            maxLines = 1,
-                            color = Color(0xC4FFFFFF),
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .wrapContentHeight(align = Alignment.CenterVertically)
-                                    .basicMarquee(
-                                        iterations = Int.MAX_VALUE,
-                                        animationMode = MarqueeAnimationMode.Immediately,
-                                    ).focusable(),
-                        )
+                        val artistLinks =
+                            track?.artists?.mapNotNull { a -> a.id?.let { id -> a.name to id } }
+                                ?: songEntity?.let { s -> s.artistName?.zip(s.artistId ?: emptyList()) }
+                        val openArtist = RowNavigation.openArtist
+                        if (openArtist != null && !artistLinks.isNullOrEmpty()) {
+                            // Artist names are links: open the artist directly.
+                            Row(
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(align = Alignment.CenterVertically)
+                                        .clipToBounds(),
+                            ) {
+                                artistLinks.forEachIndexed { idx, (name, id) ->
+                                    ArtistLinkText(name = name, onClick = { openArtist(id) })
+                                    if (idx < artistLinks.lastIndex) {
+                                        Text(", ", style = LocalAppTypography.current.bodySmall, maxLines = 1, color = Color(0xC4FFFFFF))
+                                    }
+                                }
+                            }
+                        } else {
+                            Text(
+                                text =
+                                    (
+                                        track?.artists?.toListName()?.connectArtists()
+                                            ?: songEntity?.artistName?.connectArtists()
+                                    ) ?: "",
+                                style = LocalAppTypography.current.bodySmall,
+                                maxLines = 1,
+                                color = Color(0xC4FFFFFF),
+                                modifier =
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .wrapContentHeight(align = Alignment.CenterVertically)
+                                        .basicMarquee(
+                                            iterations = Int.MAX_VALUE,
+                                            animationMode = MarqueeAnimationMode.Immediately,
+                                        ).focusable(),
+                            )
+                        }
                     }
                 }
                 if (rightView != null) {
                     rightView()
+                }
+                // Desktop: quick "add to queue" while hovering (no context menu needed).
+                if (rowHovered && !isPlaying && onAddToQueue != null) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
+                        contentDescription = stringResource(Res.string.add_to_queue),
+                        tint = Color.White,
+                        modifier =
+                            Modifier
+                                .size(36.dp)
+                                .clip(RoundedCornerShape(50))
+                                .clickable { onAddToQueue(track?.videoId ?: songEntity?.videoId ?: "") }
+                                .padding(7.dp),
+                    )
                 }
                 if (onMoreClickListener != null) {
                     RippleIconButton(resId = Res.drawable.baseline_more_vert_24, fillMaxSize = false) {
@@ -384,6 +428,7 @@ fun SuggestItems(
                                     iterations = Compottie.IterateForever,
                                 ),
                             contentDescription = "Lottie animation",
+                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.material3.MaterialTheme.colorScheme.primary),
                         )
                     } else {
                         val thumb = track.thumbnails?.lastOrNull()?.url
@@ -718,4 +763,26 @@ fun ArtistFullWidthItems(
             }
         }
     }
+}
+
+/** Artist name that behaves like a link: underlined and brighter on hover, click opens the artist. */
+@Composable
+private fun ArtistLinkText(
+    name: String,
+    onClick: () -> Unit,
+) {
+    val source = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
+    val hovered by source.collectIsHoveredAsState()
+    Text(
+        text = name,
+        style = LocalAppTypography.current.bodySmall,
+        maxLines = 1,
+        color = if (hovered) Color.White else Color(0xC4FFFFFF),
+        textDecoration = if (hovered) androidx.compose.ui.text.style.TextDecoration.Underline else androidx.compose.ui.text.style.TextDecoration.None,
+        modifier =
+            Modifier
+                .hoverable(source)
+                .pointerHoverIcon(androidx.compose.ui.input.pointer.PointerIcon.Hand)
+                .clickable(interactionSource = source, indication = null, onClick = onClick),
+    )
 }

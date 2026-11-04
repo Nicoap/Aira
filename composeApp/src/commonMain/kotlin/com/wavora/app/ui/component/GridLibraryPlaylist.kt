@@ -94,6 +94,11 @@ internal inline fun <reified T> GridLibraryPlaylist(
             }
     }
     val pullToRefreshState = rememberPullToRefreshState()
+    DesktopWheelPullToRefresh(
+        state = pullToRefreshState,
+        isRefreshing = data is LocalResource.Loading,
+        onRefresh = onReload,
+    )
     PullToRefreshBox(
         modifier = Modifier.fillMaxSize(),
         state = pullToRefreshState,

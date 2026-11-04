@@ -49,6 +49,8 @@ import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.baseline_arrow_back_ios_new_24
 import wavora.composeapp.generated.resources.local_mix
 import wavora.composeapp.generated.resources.local_mix_not_enough_history
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -82,7 +84,9 @@ fun LocalMixScreen(
             }
 
             else -> {
-                LazyColumn(
+                val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
                     modifier = Modifier.fillMaxSize().hazeSource(state = hazeState),
                 ) {
                     item {
@@ -117,6 +121,8 @@ fun LocalMixScreen(
 
                     item { EndOfPage() }
                 }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
             }
         }
 

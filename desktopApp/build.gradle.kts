@@ -274,6 +274,10 @@ compose.desktop {
     application {
         mainClass = "com.wavora.app.MainKt"
         jvmArgs += "--add-opens=java.base/java.nio=ALL-UNNAMED"
+        jvmArgs += "-Xmx1024m"
+        jvmArgs += "-XX:MinHeapFreeRatio=10"
+        jvmArgs += "-XX:MaxHeapFreeRatio=30"
+        jvmArgs += "-XX:G1PeriodicGCInterval=20000"
 
         nativeDistributions {
             appResourcesRootDir = rootDir.resolve("vlc-natives/")

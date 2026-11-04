@@ -29,6 +29,8 @@ import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.viewmodel.koinViewModel
 import wavora.composeapp.generated.resources.*
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @Composable
 fun MoodScreen(
@@ -91,7 +93,9 @@ fun MoodScreen(
                 },
         )
         AnimatedVisibility(visible = !loading) {
-            LazyColumn(
+            val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, 
                 modifier = Modifier.fillMaxSize(),
             ) {
                 items(moodData?.items ?: emptyList(), key = { it.header.ifEmpty { it.hashCode() } }) { item ->
@@ -104,6 +108,8 @@ fun MoodScreen(
                     EndOfPage()
                 }
             }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
         }
         AnimatedVisibility(visible = loading) {
             Box(

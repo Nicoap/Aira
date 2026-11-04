@@ -61,6 +61,8 @@ import wavora.composeapp.generated.resources.no_notification
 import wavora.composeapp.generated.resources.notification
 import wavora.composeapp.generated.resources.singles
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
+import androidx.compose.foundation.lazy.rememberLazyListState
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -91,7 +93,9 @@ fun NotificationScreen(
                     CenterLoadingBox(modifier = Modifier.align(Alignment.Center))
                 }
             } else if (it.isNotEmpty()) {
-                LazyColumn(modifier = Modifier.padding(15.dp)) {
+                val autoScrollbarState = rememberLazyListState()
+Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(state = autoScrollbarState, modifier = Modifier.padding(15.dp)) {
                     items(it, key = { it.id }) { notification ->
                         NotificationItem(
                             notification = notification,
@@ -102,6 +106,8 @@ fun NotificationScreen(
                         EndOfPage()
                     }
                 }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = autoScrollbarState)
+}
             } else {
                 Box(
                     Modifier.fillMaxSize(),

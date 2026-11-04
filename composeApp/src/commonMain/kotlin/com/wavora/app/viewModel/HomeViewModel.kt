@@ -272,13 +272,13 @@ class HomeViewModel(
                         params,
                         getString(Res.string.view_count),
                         getString(Res.string.song),
-                    ),
-                    homeRepository.getMoodAndMomentsData(),
-                    homeRepository.getChartData(dataStoreManager.chartKey.first()),
+                    ).safeResource(),
+                    homeRepository.getMoodAndMomentsData().safeResource(),
+                    homeRepository.getChartData(dataStoreManager.chartKey.first()).safeResource(),
                     homeRepository.getNewRelease(
                         getString(Res.string.new_release),
                         getString(Res.string.music_video),
-                    ),
+                    ).safeResource(),
                 ) { home, exploreMood, exploreChart, newRelease ->
                     HomeDataCombine(home, exploreMood, exploreChart, newRelease)
                 }.collect { result ->
@@ -440,5 +440,39 @@ class HomeViewModel(
         const val HOME_PARAMS_PARTY = "ggM8SgQIBxABSgQIBRABSgQICRABSgQIChABSgQIDRABSgQICBABSgQIBBABSgQIDhADSgQIAxABSgQIBhAB"
         const val HOME_PARAMS_COMMUTE = "ggM8SgQIBxABSgQIBRABSgQICRABSgQIChABSgQIDRABSgQICBABSgQIBBABSgQIDhABSgQIAxADSgQIBhAB"
         const val HOME_PARAMS_FOCUS = "ggM8SgQIBxABSgQIBRABSgQICRABSgQIChABSgQIDRABSgQICBABSgQIBBABSgQIDhABSgQIAxABSgQIBhAD"
+    }
+}
+
+private const val HOME_SOURCE_TIMEOUT_MS = 20_000L
+
+/**
+ * Guarantees that a data source emits at least once.
+ *
+ * The home screen combines four sources and only shows content (and clears `loading`) once
+ * ALL of them emitted. The repositories wrap their requests in runCatching without handling
+ * the failure branch, so a parsing error (or any exception) made the flow complete WITHOUT
+ * emitting anything - `combine` then waited forever and the page stayed on the loading
+ * state after a refresh. An exception, an empty completion or a hung request now becomes a
+ * Resource.Error, so the screen always finishes loading.
+ */
+private fun <T> kotlinx.coroutines.flow.Flow<Resource<T>>.safeResource(): kotlinx.coroutines.flow.Flow<Resource<T>> {
+    val upstream = this
+    return kotlinx.coroutines.flow.flow {
+        var emitted = false
+        try {
+            val completed =
+                kotlinx.coroutines.withTimeoutOrNull(HOME_SOURCE_TIMEOUT_MS) {
+                    upstream.collect {
+                        emitted = true
+                        emit(it)
+                    }
+                    true
+                }
+            if (!emitted) emit(Resource.Error<T>(if (completed == null) "Request timed out" else "No data"))
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            if (!emitted) emit(Resource.Error<T>(e.message ?: "Unknown error"))
+        }
     }
 }

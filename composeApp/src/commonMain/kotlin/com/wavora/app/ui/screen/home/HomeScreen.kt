@@ -153,6 +153,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.http.Url
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
@@ -202,6 +203,8 @@ import wavora.composeapp.generated.resources.welcome_back
 import wavora.composeapp.generated.resources.what_is_best_choice_today
 import wavora.composeapp.generated.resources.workout
 import com.wavora.app.ui.theme.LocalAppTypography
+import androidx.compose.foundation.layout.fillMaxSize
+import com.wavora.app.expect.ui.VerticalScrollBar
 
 // DataStore key for blog-promo one-shot dialog. Bump the suffix (v2, v3, …) to re-promote.
 private const val BLOG_PROMO_KEY = "blog_promo_v1_seen"
@@ -267,6 +270,8 @@ fun HomeScreen(
     val animatedColor by animateColorAsState(topHeaderColor, tween(500))
     val mainHomeThumbnail by viewModel.mainHomeThumbnail.collectAsStateWithLifecycle()
     val httpClient = remember { HttpClient(CIO) }
+    // The client was never closed: every visit of Home leaked a CIO engine (threads + sockets).
+    androidx.compose.runtime.DisposableEffect(httpClient) { onDispose { httpClient.close() } }
     val networkLoader = rememberNetworkLoader(httpClient)
     val dominantColorState =
         rememberDominantColorState(
@@ -321,7 +326,22 @@ fun HomeScreen(
         isRefreshing = true
         viewModel.getHomeItemList(params)
         Logger.w("HomeScreen", "onRefresh")
+        coroutineScope.launch {
+            // `loading` can flip true->false faster than a composition frame, so
+            // LaunchedEffect(loading) may never see it and the spinner would hang forever.
+            // Wait on the flow itself, with a safety timeout.
+            kotlinx.coroutines.withTimeoutOrNull(20_000L) {
+                viewModel.loading.first { !it }
+            }
+            isRefreshing = false
+            pullToRefreshState.animateToHidden()
+        }
     }
+    com.wavora.app.ui.component.DesktopWheelPullToRefresh(
+        state = pullToRefreshState,
+        isRefreshing = isRefreshing,
+        onRefresh = onRefresh,
+    )
     LaunchedEffect(key1 = reloadDestination) {
         if (reloadDestination == HomeDestination::class) {
             if (scrollState.firstVisibleItemIndex > 1) {
@@ -535,7 +555,8 @@ fun HomeScreen(
                         )
                         return@Crossfade
                     }
-                    LazyColumn(
+                    Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(
                         state = scrollState,
                         verticalArrangement = Arrangement.spacedBy(28.dp),
                     ) {
@@ -745,6 +766,8 @@ fun HomeScreen(
                             EndOfPage()
                         }
                     }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = scrollState)
+}
                 } else {
                     Column {
                         Spacer(

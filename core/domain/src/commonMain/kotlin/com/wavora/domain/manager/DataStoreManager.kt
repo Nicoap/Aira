@@ -142,6 +142,11 @@ interface DataStoreManager {
 
     suspend fun setDownloadVideoEnabled(enabled: Boolean)
 
+    /** Custom folder for downloaded tracks (desktop). Empty string = the default folder. */
+    val downloadFolder: Flow<String>
+
+    suspend fun setDownloadFolder(path: String)
+
     val playerVolume: Flow<Float>
 
     suspend fun setPlayerVolume(volume: Float)

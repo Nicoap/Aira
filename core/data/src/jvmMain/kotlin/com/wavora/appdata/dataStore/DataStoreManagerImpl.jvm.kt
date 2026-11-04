@@ -8,12 +8,12 @@ import createDataStore
 import java.io.File
 import java.util.Locale
 
-actual fun createDataStoreInstance(): DataStore<Preferences> = createDataStore(
+actual fun createDataStoreInstance(): DataStore<Preferences> = ResilientDataStore(createDataStore(
     producePath = {
         val file = File(getHomeFolderPath(listOf(".wavora")), "$SETTINGS_FILENAME.preferences_pb")
         file.absolutePath
     }
-)
+))
 
 // AUDIT NOTE (carteles en inglés antes de elegir idioma en Desktop):
 // DesktopApp.kt llama a changeLanguageNative() con este valor en CADA

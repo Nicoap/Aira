@@ -99,7 +99,7 @@ fun CreditScreen(
 
         // Developer - clickable, opens dev blog
         Text(
-            text = stringResource(Res.string.wavora_dev),
+            text = "nicoqw",
             style = LocalAppTypography.current.bodyMedium,
             textDecoration = TextDecoration.Underline,
             modifier =

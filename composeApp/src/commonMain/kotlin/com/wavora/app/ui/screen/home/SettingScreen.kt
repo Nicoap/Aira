@@ -388,6 +388,10 @@ import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.wavora.app.ui.theme.LocalAppTypography
+import wavora.composeapp.generated.resources.download_folder
+import wavora.composeapp.generated.resources.download_folder_default
+import wavora.composeapp.generated.resources.download_folder_reset
+import wavora.composeapp.generated.resources.download_folder_reset_hint
 
 @OptIn(
     ExperimentalMaterial3Api::class,
@@ -539,6 +543,7 @@ fun SettingScreen(
     val downloadQuality by viewModel.downloadQuality.collectAsStateWithLifecycle()
     val videoDownloadQuality by viewModel.videoDownloadQuality.collectAsStateWithLifecycle()
     val downloadVideoEnabled by viewModel.downloadVideoEnabled.map { it == TRUE }.collectAsStateWithLifecycle(initialValue = true)
+    val downloadFolder by viewModel.downloadFolder.collectAsStateWithLifecycle()
     val keepYoutubePlaylistOffline by viewModel.keepYouTubePlaylistOffline.collectAsStateWithLifecycle()
     val localTrackingEnabled by viewModel.localTrackingEnabled.collectAsStateWithLifecycle(initialValue = false)
     val combineLocalAndYouTubeLiked by viewModel.combineLocalAndYouTubeLiked.collectAsStateWithLifecycle()
@@ -1017,6 +1022,29 @@ fun SettingScreen(
                     smallSubtitle = true,
                     switch = (downloadVideoEnabled to { viewModel.setDownloadVideoEnabled(it) }),
                 )
+                if (getPlatform() == Platform.Desktop) {
+                    val defaultFolderLabel = stringResource(Res.string.download_folder_default)
+                    SettingItem(
+                        title = stringResource(Res.string.download_folder),
+                        subtitle = downloadFolder.ifBlank { defaultFolderLabel },
+                        smallSubtitle = true,
+                        onClick = {
+                            coroutineScope.launch {
+                                com.wavora.app.expect
+                                    .pickFolder(downloadFolder.ifBlank { null })
+                                    ?.let { viewModel.setDownloadFolder(it) }
+                            }
+                        },
+                    )
+                    if (downloadFolder.isNotBlank()) {
+                        SettingItem(
+                            title = stringResource(Res.string.download_folder_reset),
+                            subtitle = stringResource(Res.string.download_folder_reset_hint),
+                            smallSubtitle = true,
+                            onClick = { viewModel.setDownloadFolder("") },
+                        )
+                    }
+                }
                 SettingItem(
                     title = stringResource(Res.string.send_back_listening_data_to_google),
                     subtitle =

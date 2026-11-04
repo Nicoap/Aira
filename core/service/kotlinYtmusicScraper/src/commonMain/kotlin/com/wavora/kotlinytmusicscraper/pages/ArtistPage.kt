@@ -296,7 +296,6 @@ data class ArtistPage(
                 }
 
                 renderer.isVideo -> {
-                    print("isVideo")
                     VideoItem(
                         id = renderer.navigationEndpoint.watchEndpoint?.videoId ?: return null,
                         title =

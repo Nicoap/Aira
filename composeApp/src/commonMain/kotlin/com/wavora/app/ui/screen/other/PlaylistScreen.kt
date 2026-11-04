@@ -170,6 +170,7 @@ import wavora.composeapp.generated.resources.radio
 import wavora.composeapp.generated.resources.search
 import wavora.composeapp.generated.resources.unlimited
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.expect.ui.VerticalScrollBar
 
 @OptIn(ExperimentalCoroutinesApi::class, ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -390,7 +391,8 @@ fun PlaylistScreen(
                     rememberHazeState(
                         blurEnabled = true,
                     )
-                LazyColumn(
+                Box(modifier = Modifier.fillMaxSize()) {
+LazyColumn(
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -1152,6 +1154,8 @@ fun PlaylistScreen(
                         }
                     }
                 }
+VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = lazyState)
+}
 
                 AnimatedVisibility(
                     visible = showSearchBar,
