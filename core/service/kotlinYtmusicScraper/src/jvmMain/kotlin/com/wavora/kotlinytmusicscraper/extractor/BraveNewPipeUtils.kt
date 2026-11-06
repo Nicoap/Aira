@@ -1,5 +1,6 @@
 package com.wavora.scraper.extractor
 
+import com.wavora.logger.Logger
 import com.wavora.scraper.models.YouTubeClient
 import okhttp3.OkHttpClient
 import okhttp3.RequestBody.Companion.toRequestBody
@@ -9,6 +10,7 @@ import org.schabi.newpipe.extractor.downloader.Response
 import org.schabi.newpipe.extractor.exceptions.ReCaptchaException
 import java.io.IOException
 import java.net.Proxy
+import java.util.concurrent.TimeUnit
 
 private val REQUIRED_AUDIO_ITAGS = setOf(250, 251, 774, 141)
 private val REQUIRED_VIDEO_ITAGS = setOf(137, 136, 134)
@@ -23,6 +25,7 @@ internal fun List<Pair<Int, String>>.hasRequiredItags(): Boolean {
 private val streamHealthCheckClient: OkHttpClient by lazy {
     OkHttpClient
         .Builder()
+        .callTimeout(6, TimeUnit.SECONDS)
         .build()
 }
 
@@ -34,19 +37,34 @@ private val streamHealthCheckClient: OkHttpClient by lazy {
  */
 internal fun List<Pair<Int, String>>.headCheckRandomStream(): Boolean {
     val required = REQUIRED_AUDIO_ITAGS + REQUIRED_VIDEO_ITAGS
-    val candidate = this.filter { it.first in required }.randomOrNull() ?: return false
-    return runCatching {
-        val request =
+    // Сначала аудио-itag: именно его проигрывает плеер для обычных треков.
+    val candidate =
+        this.filter { it.first in REQUIRED_AUDIO_ITAGS }.randomOrNull()
+            ?: this.filter { it.first in required }.randomOrNull()
+            ?: return false
+    val t0 = System.nanoTime()
+    // HEAD на googlevideo всегда 403, поэтому проверяем GET. Range как у libVLC (`bytes=0-`): короткие Range
+    // (0-0, 0-1MiB) проходят и для WEB_REMIX-ссылок, которые VLC потом отвергает с 403. Тело не читаем.
+    val code =
+        probeCode(
             okhttp3.Request
                 .Builder()
-                .head()
+                .get()
                 .url(candidate.second)
-                .build()
-        streamHealthCheckClient.newCall(request).execute().use { response ->
-            response.code in 200..299
-        }
-    }.getOrDefault(false)
+                .header("Range", "bytes=0-")
+                .header("User-Agent", YouTubeClient.USER_AGENT_WEB)
+                .build(),
+        )
+    val ok = code in 200..299
+    Logger.d(
+        "Extractor",
+        "Stream probe itag=${candidate.first} rangeGET=$code ok=$ok in ${(System.nanoTime() - t0) / 1_000_000}ms",
+    )
+    return ok
 }
+
+private fun probeCode(request: okhttp3.Request): Int =
+    runCatching { streamHealthCheckClient.newCall(request).execute().use { it.code } }.getOrDefault(-1)
 
 class BraveNewPipeDownloaderImpl(
     proxy: Proxy?,

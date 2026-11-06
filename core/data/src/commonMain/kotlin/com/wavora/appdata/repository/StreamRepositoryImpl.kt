@@ -26,6 +26,13 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.withContext
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
+
+// Tidal OAuth стабильно падает (по логам 49/49 вызовов: invalid_request, ~600 мс на трек),
+// а запрос блокирует выдачу URL потока. После ошибки пропускаем Tidal на TIDAL_PAUSE.
+private val TIDAL_PAUSE = 30.minutes
+private var tidalPausedUntil: TimeSource.Monotonic.ValueTimeMark? = null
 
 internal class StreamRepositoryImpl(
     private val localDataSource: LocalDataSource,
@@ -177,7 +184,7 @@ internal class StreamRepositoryImpl(
                     var tidalBpm: Int? = null
                     var tidalMusicKey: String? = null
                     var tidalKeyScale: String? = null
-                    if (!isVideo && durationSecond != null && data.third == MediaType.Song) {
+                    if (!isVideo && durationSecond != null && data.third == MediaType.Song && tidalPausedUntil?.hasPassedNow() != false) {
                         val title = response.videoDetails?.title ?: ""
                         val author = response.videoDetails?.author ?: ""
                         val q =
@@ -197,11 +204,13 @@ internal class StreamRepositoryImpl(
                             .searchTidalMetadata(q, durationSecond)
                             .onSuccess { metadata ->
                                 Logger.w("Stream", "Tidal metadata: $metadata")
+                                tidalPausedUntil = null
                                 tidalBpm = metadata.bpm
                                 tidalMusicKey = metadata.musicKey
                                 tidalKeyScale = metadata.keyScale
                             }.onFailure {
-                                Logger.e("Stream", "Tidal metadata error: ${it.message}", it)
+                                tidalPausedUntil = TimeSource.Monotonic.markNow() + TIDAL_PAUSE
+                                Logger.w("Stream", "Tidal metadata error (paused for $TIDAL_PAUSE): ${it.message?.take(160)}")
                             }
                     }
                     insertNewFormat(

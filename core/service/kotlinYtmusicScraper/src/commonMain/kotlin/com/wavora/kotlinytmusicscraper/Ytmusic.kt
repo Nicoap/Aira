@@ -36,6 +36,7 @@ import io.ktor.client.plugins.HttpRedirect
 import io.ktor.client.plugins.compression.ContentEncoding
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.expectSuccess
 import io.ktor.client.plugins.logging.DEFAULT
 import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
@@ -47,6 +48,7 @@ import io.ktor.client.request.header
 import io.ktor.client.request.headers
 import io.ktor.client.request.parameter
 import io.ktor.client.request.post
+import io.ktor.client.request.prepareGet
 import io.ktor.client.request.prepareRequest
 import io.ktor.client.request.forms.submitForm
 import io.ktor.client.request.setBody
@@ -1207,14 +1209,24 @@ class Ytmusic {
         onComplete(isSuccess, lastException)
     }
 
-    suspend fun is403Url(url: String): Boolean {
-        return try {
-            return httpClient.head(url).status.value in 400..499
+    // googlevideo отвечает 403 на HEAD даже для рабочих ссылок, поэтому проверяем GET без чтения тела.
+    // ВАЖНО: Range должен быть таким же, как у libVLC (`bytes=0-`, открытый). Измерено на WEB_REMIX-ссылках:
+    // `bytes=0-0` и `0-1048575` -> 206, а `bytes=0-` (и запрос без Range) -> 403, то есть ссылка "проходит"
+    // короткую пробу, но VLC получает 403. expectSuccess=false: 4xx — это результат, а не исключение.
+    suspend fun is403Url(url: String): Boolean =
+        try {
+            httpClient
+                .prepareGet(url) {
+                    expectSuccess = false
+                    header(HttpHeaders.Range, "bytes=0-")
+                    header(HttpHeaders.UserAgent, DOWNLOAD_USER_AGENT)
+                }.execute { it.status.value in 400..499 }
+        } catch (e: kotlin.coroutines.cancellation.CancellationException) {
+            throw e
         } catch (e: Exception) {
-            e.printStackTrace()
+            Logger.w(TAG, "is403Url check failed: ${e.message?.take(120)}")
             true
         }
-    }
 
     suspend fun getTidalOAuthToken() =
         httpClient.submitForm(
