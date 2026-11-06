@@ -37,10 +37,20 @@ fun DesktopWheelPullToRefresh(
     val currentOnRefresh by rememberUpdatedState(onRefresh)
     LaunchedEffect(state, isRefreshing) {
         if (isRefreshing) return@LaunchedEffect
+        // Right after a refresh finishes the indicator can still sit at 1f: the old code saw that value
+        // as a fresh pull and refreshed again, forever (~1 refresh/s measured in the log, each one
+        // = 4 YouTube requests + a full parse). Hide it and only fire after the fraction was seen
+        // below the threshold again ("armed").
+        if (state.distanceFraction >= 1f) state.animateToHidden()
+        var armed = state.distanceFraction < 1f
         snapshotFlow { state.distanceFraction }.collectLatest { fraction ->
+            if (fraction < 1f) armed = true
             if (fraction <= 0f) return@collectLatest
             if (fraction >= 1f) {
-                currentOnRefresh()
+                if (armed) {
+                    armed = false
+                    currentOnRefresh()
+                }
             } else {
                 // Wheel stopped without reaching the threshold: no release event will come.
                 delay(450)

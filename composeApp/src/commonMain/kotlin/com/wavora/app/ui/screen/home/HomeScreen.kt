@@ -322,7 +322,8 @@ fun HomeScreen(
             }
     }
 
-    val onRefresh: () -> Unit = {
+    val onRefresh: () -> Unit = refresh@{
+        if (isRefreshing) return@refresh
         isRefreshing = true
         viewModel.getHomeItemList(params)
         Logger.w("HomeScreen", "onRefresh")
