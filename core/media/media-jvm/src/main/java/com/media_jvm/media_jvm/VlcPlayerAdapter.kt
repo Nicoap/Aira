@@ -274,8 +274,27 @@ class VlcPlayerAdapter(
             factoryArgs.add("--aout=directsound")
         }
 
-        mediaPlayerFactory = MediaPlayerFactory(discovery, *factoryArgs.toTypedArray())
-        secondaryFactoryProvider = { MediaPlayerFactory(discovery, *factoryArgs.toTypedArray()) }
+        // libVLC's own file log (pure native, no JNA callbacks - an earlier NativeLog/JNA hook was garbage
+        // collected and crashed libvlc_media_player_new with "Invalid memory access"). Warnings+errors only:
+        // this is where the real reason of a failed playback shows up (e.g. "HTTP 403 error" from googlevideo).
+        // One file per libVLC instance so the two factories do not truncate each other's log.
+        fun vlcLogArgs(name: String): List<String> =
+            try {
+                val dir =
+                    System.getenv("LOCALAPPDATA")?.let { java.io.File(it, "Wavora/logs") }
+                        ?: java.io.File(System.getProperty("user.home"), ".wavora/logs")
+                dir.mkdirs()
+                listOf(
+                    "--file-logging",
+                    "--logfile=" + java.io.File(dir, "vlc-$name.log").absolutePath,
+                    "--logmode=text",
+                    "--log-verbose=1",
+                )
+            } catch (_: Throwable) {
+                emptyList()
+            }
+        mediaPlayerFactory = MediaPlayerFactory(discovery, *(factoryArgs + vlcLogArgs("primary")).toTypedArray())
+        secondaryFactoryProvider = { MediaPlayerFactory(discovery, *(factoryArgs + vlcLogArgs("secondary")).toTypedArray()) }
 
         restoreEqualizerFromDataStore()
 
@@ -1680,6 +1699,10 @@ class VlcPlayerAdapter(
             // jitter than audio-only playback; keep a larger stream buffer.
             options.add(":network-caching=10000")
             options.add(":http-reconnect")
+            // Frames are pulled through a vmem callback surface (system memory, RV32). With hardware
+            // decoding (d3d11va/dxva2) libVLC logged "Failed to create video converter" and no frame
+            // reached the UI (black box). Software decoding of <=1280px video is cheap and reliable.
+            options.add(":avcodec-hw=none")
         } else {
             // WAVORA CROSSFADE FIX (Windows root cause): audio-only sources — which
             // is effectively ALL playback in Wavora, since it's a music app — had NO
@@ -3866,6 +3889,9 @@ class VlcVideoFrameSurface(
     var hasFrame = false
         private set
 
+    @Volatile
+    private var loggedFirstFrame = false
+
     private val _frameVersion = MutableStateFlow(0L)
 
     /** Increments every time a new frame is available. */
@@ -3888,6 +3914,8 @@ class VlcVideoFrameSurface(
                 }
                 w = w and 1.inv()
                 h = h and 1.inv()
+                Logger.d("VlcVideoFrameSurface", "buffer format: source=${sourceWidth}x$sourceHeight -> buffer=${w}x$h")
+                loggedFirstFrame = false
                 synchronized(lock) {
                     videoWidth = w
                     videoHeight = h
@@ -3937,6 +3965,10 @@ class VlcVideoFrameSurface(
                         hasFrame = true
                     }
                     lastPublishNanos = now
+                    if (!loggedFirstFrame) {
+                        loggedFirstFrame = true
+                        Logger.d("VlcVideoFrameSurface", "first frame displayed (${videoWidth}x$videoHeight)")
+                    }
                     _frameVersion.value = _frameVersion.value + 1
                 } catch (_: Exception) {
                     // Format change in flight - skip frame
