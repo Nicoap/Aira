@@ -65,7 +65,7 @@ class LrclibProvider : LyricsProvider {
                     }.body<List<LrclibObject>>()
 
             if (durationSeconds != null) {
-                results.find { abs(it.duration.toInt() - durationSeconds) <= 10 }
+                results.find { it.duration != null && abs(it.duration.toInt() - durationSeconds) <= 10 }
             } else {
                 results.firstOrNull()
             }

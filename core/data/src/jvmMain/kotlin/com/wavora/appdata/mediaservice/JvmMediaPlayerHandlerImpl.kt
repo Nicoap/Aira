@@ -424,7 +424,7 @@ class JvmMediaPlayerHandlerImpl(
                     format.collectLatest { formatTemp ->
                         if (dataStoreManager.sendBackToGoogle.first() == TRUE) {
                             if (formatTemp != null) {
-                                println("format in viewModel: $formatTemp")
+                                // (removed noisy println of the whole format entity incl. signed URLs)
                                 Logger.d(TAG, "Collect format ${formatTemp.videoId}")
                                 Logger.w(TAG, "Format expire at ${formatTemp.expiredTime}")
                                 Logger.i(TAG, "AtrUrl ${formatTemp.playbackTrackingAtrUrl}")

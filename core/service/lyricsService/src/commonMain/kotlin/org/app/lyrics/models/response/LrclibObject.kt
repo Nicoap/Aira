@@ -9,7 +9,7 @@ data class LrclibObject(
     val trackName: String?,
     val artistName: String?,
     val albumName: String?,
-    val duration: Float,
+    val duration: Float? = null,
     val instrumental: Boolean,
     val plainLyrics: String?,
     val syncedLyrics: String?,
