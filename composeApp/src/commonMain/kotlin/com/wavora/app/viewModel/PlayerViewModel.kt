@@ -28,6 +28,8 @@ import com.wavora.domain.utils.toTrack
 import com.wavora.app.viewModel.base.BaseViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -151,6 +153,8 @@ class PlayerViewModel(
         }
     }
 
+    private var volumePersistJob: Job? = null
+
     fun onUIEvent(uiEvent: UIEvent) = viewModelScope.launch {
         when (uiEvent) {
             UIEvent.Backward -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Backward)
@@ -165,8 +169,14 @@ class PlayerViewModel(
             UIEvent.Shuffle -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Shuffle)
             UIEvent.ToggleLike -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.ToggleLike)
             is UIEvent.UpdateVolume -> {
-                dataStoreManager.setPlayerVolume(uiEvent.newVolume)
+                // Applied immediately (sliders send this on every drag step); persisted debounced, because a
+                // DataStore write per drag step rewrites the preferences file each time.
                 mediaPlayerHandler.onPlayerEvent(PlayerEvent.UpdateVolume(uiEvent.newVolume))
+                volumePersistJob?.cancel()
+                volumePersistJob = viewModelScope.launch {
+                    delay(300)
+                    dataStoreManager.setPlayerVolume(uiEvent.newVolume)
+                }
             }
         }
     }

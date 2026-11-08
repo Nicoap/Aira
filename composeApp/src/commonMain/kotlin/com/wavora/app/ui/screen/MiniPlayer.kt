@@ -895,6 +895,8 @@ fun MiniPlayer(
                                 onValueChange = {
                                     isVolumeSliding = true
                                     volumeValue = it
+                                    // Live update while dragging (was applied only after release).
+                                    sharedViewModel.onUIEvent(UIEvent.UpdateVolume(it.coerceIn(0f, 1f)))
                                 },
                                 valueRange = 0f..1f,
                                 modifier =
