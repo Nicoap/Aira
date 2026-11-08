@@ -107,7 +107,8 @@ internal class WindowsSystemMediaSession private constructor(
         }
     }
 
-    private fun publish(snapshot: WindowsMediaSnapshot) {
+    private fun publish(rawSnapshot: WindowsMediaSnapshot) {
+        val snapshot = rawSnapshot.withCleanFields()
         val title = snapshot.title?.takeIf(String::isNotBlank)
         if (title == null) {
             controls.call(SMTC_SET_IS_ENABLED, 0).checkHresult()
@@ -677,3 +678,33 @@ private val ACCEPTED_HANDLER_IIDS =
         IID_IUNKNOWN.toGuidString(),
         IID_IAGILE_OBJECT.toGuidString(),
     )
+
+// Title / artist / album must be three independent, non-repeating fields: no play/view counters in the
+// artist line, no repeated artists, and no album that merely repeats the title or the artist.
+private val mediaCounterRegex =
+    Regex(
+        """(?i)(\d[\d\s.,]*\s*(k|m|b|тыс|млн|млрд|к)?\.?\s*(views?|plays?|listens?|просмотр\p{L}*|прослушива\p{L}*|подписчик\p{L}*|subscribers?))""",
+    )
+
+private fun String?.cleanMediaText(): String = this.orEmpty().replace(Regex("\\s+"), " ").trim()
+
+internal fun WindowsMediaSnapshot.withCleanFields(): WindowsMediaSnapshot {
+    val cleanTitle = title.cleanMediaText()
+    val cleanArtist =
+        artist.cleanMediaText()
+            .split(",")
+            .map { it.trim() }
+            .filter { it.isNotBlank() && !mediaCounterRegex.containsMatchIn(it) }
+            .distinctBy { it.lowercase() }
+            .joinToString(", ")
+    val cleanAlbum =
+        album.cleanMediaText().takeUnless {
+            it.isBlank() || it.equals("Album", ignoreCase = true) ||
+                it.equals(cleanTitle, ignoreCase = true) || it.equals(cleanArtist, ignoreCase = true)
+        }
+    return copy(
+        title = cleanTitle.takeIf { it.isNotBlank() },
+        artist = cleanArtist.takeIf { it.isNotBlank() },
+        album = cleanAlbum,
+    )
+}
