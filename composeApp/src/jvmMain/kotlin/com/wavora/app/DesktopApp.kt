@@ -555,6 +555,15 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
  * vivía directamente dentro de `application { }`, ahora parametrizado por el
  * `mediaPlayerHandler`/`sharedViewModel` ya construidos (ver [AppReady]).
  */
+private fun isWindowRectOnScreen(x: Int, y: Int, width: Int, height: Int): Boolean =
+    runCatching {
+        val rect = java.awt.Rectangle(x, y, width.coerceAtLeast(200), height.coerceAtLeast(120))
+        java.awt.GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices.any { device ->
+            val overlap = device.defaultConfiguration.bounds.intersection(rect)
+            overlap.width >= 120 && overlap.height >= 60
+        }
+    }.getOrDefault(false)
+
 @OptIn(ExperimentalMaterial3Api::class)
 @androidx.compose.runtime.Composable
 private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
@@ -576,9 +585,20 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
     val savedY = windowPrefs.getInt("y", -1)
     val wasMaximized = windowPrefs.getBoolean("maximized", false)
 
+    // Restore the last position too (it used to be read but never applied or saved), but only when
+    // the saved rectangle is still on a connected screen (monitor unplugged / minimized -32000 values).
+    val restoredPosition =
+        remember {
+            if (savedX != -1 && savedY != -1 && isWindowRectOnScreen(savedX, savedY, savedWidth.toInt(), savedHeight.toInt())) {
+                androidx.compose.ui.window.WindowPosition(savedX.dp, savedY.dp)
+            } else {
+                androidx.compose.ui.window.WindowPosition.PlatformDefault
+            }
+        }
     val windowState =
         rememberWindowState(
             size = DpSize(savedWidth.dp, savedHeight.dp),
+            position = restoredPosition,
             placement = if (wasMaximized) androidx.compose.ui.window.WindowPlacement.Maximized
                         else androidx.compose.ui.window.WindowPlacement.Floating,
         )
@@ -638,6 +658,11 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
             if (windowState.placement == androidx.compose.ui.window.WindowPlacement.Floating) {
                 windowPrefs.putFloat("width", windowState.size.width.value)
                 windowPrefs.putFloat("height", windowState.size.height.value)
+                val pos = windowState.position
+                if (pos.isSpecified && pos.x.value > -10000f && pos.y.value > -10000f) {
+                    windowPrefs.putInt("x", pos.x.value.toInt())
+                    windowPrefs.putInt("y", pos.y.value.toInt())
+                }
                 windowPrefs.putBoolean("maximized", false)
             } else {
                 windowPrefs.putBoolean("maximized", true)
@@ -657,6 +682,34 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
             // Wait for a few real frames, then mark this launch as healthy.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
             RenderGuard.confirmRendered()
+        }
+        // Native window behaviour on Windows: Snap / Win+arrows / edge resize / title-bar drag and
+        // double-click (see WindowsWindowFrame). No-op elsewhere or with WAVORA_NATIVE_FRAME=0.
+        var nativeFrame by remember { mutableStateOf<WindowsWindowFrame?>(null) }
+        LaunchedEffect(window) {
+            while (!window.isDisplayable) kotlinx.coroutines.delay(50)
+            nativeFrame = WindowsWindowFrame.install(window, captionHeightDp = 44f, controlsWidthDp = 140f)
+        }
+        androidx.compose.runtime.DisposableEffect(window) {
+            onDispose { nativeFrame?.detach() }
+        }
+        // Remember size / position while running too: the close handler is not reached on "Quit" from the tray.
+        LaunchedEffect(windowState.position, windowState.size, windowState.placement, windowState.isMinimized) {
+            kotlinx.coroutines.delay(600)
+            if (windowState.isMinimized) return@LaunchedEffect
+            if (windowState.placement == androidx.compose.ui.window.WindowPlacement.Floating) {
+                val pos = windowState.position
+                windowPrefs.putFloat("width", windowState.size.width.value)
+                windowPrefs.putFloat("height", windowState.size.height.value)
+                if (pos.isSpecified && pos.x.value > -10000f && pos.y.value > -10000f) {
+                    windowPrefs.putInt("x", pos.x.value.toInt())
+                    windowPrefs.putInt("y", pos.y.value.toInt())
+                }
+                windowPrefs.putBoolean("maximized", false)
+            } else {
+                windowPrefs.putBoolean("maximized", true)
+            }
+            windowPrefs.flush()
         }
         LaunchedEffect(mediaPlayerHandler, window) {
             val commandScope = this
