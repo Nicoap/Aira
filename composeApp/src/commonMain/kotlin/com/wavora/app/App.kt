@@ -42,6 +42,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.SpanStyle
@@ -659,7 +660,15 @@ fun App(
                         Box(
                             Modifier
                                 .fillMaxSize()
-                                .background(Color.Black),
+                                .background(Color.Black)
+                                // Swallow all pointer events so nothing underneath (e.g. Settings) stays clickable.
+                                .pointerInput(Unit) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            awaitPointerEvent()
+                                        }
+                                    }
+                                },
                         ) {
                             com.wavora.app.ui.screen.player.NowPlayingMaximizedScreen(
                                 navController = navController,
