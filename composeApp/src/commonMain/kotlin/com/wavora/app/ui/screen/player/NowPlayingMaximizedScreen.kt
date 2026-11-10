@@ -96,6 +96,49 @@ import com.wavora.app.ui.component.rememberDragDropState
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
 import com.wavora.app.ui.navigation.destination.list.ArtistDestination
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.ui.theme.WavoraRadius
+import com.wavora.app.ui.theme.WavoraSpace
+import com.wavora.app.ui.theme.WavoraTone
+import androidx.compose.material.icons.automirrored.outlined.OpenInNew
+import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
+import androidx.compose.material.icons.filled.OpenInFull
+import androidx.compose.material.icons.outlined.Info
+import androidx.compose.material.icons.rounded.AddCircleOutline
+import androidx.compose.material.icons.rounded.ThumbsUpDown
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.platform.LocalUriHandler
+import com.wavora.app.expect.toggleMiniPlayer
+import com.wavora.app.extension.parseTimestampToMilliseconds
+import com.wavora.app.ui.component.AIBadge
+import com.wavora.app.ui.component.AddToPlaylistModalBottomSheet
+import com.wavora.app.ui.component.DescriptionView
+import com.wavora.app.ui.component.InfoPlayerBottomSheet
+import com.wavora.app.ui.component.NowPlayingBottomSheet
+import com.wavora.app.ui.component.SimpleTooltip
+import com.wavora.app.ui.component.VoteLyricsDialog
+import com.wavora.app.viewModel.LyricsProvider
+import com.wavora.app.viewModel.NowPlayingBottomSheetUIEvent
+import com.wavora.app.viewModel.NowPlayingBottomSheetViewModel
+import org.koin.compose.viewmodel.koinViewModel
+import wavora.composeapp.generated.resources.collapse_now_playing
+import wavora.composeapp.generated.resources.more
+import wavora.composeapp.generated.resources.song_info
+import wavora.composeapp.generated.resources.description
+import wavora.composeapp.generated.resources.no_description
+import wavora.composeapp.generated.resources.rate_lyrics
+import wavora.composeapp.generated.resources.line_synced
+import wavora.composeapp.generated.resources.rich_synced
+import wavora.composeapp.generated.resources.unsynced
+import wavora.composeapp.generated.resources.lyrics_provider_wavora
+import wavora.composeapp.generated.resources.lyrics_provider_lrc
+import wavora.composeapp.generated.resources.lyrics_provider_youtube
+import wavora.composeapp.generated.resources.spotify_lyrics_provider
+import wavora.composeapp.generated.resources.offline_mode
+import wavora.composeapp.generated.resources.lyrics_provider_betterlyrics
+import wavora.composeapp.generated.resources.published_at
+import wavora.composeapp.generated.resources.view_count
+import wavora.composeapp.generated.resources.like_and_dislike
 import com.wavora.app.ui.theme.themedWavoraLogoPainter
 import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.app.viewModel.UIEvent
@@ -113,15 +156,6 @@ import wavora.composeapp.generated.resources.lyrics
 import wavora.composeapp.generated.resources.no_lyrics_for_track
 import wavora.composeapp.generated.resources.now_playing
 import wavora.composeapp.generated.resources.queue
-
-// Flat, neutral ground; one tone step per surface; the accent only marks state
-// (progress, the current line, the current track, active toggles).
-private val Ground = Color(0xFF0B0B0B)
-private val Surface1 = Color(0xFF131313)
-private val Surface2 = Color(0xFF1B1B1B)
-private val Hairline = Color(0xFF262626)
-private val InkText = Color(0xFFF2F2F2)
-private val Muted = Color(0xFF8C8C8C)
 
 private val Numeric = TextStyle(fontFeatureSettings = "tnum")
 
@@ -146,9 +180,11 @@ private fun clock(ms: Long): String {
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
-fun NowPlayingMaximizedScreen(
+fun NowPlayingPanel(
     navController: NavController,
+    compact: Boolean,
     onCollapse: () -> Unit,
+    onMaximize: (() -> Unit)? = null,
     sharedViewModel: SharedViewModel = koinInject(),
 ) {
     val controller by sharedViewModel.controllerState.collectAsStateWithLifecycle()
@@ -156,76 +192,119 @@ fun NowPlayingMaximizedScreen(
     val nowPlaying by sharedViewModel.nowPlayingState.collectAsStateWithLifecycle()
     val timeline by sharedViewModel.timeline.collectAsStateWithLifecycle()
     val showVideo by sharedViewModel.getVideo.collectAsStateWithLifecycle()
+    val lyricsVoteState by sharedViewModel.lyricsVoteState.collectAsStateWithLifecycle()
+    val translatedVoteState by sharedViewModel.translatedVoteState.collectAsStateWithLifecycle()
     var tab by rememberSaveable { mutableIntStateOf(0) }
+    var showMoreSheet by rememberSaveable { mutableStateOf(false) }
+    var showInfoSheet by rememberSaveable { mutableStateOf(false) }
+    var showAddToPlaylist by rememberSaveable { mutableStateOf(false) }
+    var showVoteDialog by rememberSaveable { mutableStateOf(false) }
 
     val song = nowPlaying?.songEntity
     val artistNames = song?.artistName.orEmpty()
     val artistIds = song?.artistId.orEmpty()
 
+    // The compact side panel stays open while you navigate; the maximized view steps aside so the
+    // destination page is visible.
     fun openArtist(id: String?) {
         if (id.isNullOrBlank()) return
-        onCollapse()
+        if (!compact) onCollapse()
         navController.navigate(ArtistDestination(channelId = id))
     }
 
     fun openAlbum(id: String?) {
         if (id.isNullOrBlank()) return
-        onCollapse()
+        if (!compact) onCollapse()
         navController.navigate(AlbumDestination(browseId = id))
+    }
+
+    val canVoteLyrics =
+        screenData.lyricsData?.lyricsProvider == LyricsProvider.SIMPMUSIC &&
+            screenData.lyricsData
+                ?.lyrics
+                ?.simpMusicLyrics != null
+    val canVoteTranslatedLyrics =
+        screenData.lyricsData?.translatedLyrics?.second == LyricsProvider.SIMPMUSIC &&
+            screenData.lyricsData
+                ?.translatedLyrics
+                ?.first
+                ?.simpMusicLyrics != null
+
+    if (showMoreSheet) {
+        NowPlayingBottomSheet(
+            onDismiss = { showMoreSheet = false },
+            navController = navController,
+            onNavigateToOtherScreen = { if (!compact) onCollapse() },
+            song = null, // current track
+            setSleepTimerEnable = true,
+            changeMainLyricsProviderEnable = true,
+        )
+    }
+    if (showInfoSheet) {
+        InfoPlayerBottomSheet(onDismiss = { showInfoSheet = false })
+    }
+    if (showAddToPlaylist) {
+        val viewModel: NowPlayingBottomSheetViewModel = koinViewModel()
+        val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+        LaunchedEffect(Unit) {
+            viewModel.resetPlaylists()
+            viewModel.setSongEntity(null) // current track
+        }
+        AddToPlaylistModalBottomSheet(
+            isBottomSheetVisible = true,
+            listLocalPlaylist = uiState.listLocalPlaylist,
+            listYouTubePlaylist = uiState.listYouTubePlaylist,
+            onDismiss = { showAddToPlaylist = false },
+            onClick = { playlist ->
+                viewModel.onUIEvent(NowPlayingBottomSheetUIEvent.AddToPlaylist(playlist.id))
+                showAddToPlaylist = false
+            },
+            onYTPlaylistClick = { playlist ->
+                viewModel.onUIEvent(NowPlayingBottomSheetUIEvent.AddToYouTubePlaylist(playlist.browseId))
+                showAddToPlaylist = false
+            },
+            videoId = uiState.songUIState.videoId,
+        )
+    }
+    if (showVoteDialog) {
+        VoteLyricsDialog(
+            canVoteLyrics = canVoteLyrics,
+            canVoteTranslatedLyrics = canVoteTranslatedLyrics,
+            lyricsVoteState = lyricsVoteState,
+            translatedLyricsVoteState = translatedVoteState,
+            onVoteLyrics = { upvote -> sharedViewModel.voteLyrics(upvote) },
+            onVoteTranslatedLyrics = { upvote -> sharedViewModel.voteTranslatedLyrics(upvote) },
+            onDismiss = { showVoteDialog = false },
+        )
     }
 
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Ground),
+                .background(WavoraTone.ground),
     ) {
-        // Top bar: collapse | context | product mark
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .height(64.dp)
-                    .padding(horizontal = 24.dp),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(onClick = onCollapse) {
-                Icon(Icons.Filled.FullscreenExit, contentDescription = null, tint = InkText)
-            }
-            Spacer(Modifier.width(8.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = stringResource(Res.string.now_playing),
-                    style = LocalAppTypography.current.bodySmall.copy(color = Muted),
-                )
-                Text(
-                    text = screenData.playlistName,
-                    style = LocalAppTypography.current.bodyMedium.copy(color = InkText, fontWeight = FontWeight.Medium),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            Image(
-                painter = themedWavoraLogoPainter(),
-                contentDescription = null,
-                modifier = Modifier.size(22.dp),
-                colorFilter = null,
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Wavora",
-                style = LocalAppTypography.current.bodyMedium.copy(color = InkText, fontWeight = FontWeight.SemiBold),
-            )
-        }
+        PanelHeader(
+            compact = compact,
+            context = screenData.playlistName,
+            onCollapse = onCollapse,
+            onMaximize = onMaximize,
+            onMiniPlayer = { toggleMiniPlayer() },
+            onMore = { showMoreSheet = true },
+        )
 
+        val hPad = if (compact) WavoraSpace.lg else WavoraSpace.xxxl
+        val bPad = if (compact) WavoraSpace.lg else WavoraSpace.xxl
         BoxWithConstraints(
             modifier =
                 Modifier
                     .fillMaxWidth()
                     .weight(1f)
-                    .padding(start = 40.dp, end = 40.dp, bottom = 32.dp),
+                    .padding(start = hPad, end = hPad, bottom = bPad),
         ) {
-            val wide = maxWidth >= 860.dp
+            val wide = !compact && maxWidth >= 860.dp
+            // Compact: the artwork takes at most ~40% of the height so the tabs below keep room.
+            val artHeight = (maxHeight * 0.4f).coerceAtMost(maxWidth)
             val player: @Composable (Modifier) -> Unit = { mod ->
                 PlayerBlock(
                     modifier = mod,
@@ -248,6 +327,10 @@ fun NowPlayingMaximizedScreen(
                     isPreviousAvailable = controller.isPreviousAvailable,
                     volume = controller.volume,
                     timeline = timeline,
+                    compact = compact,
+                    artHeight = artHeight,
+                    onAddToPlaylist = { showAddToPlaylist = true },
+                    onInfo = { showInfoSheet = true },
                     onArtist = ::openArtist,
                     onAlbum = ::openAlbum,
                 )
@@ -258,30 +341,119 @@ fun NowPlayingMaximizedScreen(
                     tab = tab,
                     onTab = { tab = it },
                     sharedViewModel = sharedViewModel,
+                    canVote = canVoteLyrics || canVoteTranslatedLyrics,
+                    onVote = { showVoteDialog = true },
                     onArtist = ::openArtist,
                 )
             }
-            if (wide) {
-                Row(
-                    modifier = Modifier.fillMaxSize(),
-                    horizontalArrangement = Arrangement.spacedBy(56.dp),
-                ) {
-                    player(Modifier.weight(0.85f).fillMaxHeight())
-                    side(Modifier.weight(1.15f).fillMaxHeight())
+            when {
+                wide -> {
+                    Row(
+                        modifier = Modifier.fillMaxSize(),
+                        horizontalArrangement = Arrangement.spacedBy(56.dp),
+                    ) {
+                        player(Modifier.weight(0.85f).fillMaxHeight())
+                        side(Modifier.weight(1.15f).fillMaxHeight())
+                    }
                 }
-            } else {
-                Column(
-                    modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
-                ) {
-                    player(Modifier.weight(1f).fillMaxWidth())
-                    side(Modifier.weight(1f).fillMaxWidth())
+
+                compact -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(WavoraSpace.lg),
+                    ) {
+                        player(Modifier.fillMaxWidth())
+                        side(Modifier.weight(1f).fillMaxWidth())
+                    }
+                }
+
+                else -> {
+                    Column(
+                        modifier = Modifier.fillMaxSize(),
+                        verticalArrangement = Arrangement.spacedBy(WavoraSpace.xl),
+                    ) {
+                        player(Modifier.weight(1f).fillMaxWidth())
+                        side(Modifier.weight(1f).fillMaxWidth())
+                    }
                 }
             }
         }
     }
 }
 
+/** Header: collapse | context | maximize (compact only) | mini player | more. */
+@Composable
+private fun PanelHeader(
+    compact: Boolean,
+    context: String,
+    onCollapse: () -> Unit,
+    onMaximize: (() -> Unit)?,
+    onMiniPlayer: () -> Unit,
+    onMore: () -> Unit,
+) {
+    Row(
+        modifier =
+            Modifier
+                .fillMaxWidth()
+                .height(64.dp)
+                .padding(horizontal = if (compact) WavoraSpace.md else WavoraSpace.xl),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SimpleTooltip(stringResource(Res.string.collapse_now_playing)) {
+            IconButton(onClick = onCollapse) {
+                Icon(
+                    imageVector = if (compact) Icons.AutoMirrored.Rounded.ArrowForwardIos else Icons.Filled.FullscreenExit,
+                    contentDescription = stringResource(Res.string.collapse_now_playing),
+                    tint = WavoraTone.ink,
+                )
+            }
+        }
+        Spacer(Modifier.width(WavoraSpace.sm))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                text = stringResource(Res.string.now_playing),
+                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+            )
+            Text(
+                text = context,
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.ink, fontWeight = FontWeight.Medium),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+        if (compact && onMaximize != null) {
+            SimpleTooltip("Maximize") {
+                IconButton(onClick = onMaximize) {
+                    Icon(Icons.Filled.OpenInFull, contentDescription = "Maximize", tint = WavoraTone.ink)
+                }
+            }
+        }
+        SimpleTooltip("Mini Player") {
+            IconButton(onClick = onMiniPlayer) {
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Mini Player", tint = WavoraTone.ink)
+            }
+        }
+        SimpleTooltip(stringResource(Res.string.more)) {
+            IconButton(onClick = onMore) {
+                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(Res.string.more), tint = WavoraTone.ink)
+            }
+        }
+        if (!compact) {
+            Spacer(Modifier.width(WavoraSpace.sm))
+            Image(
+                painter = themedWavoraLogoPainter(),
+                contentDescription = null,
+                modifier = Modifier.size(22.dp),
+                colorFilter = null,
+            )
+            Spacer(Modifier.width(WavoraSpace.sm))
+            Text(
+                text = "Wavora",
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.ink, fontWeight = FontWeight.SemiBold),
+            )
+        }
+    }
+}
 @OptIn(ExperimentalFoundationApi::class, ExperimentalLayoutApi::class)
 @Composable
 private fun PlayerBlock(
@@ -305,18 +477,24 @@ private fun PlayerBlock(
     isPreviousAvailable: Boolean,
     volume: Float,
     timeline: TimeLine,
+    compact: Boolean,
+    artHeight: Dp,
+    onAddToPlaylist: () -> Unit,
+    onInfo: () -> Unit,
     onArtist: (String?) -> Unit,
     onAlbum: (String?) -> Unit,
 ) {
     val accent = MaterialTheme.colorScheme.primary
     val videoMode = isVideo && showVideo
+    val screenData by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
+    val canvasData = screenData.canvasData
+    val canvasMode = !videoMode && canvasData != null
 
     Column(modifier = modifier, horizontalAlignment = Alignment.Start) {
         // Artwork / video: the dominant element, sized by whichever dimension runs out first.
         BoxWithConstraints(
             modifier =
-                Modifier
-                    .weight(1f)
+                (if (compact) Modifier.height(artHeight) else Modifier.weight(1f))
                     .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
@@ -333,6 +511,16 @@ private fun PlayerBlock(
                     artH = boxH
                     artW = boxH * 16f / 9f
                 }
+            } else if (canvasMode) {
+                // Portrait box for a vertical (9:16) Spotify Canvas loop.
+                val byHeight = boxH * 9f / 16f
+                if (byHeight <= boxW) {
+                    artH = boxH
+                    artW = byHeight
+                } else {
+                    artW = boxW
+                    artH = boxW * 16f / 9f
+                }
             } else {
                 val side = if (boxW < boxH) boxW else boxH
                 artW = side
@@ -342,8 +530,8 @@ private fun PlayerBlock(
                 modifier =
                     Modifier
                         .size(artW, artH)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(Surface1),
+                        .clip(RoundedCornerShape(WavoraRadius.art))
+                        .background(WavoraTone.surface1),
             ) {
                 if (videoMode) {
                     com.wavora.app.expect.ui.MediaPlayerViewWithSubtitle(
@@ -373,6 +561,22 @@ private fun PlayerBlock(
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
+                    // Canvas loop sits on top of the cover: the cover stays visible until the first frame.
+                    if (canvasMode && canvasData != null) {
+                        if (canvasData.isVideo) {
+                            com.wavora.app.expect.ui.MediaPlayerView(
+                                url = canvasData.url,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        } else {
+                            AsyncImage(
+                                model = canvasData.url,
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier.fillMaxSize(),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -380,11 +584,11 @@ private fun PlayerBlock(
         Spacer(Modifier.height(24.dp))
 
         // Title + links + like
-        Row(verticalAlignment = Alignment.Top) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = LocalAppTypography.current.titleLarge.copy(color = InkText, fontWeight = FontWeight.SemiBold, fontSize = 26.sp),
+                    style = LocalAppTypography.current.titleLarge.copy(color = WavoraTone.ink, fontWeight = FontWeight.SemiBold, fontSize = if (compact) 22.sp else 26.sp),
                     maxLines = 1,
                     modifier = Modifier.basicMarquee(),
                 )
@@ -398,7 +602,7 @@ private fun PlayerBlock(
                                 onClick = { onArtist(artistIds.getOrNull(index)) },
                             )
                             if (index < artistNames.lastIndex) {
-                                Text(", ", style = LocalAppTypography.current.bodyLarge.copy(color = Muted))
+                                Text(", ", style = LocalAppTypography.current.bodyLarge.copy(color = WavoraTone.muted))
                             }
                         }
                     } else if (fallbackArtist.isNotBlank()) {
@@ -409,7 +613,7 @@ private fun PlayerBlock(
                         )
                     }
                     if (!albumName.isNullOrBlank()) {
-                        Text("  ·  ", style = LocalAppTypography.current.bodyLarge.copy(color = Muted))
+                        Text("  ·  ", style = LocalAppTypography.current.bodyLarge.copy(color = WavoraTone.muted))
                         LinkText(
                             text = albumName,
                             style = LocalAppTypography.current.bodyLarge,
@@ -424,8 +628,48 @@ private fun PlayerBlock(
                 size = 30,
                 onStateChange = { sharedViewModel.onUIEvent(UIEvent.ToggleLike) },
             )
+            Spacer(Modifier.width(WavoraSpace.xs))
+            SimpleTooltip("Add to playlist") {
+                IconButton(onClick = onAddToPlaylist) {
+                    Icon(Icons.Rounded.AddCircleOutline, contentDescription = null, tint = WavoraTone.muted)
+                }
+            }
+            SimpleTooltip(stringResource(Res.string.song_info)) {
+                IconButton(onClick = onInfo) {
+                    Icon(Icons.Outlined.Info, contentDescription = stringResource(Res.string.song_info), tint = WavoraTone.muted)
+                }
+            }
         }
 
+        if (!compact) {
+            PlayerControls(
+                sharedViewModel = sharedViewModel,
+                timeline = timeline,
+                accent = accent,
+                isShuffle = isShuffle,
+                isPlaying = isPlaying,
+                isPreviousAvailable = isPreviousAvailable,
+                isNextAvailable = isNextAvailable,
+                repeatState = repeatState,
+                volume = volume,
+            )
+        }
+    }
+}
+
+@Composable
+private fun PlayerControls(
+    sharedViewModel: SharedViewModel,
+    timeline: TimeLine,
+    accent: Color,
+    isShuffle: Boolean,
+    isPlaying: Boolean,
+    isPreviousAvailable: Boolean,
+    isNextAvailable: Boolean,
+    repeatState: RepeatState,
+    volume: Float,
+) {
+    Column {
         Spacer(Modifier.height(20.dp))
 
         SeekBar(
@@ -443,7 +687,7 @@ private fun PlayerBlock(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { sharedViewModel.onUIEvent(UIEvent.Shuffle) }) {
-                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = if (isShuffle) accent else Muted)
+                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = if (isShuffle) accent else WavoraTone.muted)
             }
             Spacer(Modifier.width(12.dp))
             IconButton(
@@ -453,7 +697,7 @@ private fun PlayerBlock(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     contentDescription = null,
-                    tint = if (isPreviousAvailable) InkText else Hairline,
+                    tint = if (isPreviousAvailable) WavoraTone.ink else WavoraTone.hairline,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -463,7 +707,7 @@ private fun PlayerBlock(
                     Modifier
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(InkText)
+                        .background(WavoraTone.ink)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .clickable { sharedViewModel.onUIEvent(UIEvent.PlayPause) },
                 contentAlignment = Alignment.Center,
@@ -472,13 +716,13 @@ private fun PlayerBlock(
                     CircularProgressIndicator(
                         modifier = Modifier.size(26.dp),
                         strokeWidth = 2.5.dp,
-                        color = Ground,
+                        color = WavoraTone.ground,
                     )
                 } else {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = null,
-                        tint = Ground,
+                        tint = WavoraTone.ground,
                         modifier = Modifier.size(34.dp),
                     )
                 }
@@ -491,7 +735,7 @@ private fun PlayerBlock(
                 Icon(
                     Icons.Rounded.SkipNext,
                     contentDescription = null,
-                    tint = if (isNextAvailable) InkText else Hairline,
+                    tint = if (isNextAvailable) WavoraTone.ink else WavoraTone.hairline,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -500,7 +744,7 @@ private fun PlayerBlock(
                 Icon(
                     imageVector = if (repeatState == RepeatState.One) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                     contentDescription = null,
-                    tint = if (repeatState == RepeatState.None) Muted else accent,
+                    tint = if (repeatState == RepeatState.None) WavoraTone.muted else accent,
                 )
             }
         }
@@ -514,14 +758,14 @@ private fun PlayerBlock(
             Icon(
                 imageVector = if (volume <= 0.001f) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
                 contentDescription = null,
-                tint = Muted,
+                tint = WavoraTone.muted,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(12.dp))
             ThinSlider(
                 value = if (volumeDragging) volumeValue else volume,
                 valueRange = 0f..1f,
-                accent = InkText,
+                accent = WavoraTone.ink,
                 modifier = Modifier.width(160.dp),
                 onValueChange = {
                     volumeDragging = true
@@ -567,8 +811,8 @@ private fun SeekBar(
             },
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(clock(shownMs), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = Muted))
-            Text(clock(timeline.total), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = Muted))
+            Text(clock(shownMs), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted))
+            Text(clock(timeline.total), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted))
         }
     }
 }
@@ -599,7 +843,7 @@ private fun ThinSlider(
                 Modifier
                     .size(if (hovered) 12.dp else 0.dp)
                     .clip(CircleShape)
-                    .background(InkText),
+                    .background(WavoraTone.ink),
             )
         },
         track = {
@@ -608,7 +852,7 @@ private fun ThinSlider(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(Hairline),
+                    .background(WavoraTone.hairline),
             ) {
                 Box(
                     Modifier
@@ -633,7 +877,7 @@ private fun LinkText(
         text = text,
         style =
             style.copy(
-                color = if (hovered) InkText else Muted,
+                color = if (hovered) WavoraTone.ink else WavoraTone.muted,
                 textDecoration = if (hovered) TextDecoration.Underline else TextDecoration.None,
             ),
         maxLines = 1,
@@ -652,6 +896,8 @@ private fun SidePane(
     tab: Int,
     onTab: (Int) -> Unit,
     sharedViewModel: SharedViewModel,
+    canVote: Boolean,
+    onVote: () -> Unit,
     onArtist: (String?) -> Unit,
 ) {
     val accent = MaterialTheme.colorScheme.primary
@@ -660,51 +906,220 @@ private fun SidePane(
     Column(
         modifier =
             modifier
-                .clip(RoundedCornerShape(12.dp))
-                .background(Surface1),
+                .clip(RoundedCornerShape(WavoraRadius.panel))
+                .background(WavoraTone.surface1),
     ) {
         Row(
-            modifier = Modifier.padding(start = 28.dp, end = 28.dp, top = 18.dp),
-            horizontalArrangement = Arrangement.spacedBy(28.dp),
+            modifier = Modifier.padding(start = WavoraSpace.xl, end = WavoraSpace.xl, top = 18.dp),
+            horizontalArrangement = Arrangement.spacedBy(WavoraSpace.xl),
         ) {
             PaneTab(stringResource(Res.string.lyrics), tab == 0, accent) { onTab(0) }
             PaneTab(stringResource(Res.string.queue), tab == 1, accent) { onTab(1) }
+            PaneTab(stringResource(Res.string.description), tab == 2, accent) { onTab(2) }
         }
         Box(
             Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(Hairline),
+                .background(WavoraTone.hairline),
         )
         Box(modifier = Modifier.fillMaxSize()) {
-            if (tab == 0) {
-                val lyrics = screenData.lyricsData
-                if (lyrics != null) {
-                    LyricsView(
-                        lyricsData = lyrics,
-                        timeLine = sharedViewModel.timeline,
-                        onLineClick = { f -> sharedViewModel.onUIEvent(UIEvent.UpdateProgress(f)) },
+            when (tab) {
+                0 -> LyricsTab(sharedViewModel = sharedViewModel, canVote = canVote, onVote = onVote)
+                1 ->
+                    MaximizedQueue(
                         modifier = Modifier.fillMaxSize(),
-                        backgroundColor = Surface1,
+                        sharedViewModel = sharedViewModel,
+                        onArtist = onArtist,
                     )
-                } else {
-                    Text(
-                        text = stringResource(Res.string.no_lyrics_for_track),
-                        style = LocalAppTypography.current.bodyMedium.copy(color = Muted),
-                        modifier = Modifier.align(Alignment.Center),
-                    )
-                }
-            } else {
-                MaximizedQueue(
-                    modifier = Modifier.fillMaxSize(),
-                    sharedViewModel = sharedViewModel,
-                    onArtist = onArtist,
-                )
+                else -> AboutTab(sharedViewModel = sharedViewModel, onArtist = onArtist)
             }
         }
     }
 }
 
+@Composable
+private fun LyricsTab(
+    sharedViewModel: SharedViewModel,
+    canVote: Boolean,
+    onVote: () -> Unit,
+) {
+    val screenData by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
+    val data = screenData.lyricsData
+    if (data == null) {
+        Box(Modifier.fillMaxSize()) {
+            Text(
+                text = stringResource(Res.string.no_lyrics_for_track),
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    val syncLabel =
+        when (data.lyrics?.syncType) {
+            "LINE_SYNCED" -> stringResource(Res.string.line_synced)
+            "RICH_SYNCED" -> stringResource(Res.string.rich_synced)
+            else -> stringResource(Res.string.unsynced)
+        }
+    val providerLabel =
+        when (data.lyricsProvider) {
+            LyricsProvider.SIMPMUSIC -> stringResource(Res.string.lyrics_provider_wavora)
+            LyricsProvider.LRCLIB -> stringResource(Res.string.lyrics_provider_lrc)
+            LyricsProvider.YOUTUBE -> stringResource(Res.string.lyrics_provider_youtube)
+            LyricsProvider.SPOTIFY -> stringResource(Res.string.spotify_lyrics_provider)
+            LyricsProvider.OFFLINE -> stringResource(Res.string.offline_mode)
+            LyricsProvider.BETTER_LYRICS -> stringResource(Res.string.lyrics_provider_betterlyrics)
+            else -> ""
+        }
+    Column(Modifier.fillMaxSize()) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .padding(start = WavoraSpace.xl, end = WavoraSpace.sm, top = WavoraSpace.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            if (data.translatedLyrics?.second == LyricsProvider.AI) {
+                AIBadge()
+                Spacer(Modifier.width(WavoraSpace.sm))
+            }
+            Text(
+                text = listOf(syncLabel, providerLabel).filter { it.isNotBlank() }.joinToString("  В·  "),
+                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
+            if (canVote) {
+                SimpleTooltip(stringResource(Res.string.rate_lyrics)) {
+                    IconButton(onClick = onVote) {
+                        Icon(
+                            imageVector = Icons.Rounded.ThumbsUpDown,
+                            contentDescription = stringResource(Res.string.rate_lyrics),
+                            tint = WavoraTone.muted,
+                            modifier = Modifier.size(20.dp),
+                        )
+                    }
+                }
+            }
+        }
+        LyricsView(
+            lyricsData = data,
+            timeLine = sharedViewModel.timeline,
+            onLineClick = { f -> sharedViewModel.onUIEvent(UIEvent.UpdateProgress(f)) },
+            modifier =
+                Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+                    .padding(horizontal = WavoraSpace.xl),
+            backgroundColor = WavoraTone.surface1,
+        )
+    }
+}
+
+private fun groupDigits(digits: String): String = digits.reversed().chunked(3).joinToString(" ").reversed()
+
+/** "Description" tab: artist card, stats and the description (timestamps seek, links open). */
+@Composable
+private fun AboutTab(
+    sharedViewModel: SharedViewModel,
+    onArtist: (String?) -> Unit,
+) {
+    val screenData by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
+    val nowPlaying by sharedViewModel.nowPlayingState.collectAsStateWithLifecycle()
+    val timeline by sharedViewModel.timeline.collectAsStateWithLifecycle()
+    val uriHandler = LocalUriHandler.current
+    val info = screenData.songInfoData
+    if (info == null) {
+        Box(Modifier.fillMaxSize()) {
+            Text(
+                text = stringResource(Res.string.no_description),
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                modifier = Modifier.align(Alignment.Center),
+            )
+        }
+        return
+    }
+    val artistId =
+        nowPlaying
+            ?.songEntity
+            ?.artistId
+            ?.firstOrNull()
+            ?.takeIf { it.isNotEmpty() } ?: info.authorId
+    Column(
+        modifier =
+            Modifier
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState())
+                .padding(WavoraSpace.xl),
+        verticalArrangement = Arrangement.spacedBy(WavoraSpace.lg),
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(RoundedCornerShape(WavoraRadius.art))
+                    .background(WavoraTone.surface2)
+                    .clickable { onArtist(artistId) }
+                    .padding(WavoraSpace.md),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            AsyncImage(
+                model =
+                    ImageRequest
+                        .Builder(LocalPlatformContext.current)
+                        .data(info.authorThumbnail)
+                        .diskCachePolicy(CachePolicy.ENABLED)
+                        .diskCacheKey(info.authorThumbnail)
+                        .crossfade(250)
+                        .build(),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(56.dp).clip(CircleShape),
+            )
+            Spacer(Modifier.width(WavoraSpace.md))
+            Column(Modifier.weight(1f)) {
+                Text(
+                    text = info.author ?: "",
+                    style = LocalAppTypography.current.titleSmall.copy(color = WavoraTone.ink),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+                Text(
+                    text = info.subscribers ?: "",
+                    style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+        }
+        Column(verticalArrangement = Arrangement.spacedBy(WavoraSpace.xs)) {
+            Text(
+                text = stringResource(Res.string.published_at, info.uploadDate ?: ""),
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+            )
+            Text(
+                text = stringResource(Res.string.view_count, info.viewCount?.toString()?.let(::groupDigits) ?: ""),
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+            )
+            Text(
+                text = stringResource(Res.string.like_and_dislike, info.like ?: 0, info.dislike ?: 0),
+                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+            )
+        }
+        DescriptionView(
+            text = info.description ?: "",
+            onTimeClicked = { raw ->
+                val timestamp = parseTimestampToMilliseconds(raw)
+                if (timestamp != 0.0 && timestamp < timeline.total) {
+                    sharedViewModel.onUIEvent(UIEvent.UpdateProgress(((timestamp * 100) / timeline.total).toFloat()))
+                }
+            },
+            onURLClicked = { url -> uriHandler.openUri(url) },
+        )
+    }
+}
 @Composable
 private fun PaneTab(
     label: String,
@@ -721,7 +1136,7 @@ private fun PaneTab(
     ) {
         Text(
             text = label,
-            style = LocalAppTypography.current.bodyLarge.copy(color = if (selected) InkText else Muted, fontWeight = FontWeight.Medium),
+            style = LocalAppTypography.current.bodyLarge.copy(color = if (selected) WavoraTone.ink else WavoraTone.muted, fontWeight = FontWeight.Medium),
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Box(
@@ -785,17 +1200,17 @@ private fun MaximizedQueue(
 
     Column(modifier = modifier) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 10.dp),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = WavoraSpace.xl, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
                 text = queue.size.toString(),
-                style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = Muted),
+                style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "Endless",
-                style = LocalAppTypography.current.bodySmall.copy(color = Muted),
+                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
                 modifier = Modifier.padding(end = 8.dp),
             )
             Switch(
@@ -804,10 +1219,10 @@ private fun MaximizedQueue(
                 colors =
                     SwitchDefaults.colors(
                         checkedTrackColor = accent,
-                        checkedThumbColor = Ground,
-                        uncheckedTrackColor = Hairline,
-                        uncheckedThumbColor = Muted,
-                        uncheckedBorderColor = Hairline,
+                        checkedThumbColor = WavoraTone.ground,
+                        uncheckedTrackColor = WavoraTone.hairline,
+                        uncheckedThumbColor = WavoraTone.muted,
+                        uncheckedBorderColor = WavoraTone.hairline,
                     ),
             )
         }
@@ -893,18 +1308,18 @@ private fun QueueRow(
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(if (hovered) Surface2 else Color.Transparent)
+                .background(if (hovered) WavoraTone.surface2 else Color.Transparent)
                 .hoverable(source)
                 .clickable(interactionSource = source, indication = null, onClick = onPlay)
-                .padding(horizontal = 28.dp),
+                .padding(horizontal = WavoraSpace.xl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(
             modifier =
                 Modifier
                     .size(44.dp)
-                    .clip(RoundedCornerShape(4.dp))
-                    .background(Surface2),
+                    .clip(RoundedCornerShape(WavoraRadius.thumb))
+                    .background(WavoraTone.surface2),
             contentAlignment = Alignment.Center,
         ) {
             AsyncImage(
@@ -923,7 +1338,7 @@ private fun QueueRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = LocalAppTypography.current.bodyLarge.copy(color = if (isCurrent) accent else InkText, fontWeight = FontWeight.Medium),
+                style = LocalAppTypography.current.bodyLarge.copy(color = if (isCurrent) accent else WavoraTone.ink, fontWeight = FontWeight.Medium),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -934,13 +1349,13 @@ private fun QueueRow(
         Spacer(Modifier.width(12.dp))
         Text(
             text = duration,
-            style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = Muted),
+            style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
         )
         IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Rounded.MoreVert,
                 contentDescription = null,
-                tint = if (hovered || isCurrent) InkText else Color.Transparent,
+                tint = if (hovered || isCurrent) WavoraTone.ink else Color.Transparent,
                 modifier = Modifier.size(20.dp),
             )
         }

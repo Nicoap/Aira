@@ -36,6 +36,11 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
+import androidx.compose.foundation.layout.widthIn
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
+import com.wavora.app.ui.component.SimpleTooltip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -138,7 +143,7 @@ import com.wavora.app.ui.theme.LocalAppTypography
 
 private const val TAG = "MiniPlayer"
 
-@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class, ExperimentalComposeUiApi::class)
 @Composable
 fun MiniPlayer(
     modifier: Modifier,
@@ -146,6 +151,7 @@ fun MiniPlayer(
     sharedViewModel: SharedViewModel = koinInject(),
     onClose: () -> Unit,
     onClick: () -> Unit,
+    onArtist: ((String) -> Unit)? = null,
 ) {
     val isLiquidGlassEnabled by sharedViewModel.getEnableLiquidGlass().collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val controllerState by sharedViewModel.controllerState.collectAsStateWithLifecycle()
@@ -686,6 +692,11 @@ fun MiniPlayer(
                                     modifier =
                                         Modifier
                                             .weight(1f)
+                                            .then(
+                                                songEntity?.artistId?.firstOrNull()?.takeIf { it.isNotEmpty() }?.let { id ->
+                                                    if (onArtist != null) Modifier.clickable { onArtist(id) } else Modifier
+                                                } ?: Modifier,
+                                            )
                                             .wrapContentHeight(
                                                 align = Alignment.CenterVertically,
                                             ).basicMarquee(
@@ -699,7 +710,7 @@ fun MiniPlayer(
                 }
                 // Part 2
                 Box(modifier = Modifier.weight(1f)) {
-                    Column(Modifier.width(600.dp).padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+                    Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             contentAlignment = Alignment.Center,
                         ) {
@@ -764,10 +775,7 @@ fun MiniPlayer(
                                         modifier =
                                             Modifier
                                                 .fillMaxWidth()
-                                                .padding(top = 3.dp)
-                                                .align(
-                                                    Alignment.TopCenter,
-                                                ),
+                                                .align(Alignment.Center),
                                         track = { sliderState ->
                                             // Custom track (not SliderDefaults.Track): SliderColors
                                             // only takes a solid Color for activeTrackColor, not a
@@ -833,18 +841,34 @@ fun MiniPlayer(
                     }
                 }
                 Box(Modifier.weight(1f)) {
-                    Row(Modifier.fillMaxHeight().align(Alignment.CenterEnd), verticalAlignment = Alignment.CenterVertically) {
+                    Row(
+                        Modifier
+                            .fillMaxHeight()
+                            .align(Alignment.CenterEnd)
+                            .onPointerEvent(PointerEventType.Scroll) { event ->
+                                // Mouse wheel over the right-hand controls: 5% volume per notch.
+                                val dy = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
+                                if (dy != 0f) {
+                                    val v = (controllerState.volume - dy * 0.05f).coerceIn(0f, 1f)
+                                    sharedViewModel.onUIEvent(UIEvent.UpdateVolume(v))
+                                    event.changes.forEach { it.consume() }
+                                }
+                            },
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
                         HeartCheckBox(checked = controllerState.isLiked, size = 30) {
                             sharedViewModel.onUIEvent(UIEvent.ToggleLike)
                         }
                         Spacer(Modifier.width(4.dp))
                         // Desktop mini player button (JVM only)
                         if (getPlatform() == Platform.Desktop) {
-                            IconButton(onClick = { toggleMiniPlayer() }) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
-                                    contentDescription = stringResource(Res.string.toggle_desktop_miniplayer),
-                                )
+                            SimpleTooltip(stringResource(Res.string.toggle_desktop_miniplayer)) {
+                                IconButton(onClick = { toggleMiniPlayer() }) {
+                                    Icon(
+                                        imageVector = Icons.AutoMirrored.Outlined.OpenInNew,
+                                        contentDescription = stringResource(Res.string.toggle_desktop_miniplayer),
+                                    )
+                                }
                             }
                         }
                         IconButton(
@@ -902,7 +926,7 @@ fun MiniPlayer(
                                 modifier =
                                     Modifier
                                         .padding(top = 3.dp)
-                                        .width(64.dp),
+                                        .width(96.dp),
                                 track = { sliderState ->
                                     // Custom track (not SliderDefaults.Track): SliderColors only
                                     // takes a solid Color for activeTrackColor, not a Brush, so
@@ -958,9 +982,19 @@ fun MiniPlayer(
                                 },
                             )
                         }
-                        Spacer(Modifier.width(4.dp))
-                        IconButton(onClick = { onClose() }) {
-                            Icon(Icons.Rounded.Close, stringResource(Res.string.close_miniplayer))
+                        Spacer(Modifier.width(8.dp))
+                        // Closing stops playback and clears the queue: keep it visually apart from the volume.
+                        Box(
+                            Modifier
+                                .height(24.dp)
+                                .width(1.dp)
+                                .background(MaterialTheme.colorScheme.outlineVariant),
+                        )
+                        Spacer(Modifier.width(8.dp))
+                        SimpleTooltip(stringResource(Res.string.close_miniplayer)) {
+                            IconButton(onClick = { onClose() }) {
+                                Icon(Icons.Rounded.Close, stringResource(Res.string.close_miniplayer))
+                            }
                         }
                     }
                 }

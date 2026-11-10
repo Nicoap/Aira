@@ -484,6 +484,7 @@ fun App(
                                         viewModel.stopPlayer()
                                         viewModel.isServiceRunning = false
                                     },
+                                    onArtist = { id -> navController.navigate(ArtistDestination(channelId = id)) },
                                 )
                             }
                             if (isLiquidGlassEnabled == TRUE) {
@@ -605,6 +606,7 @@ fun App(
                                         viewModel.stopPlayer()
                                         viewModel.isServiceRunning = false
                                     },
+                                    onArtist = { id -> navController.navigate(ArtistDestination(channelId = id)) },
                                 )
                             }
                         }
@@ -632,13 +634,12 @@ fun App(
                                                 RoundedCornerShape(12.dp),
                                             ),
                                     ) {
-                                        NowPlayingScreenContent(
+                                        com.wavora.app.ui.screen.player.NowPlayingPanel(
                                             navController = navController,
+                                            compact = true,
+                                            onCollapse = { isShowNowPlaylistScreen = false },
+                                            onMaximize = { isNowPlayingMaximized = true },
                                             sharedViewModel = viewModel,
-                                            isExpanded = true,
-                                            dismissIcon = Icons.AutoMirrored.Rounded.ArrowForwardIos,
-                                            onDismiss = { isShowNowPlaylistScreen = false },
-                                            onToggleMaximize = { isNowPlayingMaximized = true },
                                         )
                                     }
                                 }
@@ -670,8 +671,9 @@ fun App(
                                     }
                                 },
                         ) {
-                            com.wavora.app.ui.screen.player.NowPlayingMaximizedScreen(
+                            com.wavora.app.ui.screen.player.NowPlayingPanel(
                                 navController = navController,
+                                compact = false,
                                 onCollapse = { isNowPlayingMaximized = false },
                             )
                         }
