@@ -264,34 +264,6 @@ fun HomeScreen(
     val openAppTime by sharedViewModel.openAppTime.collectAsStateWithLifecycle()
     val shareLyricsPermissions by sharedViewModel.shareSavedLyrics.collectAsStateWithLifecycle()
 
-    var topHeaderColor by remember {
-        mutableStateOf(md_theme_dark_background)
-    }
-    val animatedColor by animateColorAsState(topHeaderColor, tween(500))
-    val mainHomeThumbnail by viewModel.mainHomeThumbnail.collectAsStateWithLifecycle()
-    val httpClient = remember { HttpClient(CIO) }
-    // The client was never closed: every visit of Home leaked a CIO engine (threads + sockets).
-    androidx.compose.runtime.DisposableEffect(httpClient) { onDispose { httpClient.close() } }
-    val networkLoader = rememberNetworkLoader(httpClient)
-    val dominantColorState =
-        rememberDominantColorState(
-            defaultColor = md_theme_dark_background,
-            defaultOnColor = md_theme_dark_background,
-            loader = networkLoader,
-        )
-
-    LaunchedEffect(mainHomeThumbnail) {
-        mainHomeThumbnail?.let {
-            dominantColorState.updateFrom(Url(it))
-        }
-    }
-
-    LaunchedEffect(dominantColorState) {
-        snapshotFlow { dominantColorState.color }.collect {
-            topHeaderColor = it.rgbFactor(0.3f)
-        }
-    }
-
     var showReviewDialog by rememberSaveable {
         mutableStateOf(false)
     }
@@ -565,33 +537,6 @@ LazyColumn(
                             idx.toString() + "_" + item.hashCode().toString()
                         }) { index, item ->
                             Box {
-                                if (index == 0) {
-                                    Box(
-                                        modifier =
-                                            Modifier
-                                                .fillMaxWidth()
-                                                .height(300.dp)
-                                                .angledGradientBackground(listOf(animatedColor, md_theme_dark_background), 25f),
-                                    ) {
-                                        Box(
-                                            modifier =
-                                                Modifier
-                                                    .fillMaxWidth()
-                                                    .height(180.dp)
-                                                    .align(Alignment.BottomCenter)
-                                                    .background(
-                                                        brush =
-                                                            Brush.verticalGradient(
-                                                                listOf(
-                                                                    Color.Transparent,
-                                                                    Color(0x75000000),
-                                                                    Color.Black,
-                                                                ),
-                                                            ),
-                                                    ),
-                                        )
-                                    }
-                                }
                                 Column(
                                     modifier =
                                         Modifier
