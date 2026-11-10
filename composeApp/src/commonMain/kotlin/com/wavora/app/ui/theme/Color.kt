@@ -8,12 +8,12 @@ import androidx.compose.ui.graphics.Color
 val wavoraPrimary = Color(0xFFA259FF)       // Electric Purple — main accent
 val wavoraSecondary = Color(0xFF00D4FF)     // Neon Cyan — secondary accent / active state
 val wavoraAccentDark = Color(0xFF1A0B2E)
-val wavoraBackground = Color(0xFF0B0B0F)
-val wavoraSurface = Color(0xFF12121A)
-val wavoraBorder = Color(0xFF1F1F2E)
+val wavoraBackground = WavoraTone.ground
+val wavoraSurface = WavoraTone.surface1
+val wavoraBorder = WavoraTone.hairline
 val wavoraTextPrimary = Color(0xFFFFFFFF)
-val wavoraTextSecondary = Color(0xFFB3B3C6)
-val wavoraTextDisabled = Color(0xFF6B6B7A)
+val wavoraTextSecondary = Color(0xFFB3B3B3)
+val wavoraTextDisabled = Color(0xFF6B6B6B)
 val wavoraGradientStart = Color(0xFFA259FF)
 val wavoraGradientMid = Color(0xFF6A5CFF)
 val wavoraGradientEnd = Color(0xFF00D4FF)
