@@ -172,6 +172,8 @@ fun MediaPlayerViewWithUrl(
         surface = surface,
         modifier = modifier,
         crop = true,
+        // Transparent until the first frame arrives, so whatever sits underneath (cover) stays visible.
+        background = Color.Transparent,
     )
 }
 

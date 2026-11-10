@@ -120,6 +120,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.text.style.TextAlign
@@ -237,6 +238,7 @@ import wavora.composeapp.generated.resources.show_subtitles
 import wavora.composeapp.generated.resources.song_info
 import kotlin.math.roundToLong
 import com.wavora.app.ui.theme.LocalAppTypography
+import com.wavora.app.ui.theme.WavoraRadius
 import androidx.compose.material.icons.filled.OpenInFull
 
 private const val TAG = "NowPlayingScreen"
@@ -302,6 +304,10 @@ fun NowPlayingScreenContent(
     onToggleMaximize: (() -> Unit)? = null,
 ) {
     val screenInfo = getScreenSizeInfo()
+    // Real height of THIS panel/sheet. On desktop the window height is wrong for the side panel
+    // (it is shorter than the window), which made the padding math below push content off-screen.
+    var containerHeightDp by remember { mutableIntStateOf(0) }
+    val layoutHeightDp = if (containerHeightDp > 0) containerHeightDp else screenInfo.hDP
 
     val localDensity = LocalDensity.current
     val uriHandler = LocalUriHandler.current
@@ -539,12 +545,13 @@ fun NowPlayingScreenContent(
     }
     LaunchedEffect(
         topAppBarHeightDp,
-        screenInfo,
+        layoutHeightDp,
+        middleLayoutHeightDp,
         infoLayoutHeightDp,
         minimumPaddingDp,
     ) {
-        if (topAppBarHeightDp > 0 && middleLayoutHeightDp > 0 && infoLayoutHeightDp > 0 && screenInfo.hDP > 0) {
-            val result = (screenInfo.hDP - topAppBarHeightDp - middleLayoutHeightDp - infoLayoutHeightDp - minimumPaddingDp) / 2
+        if (topAppBarHeightDp > 0 && middleLayoutHeightDp > 0 && infoLayoutHeightDp > 0 && layoutHeightDp > 0) {
+            val result = (layoutHeightDp - topAppBarHeightDp - middleLayoutHeightDp - infoLayoutHeightDp - minimumPaddingDp) / 2
             middleLayoutPaddingDp =
                 if (result > minimumPaddingDp) {
                     result
@@ -811,7 +818,12 @@ fun NowPlayingScreenContent(
     if (screenDataState.lyricsData != null && controllerState.isPlaying) {
         KeepScreenOn()
     }
-    Box {
+    Box(
+        modifier =
+            Modifier.onSizeChanged {
+                containerHeightDp = with(localDensity) { it.height.toDp().value.toInt() }
+            },
+    ) {
         if (blurBg && screenDataState.canvasData == null) {
             AsyncImage(
                 model =
@@ -879,7 +891,7 @@ fun NowPlayingScreenContent(
                     state = artworkPagerState,
                     modifier =
                         Modifier
-                            .height(screenInfo.hDP.dp)
+                            .height(layoutHeightDp.dp)
                             .fillMaxWidth(),
                     beyondViewportPageCount = 1,
                     userScrollEnabled = !isRepeatOne && artworkQueue.isNotEmpty(),
@@ -1013,7 +1025,7 @@ fun NowPlayingScreenContent(
                                                     .fillMaxHeight()
                                                     .then(
                                                         if (getPlatform() == Platform.Desktop) {
-                                                            Modifier
+                                                            Modifier.fillMaxWidth()
                                                         } else {
                                                             Modifier
                                                                 .wrapContentWidth(unbounded = true, align = Alignment.CenterHorizontally)
@@ -1138,7 +1150,7 @@ fun NowPlayingScreenContent(
                                                 .background(Color.Transparent)
                                                 .shadow(
                                                     elevation = 3.dp,
-                                                    shape = RoundedCornerShape(8.dp),
+                                                    shape = RoundedCornerShape(WavoraRadius.art),
                                                     spotColor =
                                                         spotShadowColor.copy(
                                                             alpha = 0.6f,
@@ -1173,7 +1185,7 @@ fun NowPlayingScreenContent(
                                                     .aspectRatio(
                                                         if (!screenDataState.isVideo) 1f else 16f / 9,
                                                     ).clip(
-                                                        RoundedCornerShape(8.dp),
+                                                        RoundedCornerShape(WavoraRadius.art),
                                                     ).alpha(
                                                         if (!screenDataState.isVideo || !shouldShowVideo) 1f else 0f,
                                                     ),
@@ -1194,7 +1206,7 @@ fun NowPlayingScreenContent(
                                                 Modifier
                                                     .fillMaxWidth()
                                                     .aspectRatio(16f / 9)
-                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .clip(RoundedCornerShape(WavoraRadius.art))
                                                     .background(md_theme_dark_background),
                                         ) {
                                             Box(Modifier.fillMaxSize()) {
@@ -1217,6 +1229,7 @@ fun NowPlayingScreenContent(
                                                     Modifier
                                                         .fillMaxSize()
                                                         .clickable(
+                                                            enabled = onToggleMaximize == null,
                                                             onClick = { showHideFullscreenOverlay = !showHideFullscreenOverlay },
                                                             indication = null,
                                                             interactionSource =
@@ -1360,7 +1373,7 @@ fun NowPlayingScreenContent(
                                                 .background(Color.Transparent)
                                                 .shadow(
                                                     elevation = 3.dp,
-                                                    shape = RoundedCornerShape(8.dp),
+                                                    shape = RoundedCornerShape(WavoraRadius.art),
                                                     spotColor = Color.Black.copy(alpha = 0.4f),
                                                     ambientColor = Color.Transparent,
                                                 ),
@@ -1394,7 +1407,7 @@ fun NowPlayingScreenContent(
                                                     .padding(3.dp)
                                                     .fillMaxWidth()
                                                     .aspectRatio(1f)
-                                                    .clip(RoundedCornerShape(8.dp)),
+                                                    .clip(RoundedCornerShape(WavoraRadius.art)),
                                         )
                                     }
                                 }
@@ -1767,7 +1780,7 @@ fun NowPlayingScreenContent(
                                                                         .padding(
                                                                             horizontal = 3.dp,
                                                                         ).clip(
-                                                                            RoundedCornerShape(8.dp),
+                                                                            RoundedCornerShape(WavoraRadius.art),
                                                                         ),
                                                                 color = MaterialTheme.colorScheme.primary,
                                                                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -1785,7 +1798,7 @@ fun NowPlayingScreenContent(
                                                                         .padding(
                                                                             horizontal = 3.dp,
                                                                         ).clip(
-                                                                            RoundedCornerShape(8.dp),
+                                                                            RoundedCornerShape(WavoraRadius.art),
                                                                         ),
                                                                 color = MaterialTheme.colorScheme.primary.copy(alpha = 0.45f),
                                                                 trackColor = MaterialTheme.colorScheme.surfaceVariant,
@@ -2267,7 +2280,7 @@ fun NowPlayingScreenContent(
                         ) {
                             ElevatedCard(
                                 onClick = {},
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(WavoraRadius.art),
                                 colors =
                                     CardDefaults.elevatedCardColors().copy(
                                         containerColor = startColor.value,
@@ -2428,7 +2441,7 @@ fun NowPlayingScreenContent(
                                         )
                                     }
                                 },
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(WavoraRadius.art),
                                 colors =
                                     CardDefaults.elevatedCardColors().copy(
                                         containerColor = startColor.value,
@@ -2459,7 +2472,7 @@ fun NowPlayingScreenContent(
                                                 .fillMaxSize()
                                                 .alpha(0.8f)
                                                 .clip(
-                                                    RoundedCornerShape(8.dp),
+                                                    RoundedCornerShape(WavoraRadius.art),
                                                 ),
                                     )
                                     Box(
@@ -2498,7 +2511,7 @@ fun NowPlayingScreenContent(
                         AnimatedVisibility(visible = screenDataState.songInfoData != null) {
                             ElevatedCard(
                                 onClick = {},
-                                shape = RoundedCornerShape(8.dp),
+                                shape = RoundedCornerShape(WavoraRadius.art),
                                 colors =
                                     CardDefaults.elevatedCardColors().copy(
                                         containerColor = startColor.value,
