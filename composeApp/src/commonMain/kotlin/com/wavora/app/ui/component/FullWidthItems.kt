@@ -12,6 +12,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.basicMarquee
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.background
+import androidx.compose.material.icons.rounded.PlayArrow
+import com.wavora.app.ui.theme.WavoraRadius
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -171,7 +174,11 @@ fun SongFullWidthItems(
                 modifier
                     .offset { IntOffset(offsetX.value.roundToInt(), 0) }
                     .hoverable(rowHover)
-                    .clickable {
+                    .onSecondaryClick {
+                        if (onMoreClickListener != null) {
+                            (track?.videoId ?: songEntity?.videoId)?.let { onMoreClickListener(it) }
+                        }
+                    }.clickable {
                         onClickListener?.invoke(track?.videoId ?: songEntity?.videoId ?: "")
                     }.animateContentSize()
                     .pointerInput(Unit) {
@@ -253,6 +260,24 @@ fun SongFullWidthItems(
                                 color = Color.White,
                                 style = LocalAppTypography.current.titleMedium,
                                 modifier = Modifier.align(Alignment.Center),
+                            )
+                        }
+                    }
+                    if (rowHovered && !isPlaying) {
+                        // Hover affordance: the whole row plays on click, this just shows it.
+                        Box(
+                            modifier =
+                                Modifier
+                                    .fillMaxSize()
+                                    .clip(RoundedCornerShape(WavoraRadius.thumb))
+                                    .background(Color.Black.copy(alpha = 0.55f)),
+                            contentAlignment = Alignment.Center,
+                        ) {
+                            Icon(
+                                imageVector = Icons.Rounded.PlayArrow,
+                                contentDescription = null,
+                                tint = Color.White,
+                                modifier = Modifier.size(28.dp),
                             )
                         }
                     }

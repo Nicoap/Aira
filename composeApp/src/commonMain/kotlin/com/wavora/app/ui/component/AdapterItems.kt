@@ -643,6 +643,7 @@ fun HomeItemSong(
                     onClick = onClick,
                     onLongClick = onLongClick,
                 )
+                .onSecondaryClick(onLongClick)
                 .tvFocusIndicator(),
     ) {
         Column(
@@ -746,6 +747,7 @@ fun HomeItemVideo(
                 onClick = onClick,
                 onLongClick = onLongClick,
             )
+            .onSecondaryClick(onLongClick)
             .tvFocusIndicator(),
     ) {
         Column(
