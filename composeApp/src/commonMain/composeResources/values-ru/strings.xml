@@ -576,4 +576,5 @@
     <string name="bpm">BPM</string>
     <string name="key">Ключ</string>
     <string name="scale">Шкала</string>
+    <string name="playback_failed">Не удалось воспроизвести трек: %1$s</string>
 </resources>

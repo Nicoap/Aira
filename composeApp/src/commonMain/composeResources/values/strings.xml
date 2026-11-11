@@ -726,4 +726,5 @@
     <string name="download_folder_default">Default (.wavora/downloads in your user folder)</string>
     <string name="download_folder_reset">Reset download folder</string>
     <string name="download_folder_reset_hint">Go back to the default folder. Already downloaded tracks keep playing.</string>
+    <string name="playback_failed">Couldn't play this track: %1$s</string>
 </resources>

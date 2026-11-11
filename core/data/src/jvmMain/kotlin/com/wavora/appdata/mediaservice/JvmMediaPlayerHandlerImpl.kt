@@ -2625,7 +2625,7 @@ class JvmMediaPlayerHandlerImpl(
             PlayerConstants.ERROR_CODE_TIMEOUT -> {
                 Logger.e("Player Error", "onPlayerError (${error.errorCode}): ${error.message}")
 //                if (isAppInForeground()) {
-                showToast(ToastType.PlayerError(error.errorCodeName))
+                showToast(ToastType.PlayerError(error.errorCodeName, error.message))
 //                } else {
 //                    Logger.w("Player Error", "App is not in foreground, skipping toast")
 //                }
@@ -2636,7 +2636,7 @@ class JvmMediaPlayerHandlerImpl(
                 Logger.e("Player Error", "onPlayerError (${error.errorCode}): ${error.message}")
                 pushPlayerError(error)
 //                if (isAppInForeground()) {
-                showToast(ToastType.PlayerError(error.errorCodeName))
+                showToast(ToastType.PlayerError(error.errorCodeName, error.message))
 //                } else {
 //                    Logger.w("Player Error", "App is not in foreground, skipping toast")
 //                }

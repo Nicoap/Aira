@@ -71,6 +71,7 @@ import wavora.composeapp.generated.resources.app_name
 import wavora.composeapp.generated.resources.system_app_icon
 import wavora.composeapp.generated.resources.close_miniplayer
 import wavora.composeapp.generated.resources.explicit_content_blocked
+import wavora.composeapp.generated.resources.playback_failed
 import wavora.composeapp.generated.resources.open_app
 import wavora.composeapp.generated.resources.open_miniplayer
 import wavora.composeapp.generated.resources.quit_app
@@ -353,14 +354,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                                         runBlocking { getString(Res.string.explicit_content_blocked) }
                                     }
 
-                                    is ToastType.PlayerError -> {
-                                        runBlocking {
-                                            getString(
-                                                Res.string.time_out_check_internet_connection_or_change_piped_instance_in_settings,
-                                                type.error,
-                                            )
-                                        }
-                                    }
+                                    is ToastType.PlayerError -> playerErrorToastText(type)
                                 },
                             )
                         }
@@ -843,5 +837,35 @@ private object DesktopRestoreSignal {
 
     fun request() {
         _requests.tryEmit(Unit)
+    }
+}
+
+/**
+ * Toast text for a playback error. Every VLC failure used to be reported as "time out, check your
+ * internet" (the error is tagged TIMEOUT), which hid the real reason (expired stream link, codec,
+ * DNS...). Now the message is only the network one when libvlc's own reason looks like a network
+ * problem (or there is no reason); otherwise it shows libvlc's reason, minus URLs.
+ */
+private fun playerErrorToastText(type: ToastType.PlayerError): String {
+    val detail =
+        type.detail
+            ?.replace(Regex("https?://\\S+"), "\u2026")
+            ?.trim()
+            ?.take(140)
+            .orEmpty()
+    val looksLikeNetwork =
+        Regex(
+            "time.?out|timed out|unreachable|resolve|connection (refused|reset|failed)|network",
+            RegexOption.IGNORE_CASE,
+        ).containsMatchIn(detail)
+    return runBlocking {
+        if (detail.isEmpty() || looksLikeNetwork) {
+            getString(
+                Res.string.time_out_check_internet_connection_or_change_piped_instance_in_settings,
+                type.error,
+            )
+        } else {
+            getString(Res.string.playback_failed, detail)
+        }
     }
 }

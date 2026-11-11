@@ -351,5 +351,6 @@ sealed class ToastType(
 
     data class PlayerError(
         val error: String,
+        val detail: String? = null,
     ) : ToastType(error)
 }
