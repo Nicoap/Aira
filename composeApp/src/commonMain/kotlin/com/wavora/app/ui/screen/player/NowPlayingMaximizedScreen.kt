@@ -985,7 +985,7 @@ private fun LyricsTab(
                 Spacer(Modifier.width(WavoraSpace.sm))
             }
             Text(
-                text = listOf(syncLabel, providerLabel).filter { it.isNotBlank() }.joinToString("  В·  "),
+                text = listOf(syncLabel, providerLabel).filter { it.isNotBlank() }.joinToString("  \u00B7  "),
                 style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
