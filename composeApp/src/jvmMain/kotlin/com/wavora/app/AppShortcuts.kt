@@ -17,9 +17,10 @@ private var volumeBeforeMute = 0.5f
 /**
  * App-wide keyboard shortcuts for the main window.
  *
- * Wired to the window's onKeyEvent, which only receives events that nothing focused consumed:
- * a text field (search, rename...) keeps Space/arrows/letters for typing, so these only fire
- * when you are not typing.
+ * Wired to the window's onKeyEvent. That callback ALSO receives letters, Space and arrows typed
+ * into a text field (the field only consumes the separate typed-character event), so the handler
+ * asks [TextInputProbe] whether a text input session is active and stays out of the way if so.
+ * Ctrl+K / Ctrl+F still work while typing.
  *
  *   Space        play / pause
  *   Left / Right seek back / forward
@@ -40,6 +41,8 @@ internal fun handleAppShortcut(
         AppCommands.openSearch.tryEmit(Unit)
         return true
     }
+    // A text field (search, rename, dialogs...) is being edited: letters, Space and arrows are its.
+    if (TextInputProbe.isTextInputActive()) return false
     if (event.isCtrlPressed || event.isAltPressed || event.isMetaPressed) return false
 
     return when (event.key) {

@@ -672,6 +672,7 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
         visible = isVisible,
         onKeyEvent = { handleAppShortcut(it, sharedViewModel) },
     ) {
+        androidx.compose.runtime.SideEffect { TextInputProbe.window = window }
         LaunchedEffect(Unit) {
             // Wait for a few real frames, then mark this launch as healthy.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
