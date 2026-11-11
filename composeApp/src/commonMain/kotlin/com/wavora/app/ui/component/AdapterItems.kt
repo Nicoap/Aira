@@ -187,120 +187,113 @@ fun HomeItem(
                 )
             }
         }
-        LazyRow(
-            state = lazyListState,
-            flingBehavior = snapperFlingBehavior,
-        ) {
-            items(data.contents, key = { it?.videoId?.takeIf { v -> v.isNotEmpty() } ?: it?.playlistId?.takeIf { p -> p.isNotEmpty() } ?: it?.browseId?.takeIf { b -> b.isNotEmpty() } ?: it.hashCode() }) { temp ->
-                if (temp != null) {
-                    val browseId = temp.browseId
-                    val playlistId = temp.playlistId
-                    if ((playlistId != null && temp.videoId == null) || (playlistId != null && temp.videoId == "")) {
-                        if (playlistId.startsWith("UC")) {
-                            HomeItemArtist(onClick = {
-                                navController.navigate(
-                                    ArtistDestination(
-                                        channelId = playlistId,
-                                    ),
-                                )
-                            }, data = temp)
+        HoverScrollArrows(state = lazyListState) {
+            LazyRow(
+                state = lazyListState,
+                flingBehavior = snapperFlingBehavior,
+            ) {
+                items(data.contents, key = { it?.videoId?.takeIf { v -> v.isNotEmpty() } ?: it?.playlistId?.takeIf { p -> p.isNotEmpty() } ?: it?.browseId?.takeIf { b -> b.isNotEmpty() } ?: it.hashCode() }) { temp ->
+                    if (temp != null) {
+                        val browseId = temp.browseId
+                        val playlistId = temp.playlistId
+                        if ((playlistId != null && temp.videoId == null) || (playlistId != null && temp.videoId == "")) {
+                            if (playlistId.startsWith("UC")) {
+                                HomeItemArtist(onClick = {
+                                    navController.navigate(
+                                        ArtistDestination(
+                                            channelId = playlistId,
+                                        ),
+                                    )
+                                }, data = temp)
+                            } else {
+                                HomeItemContentPlaylist(onClick = {
+                                    navController.navigate(
+                                        PlaylistDestination(
+                                            playlistId = playlistId,
+                                        ),
+                                    )
+                                }, data = temp)
+                            }
+                        } else if ((browseId != null && temp.videoId == null) || (browseId != null && temp.videoId == "")) {
+                            if (browseId.startsWith("UC")) {
+                                HomeItemArtist(onClick = {
+                                    navController.navigate(
+                                        ArtistDestination(
+                                            channelId = browseId,
+                                        ),
+                                    )
+                                }, data = temp)
+                            } else if (browseId.startsWith("MPSP")) {
+                                HomeItemContentPlaylist(onClick = {
+                                    navController.navigate(
+                                        PodcastDestination(
+                                            podcastId = browseId,
+                                        ),
+                                    )
+                                }, data = temp)
+                            } else {
+                                HomeItemContentPlaylist(onClick = {
+                                    navController.navigate(
+                                        AlbumDestination(
+                                            browseId = browseId,
+                                        ),
+                                    )
+                                }, data = temp)
+                            }
+                        } else if (temp.thumbnails.firstOrNull()?.width != temp.thumbnails.firstOrNull()?.height) {
+                            HomeItemVideo(
+                                onClick = {
+                                    val firstQueue: Track = temp.toTrack()
+                                    homeViewModel.setQueueData(
+                                        QueueData.Data(
+                                            listTracks = arrayListOf(firstQueue),
+                                            firstPlayedTrack = firstQueue,
+                                            playlistId = "RDAMVM${temp.videoId}",
+                                            playlistName = temp.title,
+                                            playlistType = PlaylistType.RADIO,
+                                            continuation = null,
+                                        ),
+                                    )
+                                    homeViewModel.loadMediaItem(
+                                        firstQueue,
+                                        Config.SONG_CLICK,
+                                    )
+                                },
+                                onLongClick = {
+                                    track = temp.toTrack()
+                                    bottomSheetShow = true
+                                },
+                                data = temp,
+                            )
                         } else {
-                            HomeItemContentPlaylist(onClick = {
-                                navController.navigate(
-                                    PlaylistDestination(
-                                        playlistId = playlistId,
-                                    ),
-                                )
-                            }, data = temp)
+                            HomeItemSong(
+                                onClick = {
+                                    val firstQueue: Track = temp.toTrack()
+                                    homeViewModel.setQueueData(
+                                        QueueData.Data(
+                                            listTracks = arrayListOf(firstQueue),
+                                            firstPlayedTrack = firstQueue,
+                                            playlistId = "RDAMVM${temp.videoId}",
+                                            playlistName = temp.title,
+                                            playlistType = PlaylistType.RADIO,
+                                            continuation = null,
+                                        ),
+                                    )
+                                    homeViewModel.loadMediaItem(
+                                        firstQueue,
+                                        Config.SONG_CLICK,
+                                    )
+                                },
+                                onLongClick = {
+                                    track = temp.toTrack()
+                                    bottomSheetShow = true
+                                },
+                                data = temp,
+                            )
                         }
-                    } else if ((browseId != null && temp.videoId == null) || (browseId != null && temp.videoId == "")) {
-                        if (browseId.startsWith("UC")) {
-                            HomeItemArtist(onClick = {
-                                navController.navigate(
-                                    ArtistDestination(
-                                        channelId = browseId,
-                                    ),
-                                )
-                            }, data = temp)
-                        } else if (browseId.startsWith("MPSP")) {
-                            HomeItemContentPlaylist(onClick = {
-                                navController.navigate(
-                                    PodcastDestination(
-                                        podcastId = browseId,
-                                    ),
-                                )
-                            }, data = temp)
-                        } else {
-                            HomeItemContentPlaylist(onClick = {
-                                navController.navigate(
-                                    AlbumDestination(
-                                        browseId = browseId,
-                                    ),
-                                )
-                            }, data = temp)
-                        }
-                    } else if (temp.thumbnails.firstOrNull()?.width != temp.thumbnails.firstOrNull()?.height) {
-                        HomeItemVideo(
-                            onClick = {
-                                val firstQueue: Track = temp.toTrack()
-                                homeViewModel.setQueueData(
-                                    QueueData.Data(
-                                        listTracks = arrayListOf(firstQueue),
-                                        firstPlayedTrack = firstQueue,
-                                        playlistId = "RDAMVM${temp.videoId}",
-                                        playlistName = temp.title,
-                                        playlistType = PlaylistType.RADIO,
-                                        continuation = null,
-                                    ),
-                                )
-                                homeViewModel.loadMediaItem(
-                                    firstQueue,
-                                    Config.SONG_CLICK,
-                                )
-                            },
-                            onLongClick = {
-                                track = temp.toTrack()
-                                bottomSheetShow = true
-                            },
-                            data = temp,
-                        )
-                    } else {
-                        HomeItemSong(
-                            onClick = {
-                                val firstQueue: Track = temp.toTrack()
-                                homeViewModel.setQueueData(
-                                    QueueData.Data(
-                                        listTracks = arrayListOf(firstQueue),
-                                        firstPlayedTrack = firstQueue,
-                                        playlistId = "RDAMVM${temp.videoId}",
-                                        playlistName = temp.title,
-                                        playlistType = PlaylistType.RADIO,
-                                        continuation = null,
-                                    ),
-                                )
-                                homeViewModel.loadMediaItem(
-                                    firstQueue,
-                                    Config.SONG_CLICK,
-                                )
-                            },
-                            onLongClick = {
-                                track = temp.toTrack()
-                                bottomSheetShow = true
-                            },
-                            data = temp,
-                        )
                     }
                 }
             }
-        }
-        if (getPlatform() == Platform.Desktop) {
-            HorizontalScrollBar(
-                modifier =
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                scrollState = lazyListState,
-            )
         }
     }
 }
