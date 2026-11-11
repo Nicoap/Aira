@@ -77,6 +77,7 @@ import com.wavora.app.ui.component.AppBottomNavigationBar
 import com.wavora.app.ui.component.AppNavigationRail
 import com.wavora.app.ui.component.LiquidGlassAppBottomNavigationBar
 import com.wavora.app.ui.navigation.destination.home.NotificationDestination
+import com.wavora.app.ui.navigation.destination.search.SearchDestination
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
 import com.wavora.app.ui.navigation.destination.list.ArtistDestination
 import com.wavora.app.ui.navigation.destination.list.PlaylistDestination
@@ -179,6 +180,12 @@ fun App(
 ) {
     val windowSize = currentWindowAdaptiveInfo().windowSizeClass
     val navController = rememberNavController()
+    LaunchedEffect(Unit) {
+        // Ctrl+K / Ctrl+F from the desktop window handler.
+        AppCommands.openSearch.collect {
+            navController.navigate(SearchDestination) { launchSingleTop = true }
+        }
+    }
     val themeSettings: DataStoreManager = koinInject()
 
     val sleepTimerState by viewModel.sleepTimerState.collectAsStateWithLifecycle()

@@ -56,6 +56,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.FocusRequester
+import com.wavora.app.Platform
+import com.wavora.app.getPlatform
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.Color
@@ -156,6 +158,10 @@ fun SearchScreen(
     var isExpanded by rememberSaveable { mutableStateOf(false) }
 
     val focusRequester = remember { FocusRequester() }
+    if (getPlatform() == Platform.Desktop) {
+        // Desktop: opening Search (button or Ctrl+K) puts the cursor straight into the field.
+        LaunchedEffect(Unit) { runCatching { focusRequester.requestFocus() } }
+    }
 
     var isFocused by rememberSaveable { mutableStateOf(false) }
 
