@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.State
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -59,23 +60,31 @@ fun InfiniteBorderAnimationView(
     val gradientEnd = lerp(primary, MaterialTheme.colorScheme.onSurface, 0.16f)
     val borderAnimationBrush =
         brush ?: remember(primary, gradientEnd) { Brush.sweepGradient(listOf(primary, gradientEnd, primary)) }
-    // Only run the infinite transition when the animation is actually visible.
-    // Previously the transition always ran (even on unselected chips), wasting CPU.
-    val infiniteTransition = rememberInfiniteTransition(label = "Infinite Color Animation")
-    val degrees by infiniteTransition.animateFloat(
-        initialValue = 90f,
-        targetValue = 450f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = if (isAnimated) oneCircleDurationMillis else Int.MAX_VALUE, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "Infinite Colors",
-    )
     val scaleAnimationValue by animateFloatAsState(
         if (isAnimated) 1f else 0f,
         tween(800),
     )
+    // A live rememberInfiniteTransition keeps the Compose frame clock awake: the WHOLE window is
+    // re-rendered at the display refresh rate (165 Hz on the dev machine) for as long as it exists,
+    // even when nothing reads its value. It used to be created for every chip with a huge duration
+    // when idle, so every chip on screen kept the app rendering non-stop. It now only exists while
+    // the border is animating or still fading out.
+    val active = isAnimated || scaleAnimationValue > 0.001f
+    val degreesState: State<Float> =
+        if (active) {
+            rememberInfiniteTransition(label = "Infinite Color Animation").animateFloat(
+                initialValue = 90f,
+                targetValue = 450f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = oneCircleDurationMillis, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "Infinite Colors",
+            )
+        } else {
+            remember { mutableStateOf(90f) }
+        }
     Surface(
         modifier =
             Modifier
@@ -83,10 +92,11 @@ fun InfiniteBorderAnimationView(
                     shape,
                 ).padding(borderWidth)
                 .graphicsLayer {
-                    compositingStrategy = CompositingStrategy.Offscreen
+                    compositingStrategy =
+                        if (scaleAnimationValue > 0f) CompositingStrategy.Offscreen else CompositingStrategy.Auto
                 }.drawBehind {
                     scale(scale = scaleAnimationValue) {
-                        rotate(degrees = degrees) {
+                        rotate(degrees = degreesState.value) {
                             drawCircle(
                                 brush = borderAnimationBrush,
                                 radius = size.width,
@@ -147,17 +157,23 @@ fun LimitedBorderAnimationView(
         }
     }
 
-    val infiniteTransition = rememberInfiniteTransition(label = "Infinite Color Animation")
-    val degrees by infiniteTransition.animateFloat(
-        initialValue = 0f,
-        targetValue = 360f,
-        animationSpec =
-            infiniteRepeatable(
-                animation = tween(durationMillis = oneCircleDurationMillis, easing = LinearEasing),
-                repeatMode = RepeatMode.Restart,
-            ),
-        label = "Infinite Colors",
-    )
+    // See InfiniteBorderAnimationView: no live infinite transition unless the border is visible.
+    val active = isAnimated || scaleAnimationValue > 0.001f
+    val degreesState: State<Float> =
+        if (active) {
+            rememberInfiniteTransition(label = "Infinite Color Animation").animateFloat(
+                initialValue = 0f,
+                targetValue = 360f,
+                animationSpec =
+                    infiniteRepeatable(
+                        animation = tween(durationMillis = oneCircleDurationMillis, easing = LinearEasing),
+                        repeatMode = RepeatMode.Restart,
+                    ),
+                label = "Infinite Colors",
+            )
+        } else {
+            remember { mutableStateOf(0f) }
+        }
     Surface(
         modifier =
             Modifier
@@ -171,7 +187,7 @@ fun LimitedBorderAnimationView(
                         scale(
                             scale = scaleAnimationValue,
                         ) {
-                            rotate(degrees = degrees) {
+                            rotate(degrees = degreesState.value) {
                                 drawCircle(
                                     brush = borderAnimationBrush,
                                     radius = size.width,
