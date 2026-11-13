@@ -3,6 +3,7 @@ package com.wavora.scraper
 import com.eygraber.uri.toKmpUri
 import com.wavora.scraper.YouTube.Companion.DEFAULT_VISITOR_DATA
 import com.wavora.scraper.extension.toListFormat
+import com.wavora.scraper.extractor.BotBlock
 import com.wavora.scraper.extractor.rewriteStreamUrl
 import com.wavora.scraper.models.AccountInfo
 import com.wavora.scraper.models.AlbumItem
@@ -1412,15 +1413,16 @@ class YouTube {
         listUrlSig.forEach {
             Logger.d(TAG, "YouTube NewPipe URL $it")
         }
-        // A manifest URL in the pool is not a stream: probing it rejected a good track about 1 time in 20.
-        val randomUrl = listUrlSig.filterNot { isManifestUrl(it) }.randomOrNull() ?: return null
-        if (listUrlSig.isNotEmpty() && !is403Url(randomUrl)) {
-            Logger.d(TAG, "YouTube NewPipe Found URL $randomUrl")
-            return decodedSigResponse
-        } else {
+        // Проба одной случайной ссылки больше не решает судьбу трека. googlevideo отдаёт 403
+        // на отдельные диапазоны/моменты (особенно с «грязных» IP), а локальный прокси всё равно
+        // перезапрашивает куски. Раньше одна неудачная проба выбрасывала полностью рабочий набор
+        // ссылок — отсюда «No URL found» и пропуск трека, который вручную играет нормально.
+        if (listUrlSig.isEmpty()) {
             Logger.d(TAG, "YouTube NewPipe No URL Found")
             return null
         }
+        Logger.d(TAG, "YouTube NewPipe Found URL ${listUrlSig.first()}")
+        return decodedSigResponse
     }
 
     fun isManifestUrl(url: String): Boolean = url.contains(".m3u8") || url.contains(".mpd") || url.contains("manifest")
@@ -1443,6 +1445,7 @@ class YouTube {
                         ]
                     }.joinToString("")
 
+            if (BotBlock.active()) throw RuntimeException(BotBlock.MESSAGE)
             var decodedSigResponse: PlayerResponse? = null
             val tempRes =
                 ytMusic
@@ -1522,7 +1525,9 @@ class YouTube {
             } else {
                 Logger.d(TAG, "YouTube Player no URL found")
             }
-            if (decodedSigResponse == null) throw RuntimeException("No URL found")
+            if (decodedSigResponse == null) {
+                throw RuntimeException(if (BotBlock.active()) BotBlock.MESSAGE else "No URL found")
+            }
             val firstThumb =
                 decodedSigResponse.videoDetails
                     ?.thumbnail

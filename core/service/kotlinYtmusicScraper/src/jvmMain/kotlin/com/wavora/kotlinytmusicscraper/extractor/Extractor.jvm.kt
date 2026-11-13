@@ -49,6 +49,10 @@ actual class Extractor {
     }
 
     actual fun newPipePlayer(videoId: String): List<Pair<Int, String>> {
+        if (BotBlock.active()) {
+            Logger.d(TAG, "Extraction paused: YouTube asked to confirm the user is not a bot (flagged IP)")
+            return emptyList()
+        }
         if (!pipePipeSkipped()) try {
             val streamInfo =
                 StreamInfo.getInfo(ServiceList.YouTube, "https://music.youtube.com/watch?v=$videoId")
@@ -96,6 +100,10 @@ actual class Extractor {
             temp.toList()
         }.onFailure {
             Logger.w(TAG, "BravePipe extractor failed for $videoId: ${it.message}")
+            if (BotBlock.isBotCheck(it.message)) {
+                BotBlock.trip()
+                Logger.w(TAG, "Anti-bot check: extraction paused for a few minutes (change VPN server / route YouTube directly)")
+            }
         }.getOrElse { emptyList() }
     }
 
