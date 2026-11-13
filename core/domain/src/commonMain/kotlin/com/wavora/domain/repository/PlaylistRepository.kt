@@ -90,4 +90,10 @@ interface PlaylistRepository {
      * @return Country Code -> YouTube Music Playlist ID
      */
     fun getChartPlaylist(): Flow<Resource<List<ChartItem>>>
+
+    /**
+     * Двусторонняя синхронизация лайкнутых плейлистов с библиотекой YouTube Music:
+     * плейлисты попадают в таблицу `playlist` как liked, снятые на YouTube — теряют liked.
+     */
+    suspend fun syncLikedPlaylists(): Result<Unit>
 }

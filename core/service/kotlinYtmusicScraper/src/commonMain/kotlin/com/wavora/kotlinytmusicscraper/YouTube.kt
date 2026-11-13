@@ -1916,6 +1916,47 @@ class YouTube {
             ytMusic.browse(WEB_REMIX, "FEmusic_liked_playlists", setLogin = true).body<BrowseResponse>()
         }
 
+    /**
+     * Лайкнутые альбомы из библиотеки YouTube Music (FEmusic_liked_albums) со всеми продолжениями.
+     * Разбор карточек переиспользует [RelatedPage.fromMusicTwoRowItemRenderer] — тот же парсер,
+     * что и у остальных альбомных гридов.
+     */
+    suspend fun getLibraryAlbums(): Result<List<AlbumItem>> =
+        runCatching {
+            fun albumItems(renderers: List<MusicTwoRowItemRenderer>): List<AlbumItem> =
+                renderers.mapNotNull { renderer ->
+                    RelatedPage.fromMusicTwoRowItemRenderer(renderer) as? AlbumItem
+                }
+
+            val response =
+                ytMusic
+                    .browse(WEB_REMIX, "FEmusic_liked_albums", setLogin = true)
+                    .body<BrowseResponse>()
+            val sections =
+                response.contents?.sectionListRenderer?.contents
+                    ?: response.contents?.singleColumnBrowseResultsRenderer
+                        ?.tabs
+                        ?.firstOrNull()
+                        ?.tabRenderer
+                        ?.content
+                        ?.sectionListRenderer
+                        ?.contents
+                    ?: emptyList()
+            val albums =
+                sections
+                    .flatMap { it.gridRenderer?.items.orEmpty() }
+                    .mapNotNull { it.musicTwoRowItemRenderer }
+                    .let(::albumItems)
+                    .toMutableList()
+            var continuation = sections.firstOrNull()?.gridRenderer?.continuations?.getContinuation()
+            while (continuation != null) {
+                val page = nextYouTubePlaylists(continuation).getOrThrow()
+                albums.addAll(albumItems(page.first))
+                continuation = page.second
+            }
+            albums.distinctBy { it.id }
+        }
+
     suspend fun getMixedForYou() =
         runCatching {
             ytMusic.browse(WEB_REMIX, "FEmusic_mixed_for_you", setLogin = true).body<BrowseResponse>()
@@ -2056,6 +2097,17 @@ class YouTube {
         runCatching {
             ytMusic.removeFromLiked(mediaId).status.value
         }
+
+    /**
+     * Лайк/анлайк альбома или плейлиста в YouTube Music.
+     * Для альбома передаётся его audioPlaylistId, для плейлиста — browseId без префикса "VL".
+     */
+    suspend fun setPlaylistLiked(
+        playlistId: String,
+        liked: Boolean,
+    ) = runCatching {
+        ytMusic.setPlaylistLiked(playlistId, liked).status.value
+    }
 
     @Deprecated("chart.wavora.org is not available", level = DeprecationLevel.WARNING)
     suspend fun getWavoraChart(): Result<WavoraChartResponse> =

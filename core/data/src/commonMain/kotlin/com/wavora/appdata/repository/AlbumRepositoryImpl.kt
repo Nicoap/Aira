@@ -2,6 +2,7 @@ package com.wavora.appdata.repository
 
 import com.wavora.appdata.db.datasource.LocalDataSource
 import com.wavora.appdata.extension.getFullDataFromDB
+import com.wavora.appdata.mapping.toAlbumEntity
 import com.wavora.appdata.mapping.toAlbumsResult
 import com.wavora.appdata.parser.parseAlbumData
 import com.wavora.domain.model.entities.AlbumEntity
@@ -58,7 +59,24 @@ internal class AlbumRepositoryImpl(
     override suspend fun updateAlbumLiked(
         albumId: String,
         likeStatus: Int,
-    ) = withContext(Dispatchers.IO) { localDataSource.updateAlbumLiked(likeStatus, albumId) }
+    ) = withContext(Dispatchers.IO) {
+        localDataSource.updateAlbumLiked(likeStatus, albumId)
+        // Локальный лайк альбома -> YouTube Music (target.playlistId = audioPlaylistId).
+        // Best-effort: сбой сети не должен ронять UI, поэтому только логируем.
+        val audioPlaylistId = localDataSource.getAlbum(albumId)?.audioPlaylistId
+        if (!audioPlaylistId.isNullOrBlank()) {
+            youTube.setPlaylistLiked(audioPlaylistId, likeStatus == 1).fold(
+                onSuccess = { status ->
+                    if (status !in 200..299) {
+                        Logger.e(TAG, "YouTube Music album like sync failed with HTTP $status")
+                    }
+                },
+                onFailure = { error ->
+                    Logger.e(TAG, "YouTube Music album like sync failed: ${error.message ?: error}")
+                },
+            )
+        }
+    }
 
     override suspend fun updateAlbumInLibrary(
         inLibrary: LocalDateTime,
@@ -140,4 +158,38 @@ internal class AlbumRepositoryImpl(
                     }
             }
         }.flowOn(Dispatchers.IO)
+
+    override suspend fun syncLikedAlbums(): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                val remoteAlbums = youTube.getLibraryAlbums().getOrThrow()
+                val remoteBrowseIds = remoteAlbums.mapTo(mutableSetOf()) { it.id }
+                val localLikedAlbums =
+                    getFullDataFromDB { limit, offset ->
+                        localDataSource.getLikedAlbums(limit, offset)
+                    }
+
+                // Снимаем локальный лайк только если YouTube реально вернул непустую библиотеку:
+                // пустой ответ (сбой авторизации, приватный аккаунт) не должен стирать библиотеку.
+                if (remoteBrowseIds.isNotEmpty()) {
+                    localLikedAlbums
+                        .filterNot { it.browseId in remoteBrowseIds }
+                        .forEach { album ->
+                            Logger.d(TAG, "syncLikedAlbums -> unliked remotely: ${album.browseId}")
+                            localDataSource.updateAlbumLiked(0, album.browseId)
+                        }
+                }
+
+                remoteAlbums.forEach { album ->
+                    val existing = localDataSource.getAlbum(album.id)
+                    if (existing == null) {
+                        // insertAlbum построен на INSERT IGNORE, поэтому вставка не затирает
+                        // скачанные треки/время добавления, если строка уже есть.
+                        localDataSource.insertAlbum(album.toAlbumEntity())
+                    } else if (!existing.liked) {
+                        localDataSource.updateAlbumLiked(1, album.id)
+                    }
+                }
+            }
+        }
 }

@@ -3,6 +3,7 @@ package com.wavora.appdata.repository
 import com.wavora.appdata.db.datasource.LocalDataSource
 import com.wavora.appdata.extension.getFullDataFromDB
 import com.wavora.appdata.mapping.toListTrack
+import com.wavora.appdata.mapping.toPlaylistEntity
 import com.wavora.appdata.mapping.toTrack
 import com.wavora.appdata.mapping.toYouTubeWatchEndpoint
 import com.wavora.appdata.parser.parseLibraryPlaylist
@@ -44,6 +45,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.lastOrNull
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalDateTime
+
+private const val TAG = "PlaylistRepositoryImpl"
 
 internal class PlaylistRepositoryImpl(
     private val dataStoreManager: DataStoreManager,
@@ -98,6 +101,20 @@ internal class PlaylistRepositoryImpl(
             likeStatus,
             playlistId,
         )
+        // Локальный лайк плейлиста -> YouTube Music (like/like | like/removelike по playlistId).
+        // Радио (RD*) в библиотеке не лайкается, а best-effort-запрос всё равно вернёт ошибку.
+        if (!playlistId.startsWith("RD")) {
+            youTube.setPlaylistLiked(playlistId.removePrefix("VL"), likeStatus == 1).fold(
+                onSuccess = { status ->
+                    if (status !in 200..299) {
+                        Logger.e(TAG, "YouTube Music playlist like sync failed with HTTP $status")
+                    }
+                },
+                onFailure = { error ->
+                    Logger.e(TAG, "YouTube Music playlist like sync failed: ${error.message ?: error}")
+                },
+            )
+        }
     }
 
     override suspend fun updatePlaylistInLibrary(
@@ -789,4 +806,46 @@ internal class PlaylistRepositoryImpl(
             // chart.wavora.org is not available; return empty list
             emit(Resource.Success(emptyList<ChartItem>()))
         }.flowOn(Dispatchers.IO)
+
+    override suspend fun syncLikedPlaylists(): Result<Unit> =
+        withContext(Dispatchers.IO) {
+            runCatching {
+                // getLibraryPlaylist() уже разворачивает все continuation-страницы.
+                val remotePlaylists = getLibraryPlaylist().lastOrNull().orEmpty()
+                val remoteIds =
+                    remotePlaylists
+                        .map { it.browseId.removePrefix("VL") }
+                        .filterNot { it.isBlank() }
+                        .toSet()
+                val localLikedPlaylists =
+                    getFullDataFromDB { limit, offset ->
+                        localDataSource.getLikedPlaylists(limit, offset)
+                    }
+
+                // Снимаем локальный лайк только если YouTube вернул непустую библиотеку,
+                // иначе сбой запроса стёр бы весь раздел избранных плейлистов.
+                if (remoteIds.isNotEmpty()) {
+                    localLikedPlaylists
+                        .filterNot { it.id in remoteIds }
+                        .forEach { playlist ->
+                            Logger.d(TAG, "syncLikedPlaylists -> unliked remotely: ${playlist.id}")
+                            localDataSource.updatePlaylistLiked(0, playlist.id)
+                        }
+                }
+
+                remotePlaylists.forEach { playlist ->
+                    val id = playlist.browseId.removePrefix("VL")
+                    // "LM" — служебный плейлист лайкнутых песен, у него своя запись в UI.
+                    if (id.isBlank() || id == "LM") return@forEach
+                    val existing = localDataSource.getPlaylist(id)
+                    if (existing == null) {
+                        // insertPlaylist — INSERT IGNORE: существующие строки (скачивания,
+                        // время добавления) не перезаписываются.
+                        localDataSource.insertPlaylist(playlist.toPlaylistEntity())
+                    } else if (!existing.liked) {
+                        localDataSource.updatePlaylistLiked(1, id)
+                    }
+                }
+            }
+        }
 }

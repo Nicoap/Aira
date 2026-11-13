@@ -158,12 +158,26 @@ class SharedViewModel(
 
     // ── Init: wire song-change events from player → nowPlaying ────────────
     init {
+        // Двусторонняя синхронизация библиотеки с YouTube Music. Каждый sync — в своём
+        // launch: падение/таймаут одного не мешает остальным и не блокирует старт.
         viewModelScope.launch {
             songRepository.syncLikedSongs().onFailure { error ->
                 Logger.e("YouTubeMusicSync", "Liked-song sync failed: ${error.message ?: error}")
             }
+        }
+        viewModelScope.launch {
             artistRepository.syncFollowedArtists().onFailure { error ->
                 Logger.e("YouTubeMusicSync", "Artist-subscription sync failed: ${error.message ?: error}")
+            }
+        }
+        viewModelScope.launch {
+            albumRepository.syncLikedAlbums().onFailure { error ->
+                Logger.e("YouTubeMusicSync", "Liked-album sync failed: ${error.message ?: error}")
+            }
+        }
+        viewModelScope.launch {
+            playlistRepository.syncLikedPlaylists().onFailure { error ->
+                Logger.e("YouTubeMusicSync", "Liked-playlist sync failed: ${error.message ?: error}")
             }
         }
         viewModelScope.launch {

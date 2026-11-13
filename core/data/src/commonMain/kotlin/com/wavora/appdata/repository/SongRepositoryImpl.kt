@@ -137,40 +137,39 @@ internal class SongRepositoryImpl(
         likeStatus: Int,
     ) = withContext(Dispatchers.IO) {
         localDataSource.updateLiked(likeStatus, videoId)
-        if (likeStatus == 1) {
-            youTube.addToLiked(videoId).fold(
-                onSuccess = { status ->
-                    if (status !in 200..299) {
-                        Logger.e(TAG, "YouTube Music like sync failed with HTTP $status")
-                    }
-                },
-                onFailure = { error ->
-                    Logger.e(TAG, "YouTube Music like sync failed: ${error.message ?: error}")
-                },
-            )
-        }
+        // Локальный переключатель лайка -> YouTube Music (и лайк, и анлайк).
+        // Best-effort: сбой сети не должен ронять UI, поэтому только логируем.
+        val remoteResult =
+            if (likeStatus == 1) {
+                youTube.addToLiked(videoId)
+            } else {
+                youTube.removeFromLiked(videoId)
+            }
+        remoteResult.fold(
+            onSuccess = { status ->
+                if (status !in 200..299) {
+                    Logger.e(TAG, "YouTube Music like sync failed with HTTP $status")
+                }
+            },
+            onFailure = { error ->
+                Logger.e(TAG, "YouTube Music like sync failed: ${error.message ?: error}")
+            },
+        )
     }
 
+    /**
+     * Тянет лайкнутые песни из YouTube Music в БД.
+     *
+     * ВАЖНО: обратной записи (local -> remote) здесь больше нет. Раньше функция
+     * долайкивала на YouTube все локально лайкнутые песни, которых не было в
+     * удалённом списке, из-за чего песни, удалённые из библиотеки на другом
+     * устройстве/сайте, «воскресали». Единственный путь local -> remote для песен —
+     * явные действия пользователя ([updateLikeStatus], [addToYouTubeLiked]).
+     */
     override suspend fun syncLikedSongs(): Result<Unit> =
         withContext(Dispatchers.IO) {
             runCatching {
                 val remoteSongs = youTube.getLikedSongs().getOrThrow()
-                val localLikedSongs =
-                    getFullDataFromDB { limit, offset ->
-                        localDataSource.getLikedSongs(limit, offset)
-                    }
-                val remoteVideoIds = remoteSongs.mapTo(mutableSetOf()) { it.id }
-
-                localLikedSongs
-                    .asSequence()
-                    .map { it.videoId }
-                    .filterNot { it in remoteVideoIds }
-                    .forEach { videoId ->
-                        val status = youTube.addToLiked(videoId).getOrThrow()
-                        check(status in 200..299) {
-                            "YouTube Music returned HTTP $status while syncing liked song $videoId"
-                        }
-                    }
 
                 remoteSongs.forEach { song ->
                     val entity: SongEntity = song.toTrack().toSongEntity()

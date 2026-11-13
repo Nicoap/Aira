@@ -10,6 +10,8 @@ data class LikeBody(
 ) {
     @Serializable
     data class Target(
-        val videoId: String,
+        val videoId: String? = null,
+        // Для альбомов здесь лежит audioPlaylistId ("OLAK5uy_..."), для плейлистов — их browseId без "VL"
+        val playlistId: String? = null,
     )
 }

@@ -1,6 +1,8 @@
 package com.wavora.appdata.mapping
 
 import com.wavora.appdata.parser.toListThumbnail
+import com.wavora.domain.model.entities.AlbumEntity
+import com.wavora.domain.model.entities.PlaylistEntity
 import com.wavora.domain.model.model.browse.album.Track
 import com.wavora.domain.model.model.canvas.CanvasResult
 import com.wavora.domain.model.model.mediaService.SponsorSkipSegments
@@ -276,6 +278,43 @@ internal fun AlbumItem.toAlbumsResult(): AlbumsResult =
         title = this.title,
         type = if (isSingle) "SINGLE" else "ALBUM",
         year = this.year?.toString() ?: "",
+    )
+
+/**
+ * Альбом из библиотеки YouTube Music -> строка таблицы `album`.
+ * Список треков не заполняется: он подтягивается при открытии альбома.
+ */
+internal fun AlbumItem.toAlbumEntity(liked: Boolean = true): AlbumEntity =
+    AlbumEntity(
+        browseId = this.id,
+        artistId = this.artists?.map { it.id },
+        artistName = this.artists?.map { it.name },
+        audioPlaylistId = this.playlistId,
+        description = "",
+        duration = "",
+        durationSeconds = 0,
+        thumbnails = this.thumbnail,
+        title = this.title,
+        trackCount = 0,
+        tracks = null,
+        type = if (isSingle) "SINGLE" else "ALBUM",
+        year = this.year?.toString(),
+        liked = liked,
+    )
+
+/**
+ * Плейлист из библиотеки YouTube Music -> строка таблицы `playlist`.
+ * id хранится без префикса "VL", как и в PlaylistBrowse.
+ */
+internal fun PlaylistsResult.toPlaylistEntity(liked: Boolean = true): PlaylistEntity =
+    PlaylistEntity(
+        id = this.browseId.removePrefix("VL"),
+        author = this.author,
+        description = "",
+        thumbnails = this.thumbnails.lastOrNull()?.url ?: "",
+        title = this.title,
+        trackCount = this.itemCount.toIntOrNull() ?: 0,
+        liked = liked,
     )
 
 // Wavora Lyrics Extension

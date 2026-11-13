@@ -48,4 +48,10 @@ interface AlbumRepository {
         browseId: String,
         params: String,
     ): Flow<Pair<String, List<AlbumsResult>>?>
+
+    /**
+     * Двусторонняя синхронизация лайкнутых альбомов с библиотекой YouTube Music:
+     * новые альбомы попадают в БД как liked, снятые на YouTube лайки снимаются локально.
+     */
+    suspend fun syncLikedAlbums(): Result<Unit>
 }

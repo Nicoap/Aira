@@ -873,27 +873,32 @@ class Ytmusic {
         }
     }
 
-    suspend fun addToLiked(videoId: String) =
-        httpClient.post("like/like") {
-            ytClient(WEB_REMIX, true)
-            setBody(
-                LikeBody(
-                    context = WEB_REMIX.toContext(locale, visitorData),
-                    target = LikeBody.Target(videoId),
-                ),
-            )
-        }
+    /**
+     * Общий POST для like/like и like/removelike: цель задаётся либо videoId, либо playlistId
+     * (альбом приходит со своим audioPlaylistId, плейлист — своим browseId без "VL").
+     */
+    private suspend fun postLike(
+        path: String,
+        videoId: String? = null,
+        playlistId: String? = null,
+    ) = httpClient.post(path) {
+        ytClient(WEB_REMIX, true)
+        setBody(
+            LikeBody(
+                context = WEB_REMIX.toContext(locale, visitorData),
+                target = LikeBody.Target(videoId = videoId, playlistId = playlistId),
+            ),
+        )
+    }
 
-    suspend fun removeFromLiked(videoId: String) =
-        httpClient.post("like/removelike") {
-            ytClient(WEB_REMIX, true)
-            setBody(
-                LikeBody(
-                    context = WEB_REMIX.toContext(locale, visitorData),
-                    target = LikeBody.Target(videoId),
-                ),
-            )
-        }
+    suspend fun addToLiked(videoId: String) = postLike("like/like", videoId = videoId)
+
+    suspend fun removeFromLiked(videoId: String) = postLike("like/removelike", videoId = videoId)
+
+    suspend fun setPlaylistLiked(
+        playlistId: String,
+        liked: Boolean,
+    ) = postLike(if (liked) "like/like" else "like/removelike", playlistId = playlistId)
 
     suspend fun subscribeArtist(channelId: String) =
         httpClient.post("subscription/subscribe") {
