@@ -3,6 +3,7 @@ package com.wavora.app.ui.component
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
+import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -67,6 +68,43 @@ fun HoverScrollArrows(
         ) {
             ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowRight) {
                 scope.launch { state.animateScrollBy(state.layoutInfo.viewportSize.width * 0.8f) }
+            }
+        }
+    }
+}
+
+/**
+ * То же для обычной горизонтальной прокрутки (`Modifier.horizontalScroll`), например для ряда
+ * чипов в Библиотеке: стрелки видны всегда, пока есть куда скроллить, — мышиная прокрутка
+ * по горизонтали на десктопе неочевидна.
+ */
+@Composable
+fun ScrollArrows(
+    state: ScrollState,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    Box(modifier) {
+        content()
+        AnimatedVisibility(
+            visible = state.canScrollBackward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowLeft) {
+                scope.launch { state.animateScrollBy(-(state.viewportSize * 0.8f)) }
+            }
+        }
+        AnimatedVisibility(
+            visible = state.canScrollForward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowRight) {
+                scope.launch { state.animateScrollBy(state.viewportSize * 0.8f) }
             }
         }
     }

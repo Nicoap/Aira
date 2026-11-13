@@ -61,6 +61,12 @@ import javax.swing.JPanel
 
 private const val TAG = "VlcPlayerAdapter"
 
+// Тот же трек, запущенный вручную, обычно играет: сбой извлечения ссылки временный
+// (устаревший формат, короткий 403). Даём несколько попыток с нарастающей паузой,
+// прежде чем пропустить трек.
+private const val EXTRACT_RETRY_ATTEMPTS = 2
+private const val EXTRACT_RETRY_DELAY_MS = 400L
+
 // AUDIT FIX (02/09): tiempo máximo para esperar la confirmación nativa del
 // seek a 0 del player precacheado antes de asumir que ya se aplicó y seguir
 // igual (ver comentario junto a seekAppliedSignal en triggerCrossfadeTransition).
@@ -1581,12 +1587,19 @@ class VlcPlayerAdapter(
                         } else {
                             var source = withContext(Dispatchers.IO) { extractPlayableUrl(mediaItem) }
                             if (source == null || source.url.isEmpty()) {
-                                Logger.w(TAG, "First extract failed for $videoId, invalidating and retrying...")
-                                withContext(Dispatchers.IO) {
-                                    streamRepository.invalidateFormat(videoId)
-                                    streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$videoId")
+                                // Тот же трек, запущенный вручную, обычно играет — значит сбой
+                                // временный (устаревшая ссылка, короткий 403). Даём несколько попыток
+                                // с паузой, и только потом пропускаем.
+                                for (attempt in 1..EXTRACT_RETRY_ATTEMPTS) {
+                                    Logger.w(TAG, "Extract failed for $videoId, attempt $attempt: invalidating and retrying...")
+                                    withContext(Dispatchers.IO) {
+                                        streamRepository.invalidateFormat(videoId)
+                                        streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$videoId")
+                                    }
+                                    delay(EXTRACT_RETRY_DELAY_MS * attempt)
+                                    source = withContext(Dispatchers.IO) { extractPlayableUrl(mediaItem) }
+                                    if (source != null && source.url.isNotEmpty()) break
                                 }
-                                source = withContext(Dispatchers.IO) { extractPlayableUrl(mediaItem) }
                             }
                             if (source == null || source.url.isEmpty()) {
                                 Logger.e(TAG, "Failed to extract playable URL for $videoId after retry")

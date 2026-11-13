@@ -75,6 +75,7 @@ import com.wavora.app.ui.component.LibraryItem
 import com.wavora.app.ui.component.LibraryItemState
 import com.wavora.app.ui.component.LibraryItemType
 import com.wavora.app.ui.component.LibraryTilingBox
+import com.wavora.app.ui.component.ScrollArrows
 import com.wavora.app.expect.ui.VerticalScrollBar
 import com.wavora.app.ui.navigation.destination.home.AnalyticsDestination
 import com.wavora.app.ui.theme.transparent
@@ -507,15 +508,18 @@ fun LibraryScreen(
                 }
             },
         )
-        Row(
-            modifier =
-                Modifier
-                    .horizontalScroll(chipRowState)
-                    .padding(horizontal = 15.dp)
-                    .padding(bottom = 8.dp)
-                    .background(Color.Transparent),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
-        ) {
+        // Стрелки нужны, потому что горизонтальная прокрутка чипов на десктопе неочевидна,
+        // а уплотнённая панель плеера может закрывать правый край ряда.
+        ScrollArrows(state = chipRowState) {
+            Row(
+                modifier =
+                    Modifier
+                        .horizontalScroll(chipRowState)
+                        .padding(horizontal = 15.dp)
+                        .padding(bottom = 8.dp)
+                        .background(Color.Transparent),
+                horizontalArrangement = Arrangement.spacedBy(4.dp),
+            ) {
             // AUDIT FIX (revisión de Biblioteca): CHART ("Gráficos Wavora") apunta a
             // chart.wavora.org, que todavía no existe (el repositorio ya devuelve
             // una lista vacía a propósito, ver PlaylistRepositoryImpl.getChartPlaylist)
@@ -546,6 +550,7 @@ fun LibraryScreen(
                 ) {
                     viewModel.setCurrentScreen(type)
                 }
+            }
             }
         }
     }
