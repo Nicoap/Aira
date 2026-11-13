@@ -37,6 +37,15 @@ private val CHUNK_WINDOWS = longArrayOf(CHUNK_SIZE, 256L * 1024, 64L * 1024)
 private const val FIRST_BYTE_CHUNK = 64L * 1024
 
 /**
+ * Минимальная суммарная полоса HLS-варианта, пригодного для музыки.
+ *
+ * Измерено на реальном манифесте: варианты 144p и 240p несут AAC 50 кбит/с, а 360p и все
+ * старшие — AAC-LC 131 кбит/с (звук у них одинаковый). Поэтому для аудио берём самый лёгкий
+ * вариант не ниже порога: 360p ≈ 157 кбит/с суммарно — почти как прогрессивный opus.
+ */
+private const val AUDIO_MIN_BANDWIDTH = 150_000L
+
+/**
  * JVM-реализация: подставляет локальный прокси вместо прямого googlevideo-адреса.
  *
  * libVLC запрашивает поток открытым диапазоном (`Range: bytes=0-`), а сервер на такой запрос отвечает
@@ -268,7 +277,9 @@ internal object StreamProxy {
             val target = hint.removePrefix("video:").filter(Char::isDigit).toIntOrNull() ?: 720
             variants.filter { it.height in 1..target }.maxByOrNull { it.height }?.let { return it }
         }
-        return variants.minByOrNull { it.bandwidth }
+        // Для звука берём самый лёгкий вариант с полноценным AAC, а не облегчённым 50 кбит/с.
+        return variants.filter { it.bandwidth >= AUDIO_MIN_BANDWIDTH }.minByOrNull { it.bandwidth }
+            ?: variants.maxByOrNull { it.bandwidth }
     }
 
     private fun stream(exchange: HttpExchange, upstream: String, range: RequestedRange) {
