@@ -37,25 +37,65 @@ internal data class WindowsMediaSnapshot(
     val isPlaying: Boolean,
     val canGoNext: Boolean,
     val canGoPrevious: Boolean,
+    /** Total length in milliseconds, 0 when the stream has no known duration (radio, live). */
+    val durationMs: Long = 0L,
+    /** Current playback position in milliseconds. */
+    val positionMs: Long = 0L,
+    val shuffleEnabled: Boolean = false,
+    val repeatMode: WindowsMediaRepeat = WindowsMediaRepeat.Off,
 )
 
-internal enum class WindowsMediaCommand {
-    Play,
-    Pause,
-    Stop,
-    Next,
-    Previous,
+/** App repeat mode, mapped onto the Windows <c>MediaPlaybackAutoRepeatMode</c> values. */
+internal enum class WindowsMediaRepeat(
+    val abiValue: Int,
+) {
+    Off(ABI_REPEAT_NONE),
+    All(ABI_REPEAT_ALL),
+    One(ABI_REPEAT_TRACK),
+    ;
+
+    companion object {
+        fun fromAbi(value: Int): WindowsMediaRepeat = entries.firstOrNull { it.abiValue == value } ?: Off
+    }
+}
+
+internal sealed interface WindowsMediaCommand {
+    data object Play : WindowsMediaCommand
+
+    data object Pause : WindowsMediaCommand
+
+    data object Stop : WindowsMediaCommand
+
+    data object Next : WindowsMediaCommand
+
+    data object Previous : WindowsMediaCommand
+
+    /** The user dragged the seek bar in the Windows media flyout. */
+    data class SeekTo(val positionMs: Long) : WindowsMediaCommand
+
+    /** The user pressed the shuffle button: this is an absolute value, not a toggle. */
+    data class SetShuffle(val enabled: Boolean) : WindowsMediaCommand
+
+    /** The user pressed the repeat button: this is an absolute mode, not a cycle. */
+    data class SetRepeat(val mode: WindowsMediaRepeat) : WindowsMediaCommand
 }
 
 internal class WindowsSystemMediaSession private constructor(
     private val apartment: WinRtApartment,
     private val controls: ComPtr,
+    private val controls2: ComPtr?,
     private val display: ComPtr,
     private val music: ComPtr,
-    private val buttonHandler: MediaButtonHandler,
+    private val buttonHandler: WinRtDelegate,
     private val registration: Long,
+    private val events: List<EventRegistration>,
 ) : AutoCloseable {
     private val closed = AtomicBoolean(false)
+    private var timeline: ComPtr? = null
+    private var publishedMetadata: MetadataState? = null
+    private var publishedShuffle: Boolean? = null
+    private var publishedRepeat: WindowsMediaRepeat? = null
+    private var publishedTimeline: TimelineState? = null
     private val artworkExecutor: ExecutorService =
         Executors.newSingleThreadExecutor { task ->
             Thread(task, "Wavora-Media-Artwork").apply { isDaemon = true }
@@ -85,8 +125,19 @@ internal class WindowsSystemMediaSession private constructor(
         if (!closed.compareAndSet(false, true)) return
         apartment.finish {
             try {
+                events.forEach { event ->
+                    try {
+                        controls2?.call(event.removeSlot, event.token)?.checkHresult()
+                    } catch (error: Exception) {
+                        Logger.w(TAG, "Could not detach a Windows media event: ${error.message}")
+                    }
+                }
+                events.forEach { event ->
+                    event.handler.detach()
+                    WinRtDelegate.forget(event.handler)
+                }
                 controls.call(SMTC_REMOVE_BUTTON_PRESSED, registration).checkHresult()
-                MediaButtonHandler.forget(buttonHandler)
+                WinRtDelegate.forget(buttonHandler)
                 controls.call(SMTC_SET_IS_ENABLED, 0).checkHresult()
                 controls.call(SMTC_SET_PLAYBACK_STATUS, PLAYBACK_CLOSED).checkHresult()
                 display.call(DISPLAY_CLEAR_ALL).checkHresult()
@@ -100,8 +151,11 @@ internal class WindowsSystemMediaSession private constructor(
                 artworkFiles.forEach { it.delete() }
                 artworkFiles.clear()
                 buttonHandler.detach()
+                timeline?.close()
+                timeline = null
                 music.close()
                 display.close()
+                controls2?.close()
                 controls.close()
             }
         }
@@ -116,25 +170,109 @@ internal class WindowsSystemMediaSession private constructor(
             display.call(DISPLAY_CLEAR_ALL).checkHresult()
             display.call(DISPLAY_UPDATE).checkHresult()
             releaseThumbnailObjects()
+            publishedMetadata = null
+            publishedShuffle = null
+            publishedRepeat = null
+            publishedTimeline = null
             return
         }
 
-        controls.call(SMTC_SET_IS_ENABLED, 1).checkHresult()
-        controls.call(SMTC_SET_IS_PLAY_ENABLED, 1).checkHresult()
-        controls.call(SMTC_SET_IS_PAUSE_ENABLED, 1).checkHresult()
-        controls.call(SMTC_SET_IS_STOP_ENABLED, 0).checkHresult()
-        controls.call(SMTC_SET_IS_NEXT_ENABLED, snapshot.canGoNext.asAbiBoolean()).checkHresult()
-        controls.call(SMTC_SET_IS_PREVIOUS_ENABLED, snapshot.canGoPrevious.asAbiBoolean()).checkHresult()
-        controls
-            .call(
-                SMTC_SET_PLAYBACK_STATUS,
-                if (snapshot.isPlaying) PLAYBACK_PLAYING else PLAYBACK_PAUSED,
-            ).checkHresult()
+        // The position is part of the snapshot, so update() runs every few seconds during playback.
+        // Only rewrite the shell metadata when something visible actually changed.
+        val metadata =
+            MetadataState(
+                title = title,
+                artist = snapshot.artist,
+                album = snapshot.album,
+                isPlaying = snapshot.isPlaying,
+                canGoNext = snapshot.canGoNext,
+                canGoPrevious = snapshot.canGoPrevious,
+            )
+        if (metadata != publishedMetadata) {
+            controls.call(SMTC_SET_IS_ENABLED, 1).checkHresult()
+            controls.call(SMTC_SET_IS_PLAY_ENABLED, 1).checkHresult()
+            controls.call(SMTC_SET_IS_PAUSE_ENABLED, 1).checkHresult()
+            controls.call(SMTC_SET_IS_STOP_ENABLED, 0).checkHresult()
+            controls.call(SMTC_SET_IS_NEXT_ENABLED, snapshot.canGoNext.asAbiBoolean()).checkHresult()
+            controls.call(SMTC_SET_IS_PREVIOUS_ENABLED, snapshot.canGoPrevious.asAbiBoolean()).checkHresult()
+            controls
+                .call(
+                    SMTC_SET_PLAYBACK_STATUS,
+                    if (snapshot.isPlaying) PLAYBACK_PLAYING else PLAYBACK_PAUSED,
+                ).checkHresult()
 
-        music.setString(MUSIC_SET_TITLE, title)
-        music.setString(MUSIC_SET_ARTIST, snapshot.artist.orEmpty())
-        music.setString(MUSIC_SET_ALBUM, snapshot.album.orEmpty())
-        display.call(DISPLAY_UPDATE).checkHresult()
+            music.setString(MUSIC_SET_TITLE, title)
+            music.setString(MUSIC_SET_ARTIST, snapshot.artist.orEmpty())
+            music.setString(MUSIC_SET_ALBUM, snapshot.album.orEmpty())
+            display.call(DISPLAY_UPDATE).checkHresult()
+            publishedMetadata = metadata
+        }
+
+        publishExtendedState(snapshot)
+    }
+
+    // Timeline, shuffle and repeat live on ISystemMediaTransportControls2. Windows greys the buttons out
+    // until these properties are published, so they are pushed on every change.
+    private fun publishExtendedState(snapshot: WindowsMediaSnapshot) {
+        val extended = controls2 ?: return
+
+        if (publishedShuffle != snapshot.shuffleEnabled) {
+            val result = extended.call(SMTC2_SET_SHUFFLE_ENABLED, snapshot.shuffleEnabled.asAbiBoolean())
+            if (result >= 0) {
+                publishedShuffle = snapshot.shuffleEnabled
+            } else {
+                Logger.w(TAG, "Could not publish the shuffle state: 0x${result.toUInt().toString(16)}")
+            }
+        }
+
+        if (publishedRepeat != snapshot.repeatMode) {
+            val result = extended.call(SMTC2_SET_AUTO_REPEAT_MODE, snapshot.repeatMode.abiValue)
+            if (result >= 0) {
+                publishedRepeat = snapshot.repeatMode
+            } else {
+                Logger.w(TAG, "Could not publish the repeat mode: 0x${result.toUInt().toString(16)}")
+            }
+        }
+
+        publishTimeline(extended, snapshot)
+    }
+
+    private fun publishTimeline(
+        extended: ComPtr,
+        snapshot: WindowsMediaSnapshot,
+    ) {
+        val duration = snapshot.durationMs
+        if (duration <= 0L) {
+            // Live streams have no known length: leave the seek bar disabled instead of showing 0:00 / 0:00.
+            publishedTimeline = null
+            return
+        }
+
+        val position = snapshot.positionMs.coerceIn(0L, duration)
+        val state = TimelineState(durationMs = duration, positionMs = position)
+        if (state == publishedTimeline) return
+
+        val properties = timelineProperties()
+        properties.setTimeSpan(TIMELINE_SET_START_TIME, 0L)
+        properties.setTimeSpan(TIMELINE_SET_END_TIME, duration)
+        properties.setTimeSpan(TIMELINE_SET_MIN_SEEK_TIME, 0L)
+        properties.setTimeSpan(TIMELINE_SET_MAX_SEEK_TIME, duration)
+        properties.setTimeSpan(TIMELINE_SET_POSITION, position)
+        extended.call(SMTC2_UPDATE_TIMELINE_PROPERTIES, properties.pointer).checkHresult()
+        publishedTimeline = state
+    }
+
+    private fun timelineProperties(): ComPtr {
+        timeline?.let { return it }
+        val result = PointerByReference()
+        useHString(TIMELINE_PROPERTIES_CLASS) { className ->
+            WinRt.api
+                .RoActivateInstance(className ?: error("Windows returned an empty runtime class name"), result)
+                .checkHresult()
+        }
+        val created = ComPtr(result.value ?: error("Windows returned an empty timeline-properties object"))
+        timeline = created
+        return created
     }
 
     private fun updateArtwork(uri: String?) {
@@ -356,7 +494,9 @@ internal class WindowsSystemMediaSession private constructor(
 
             var display: ComPtr? = null
             var music: ComPtr? = null
-            var handler: MediaButtonHandler? = null
+            var controls2: ComPtr? = null
+            var handler: WinRtDelegate? = null
+            val events = mutableListOf<EventRegistration>()
             try {
                 display = controls.getInterface(SMTC_GET_DISPLAY_UPDATER)
                 display.call(DISPLAY_SET_TYPE, MEDIA_TYPE_MUSIC).checkHresult()
@@ -365,28 +505,64 @@ internal class WindowsSystemMediaSession private constructor(
                 controls.call(SMTC_SET_IS_PLAY_ENABLED, 1).checkHresult()
                 controls.call(SMTC_SET_IS_PAUSE_ENABLED, 1).checkHresult()
 
-                handler = MediaButtonHandler(onCommand)
+                handler = buttonPressedDelegate(onCommand)
                 val token = LongByReference()
                 controls
                     .call(SMTC_ADD_BUTTON_PRESSED, handler.instance, token)
                     .checkHresult()
 
+                controls2 = controls.queryInterface(IID_SMTC2)
+                if (controls2 == null) {
+                    Logger.w(TAG, "Windows media controls do not expose timeline, shuffle or repeat support")
+                } else {
+                    registerExtendedEvents(controls2, onCommand, events)
+                }
+
                 return WindowsSystemMediaSession(
                     apartment = apartment,
                     controls = controls,
+                    controls2 = controls2,
                     display = display,
                     music = music,
                     buttonHandler = handler,
                     registration = token.value,
+                    events = events,
                 )
             } catch (error: Exception) {
+                events.forEach { event ->
+                    runCatching { controls2?.call(event.removeSlot, event.token)?.checkHresult() }
+                    event.handler.detach()
+                    WinRtDelegate.forget(event.handler)
+                }
                 handler?.detach()
-                handler?.let(MediaButtonHandler::forget)
+                handler?.let(WinRtDelegate::forget)
                 music?.close()
                 display?.close()
+                controls2?.close()
                 controls.close()
                 throw error
             }
+        }
+
+        private fun registerExtendedEvents(
+            controls2: ComPtr,
+            onCommand: (WindowsMediaCommand) -> Unit,
+            events: MutableList<EventRegistration>,
+        ) {
+            val request = { addSlot: Int, removeSlot: Int, delegate: WinRtDelegate ->
+                runCatching {
+                    val token = LongByReference()
+                    controls2.call(addSlot, delegate.instance, token).checkHresult()
+                    events += EventRegistration(removeSlot = removeSlot, token = token.value, handler = delegate)
+                }.onFailure { error ->
+                    delegate.detach()
+                    WinRtDelegate.forget(delegate)
+                    Logger.w(TAG, "Could not subscribe to a Windows media event: ${error.message}")
+                }
+            }
+            request(SMTC2_ADD_POSITION_REQUESTED, SMTC2_REMOVE_POSITION_REQUESTED, positionRequestedDelegate(onCommand))
+            request(SMTC2_ADD_SHUFFLE_REQUESTED, SMTC2_REMOVE_SHUFFLE_REQUESTED, shuffleRequestedDelegate(onCommand))
+            request(SMTC2_ADD_REPEAT_REQUESTED, SMTC2_REMOVE_REPEAT_REQUESTED, repeatRequestedDelegate(onCommand))
         }
     }
 }
@@ -458,6 +634,20 @@ private class ComPtr(
         return ComPtr(result.value ?: error("COM method $slot returned a null interface"))
     }
 
+    /** IUnknown::QueryInterface; returns null when the object does not implement [iid]. */
+    fun queryInterface(iid: Guid.GUID): ComPtr? {
+        val result = PointerByReference()
+        return if (call(QUERY_INTERFACE, iid, result) >= 0) result.value?.let(::ComPtr) else null
+    }
+
+    /** Sets a WinRT TimeSpan property, which travels as a 100-nanosecond tick count. */
+    fun setTimeSpan(
+        slot: Int,
+        milliseconds: Long,
+    ) {
+        call(slot, milliseconds * TICKS_PER_MILLISECOND).checkHresult()
+    }
+
     fun setString(
         slot: Int,
         value: String,
@@ -470,8 +660,9 @@ private class ComPtr(
     }
 }
 
-private class MediaButtonHandler(
-    private val onCommand: (WindowsMediaCommand) -> Unit,
+private class WinRtDelegate(
+    private val acceptedIids: Set<String>,
+    private val onInvoke: (Pointer) -> Unit,
 ) {
     private interface QueryInterface : StdCallLibrary.StdCallCallback {
         fun invoke(self: Pointer?, requested: Pointer?, result: Pointer?): Int
@@ -495,7 +686,14 @@ private class MediaButtonHandler(
     private val query: QueryInterface = object : QueryInterface {
         override fun invoke(self: Pointer?, requested: Pointer?, result: Pointer?): Int {
             if (requested == null || result == null) return E_POINTER
-            if (Guid.GUID(requested).toGuidString() !in ACCEPTED_HANDLER_IIDS) {
+            val iid = Guid.GUID(requested).toGuidString()
+            if (iid !in acceptedIids) {
+                // Answering a marker interface this handler does not implement (INoMarshal, IMarshal, ...) makes
+                // the WinRT event registration fail, so unknown IIDs are always rejected. Windows probes those
+                // markers on every launch, so the rejection is logged at debug level only.
+                if (PROBED_IIDS.add(iid)) {
+                    Logger.d(TAG, "Windows media delegate declined an interface: $iid")
+                }
                 result.setPointer(0, null)
                 return E_NOINTERFACE
             }
@@ -513,9 +711,11 @@ private class MediaButtonHandler(
     private val dispatch: EventInvoke = object : EventInvoke {
         override fun invoke(self: Pointer?, source: Pointer?, eventArgs: Pointer?): Int {
             if (!alive.get() || eventArgs == null) return S_OK
-            val value = IntByReference()
-            if (ComPtr(eventArgs).call(BUTTON_ARGS_GET_BUTTON, value) >= 0) {
-                commandForButton(value.value)?.let(onCommand)
+            try {
+                onInvoke(eventArgs)
+            } catch (error: Exception) {
+                // A Kotlin exception must never escape into the Windows Runtime callback.
+                Logger.w(TAG, "Windows media event handler failed: ${error.message}")
             }
             return S_OK
         }
@@ -538,23 +738,84 @@ private class MediaButtonHandler(
     }
 
     companion object {
-        private val ACTIVE_HANDLERS = ConcurrentHashMap.newKeySet<MediaButtonHandler>()
+        private val ACTIVE_HANDLERS = ConcurrentHashMap.newKeySet<WinRtDelegate>()
+        private val PROBED_IIDS = ConcurrentHashMap.newKeySet<String>()
 
-        fun forget(handler: MediaButtonHandler) {
-            ACTIVE_HANDLERS.remove(handler)
+        fun forget(delegate: WinRtDelegate) {
+            ACTIVE_HANDLERS.remove(delegate)
+        }
+    }
+}
+
+/** A registered Windows Runtime event: the slot that removes it, its token and its callback object. */
+private class EventRegistration(
+    val removeSlot: Int,
+    val token: Long,
+    val handler: WinRtDelegate,
+)
+
+private data class MetadataState(
+    val title: String,
+    val artist: String?,
+    val album: String?,
+    val isPlaying: Boolean,
+    val canGoNext: Boolean,
+    val canGoPrevious: Boolean,
+)
+
+private data class TimelineState(
+    val durationMs: Long,
+    val positionMs: Long,
+)
+
+private fun buttonPressedDelegate(onCommand: (WindowsMediaCommand) -> Unit): WinRtDelegate =
+    WinRtDelegate(setOf(IID_BUTTON_HANDLER.toGuidString(), IID_IUNKNOWN.toGuidString(), IID_IAGILE_OBJECT.toGuidString())) { eventArgs ->
+        val value = IntByReference()
+        if (ComPtr(eventArgs).call(EVENT_ARGS_GET_REQUESTED_VALUE, value) >= 0) {
+            mediaCommandForButton(value.value)?.let(onCommand)
         }
     }
 
-    private fun commandForButton(button: Int): WindowsMediaCommand? =
-        when (button) {
-            BUTTON_PLAY -> WindowsMediaCommand.Play
-            BUTTON_PAUSE -> WindowsMediaCommand.Pause
-            BUTTON_STOP -> WindowsMediaCommand.Stop
-            BUTTON_NEXT -> WindowsMediaCommand.Next
-            BUTTON_PREVIOUS -> WindowsMediaCommand.Previous
-            else -> null
+private fun positionRequestedDelegate(onCommand: (WindowsMediaCommand) -> Unit): WinRtDelegate =
+    WinRtDelegate(acceptedDelegateIids(IID_PLAYBACK_POSITION_REQUESTED_HANDLER)) { eventArgs ->
+        val ticks = Memory(TIMESPAN_BYTES)
+        if (ComPtr(eventArgs).call(EVENT_ARGS_GET_REQUESTED_VALUE, ticks) >= 0) {
+            val position = ticks.getLong(0) / TICKS_PER_MILLISECOND
+            if (position >= 0) onCommand(WindowsMediaCommand.SeekTo(position))
         }
-}
+    }
+
+private fun shuffleRequestedDelegate(onCommand: (WindowsMediaCommand) -> Unit): WinRtDelegate =
+    WinRtDelegate(acceptedDelegateIids(IID_SHUFFLE_ENABLED_REQUESTED_HANDLER)) { eventArgs ->
+        val value = IntByReference()
+        if (ComPtr(eventArgs).call(EVENT_ARGS_GET_REQUESTED_VALUE, value) >= 0) {
+            onCommand(WindowsMediaCommand.SetShuffle(enabled = value.value != 0))
+        }
+    }
+
+private fun repeatRequestedDelegate(onCommand: (WindowsMediaCommand) -> Unit): WinRtDelegate =
+    WinRtDelegate(acceptedDelegateIids(IID_AUTO_REPEAT_MODE_REQUESTED_HANDLER)) { eventArgs ->
+        val value = IntByReference()
+        if (ComPtr(eventArgs).call(EVENT_ARGS_GET_REQUESTED_VALUE, value) >= 0) {
+            onCommand(WindowsMediaCommand.SetRepeat(WindowsMediaRepeat.fromAbi(value.value)))
+        }
+    }
+
+// Delegates must answer IUnknown (mandatory) and IAgileObject (they are called from whichever thread raises
+// the event). Everything else - INoMarshal, IMarshal and friends - has to be refused, otherwise the Windows
+// runtime trusts a marker interface this handler does not implement and the registration fails.
+private fun acceptedDelegateIids(delegate: Guid.GUID): Set<String> =
+    setOf(delegate.toGuidString(), IID_IUNKNOWN.toGuidString(), IID_IAGILE_OBJECT.toGuidString())
+
+private fun mediaCommandForButton(button: Int): WindowsMediaCommand? =
+    when (button) {
+        BUTTON_PLAY -> WindowsMediaCommand.Play
+        BUTTON_PAUSE -> WindowsMediaCommand.Pause
+        BUTTON_STOP -> WindowsMediaCommand.Stop
+        BUTTON_NEXT -> WindowsMediaCommand.Next
+        BUTTON_PREVIOUS -> WindowsMediaCommand.Previous
+        else -> null
+    }
 
 private object WinRt {
     interface Api : StdCallLibrary {
@@ -566,6 +827,11 @@ private object WinRt {
             className: Pointer,
             iid: Guid.GUID,
             factory: PointerByReference,
+        ): Int
+
+        fun RoActivateInstance(
+            activatableClassId: Pointer,
+            instance: PointerByReference,
         ): Int
 
         fun WindowsCreateString(
@@ -621,6 +887,7 @@ private fun Int.checkHresult() {
 }
 
 private const val COM_RELEASE = 2
+private const val QUERY_INTERFACE = 0
 private const val INTEROP_GET_FOR_WINDOW = 6
 private const val SMTC_SET_PLAYBACK_STATUS = 7
 private const val SMTC_GET_DISPLAY_UPDATER = 8
@@ -632,6 +899,20 @@ private const val SMTC_SET_IS_PREVIOUS_ENABLED = 25
 private const val SMTC_SET_IS_NEXT_ENABLED = 27
 private const val SMTC_ADD_BUTTON_PRESSED = 32
 private const val SMTC_REMOVE_BUTTON_PRESSED = 33
+private const val SMTC2_SET_AUTO_REPEAT_MODE = 7
+private const val SMTC2_SET_SHUFFLE_ENABLED = 9
+private const val SMTC2_UPDATE_TIMELINE_PROPERTIES = 12
+private const val SMTC2_ADD_POSITION_REQUESTED = 13
+private const val SMTC2_REMOVE_POSITION_REQUESTED = 14
+private const val SMTC2_ADD_SHUFFLE_REQUESTED = 17
+private const val SMTC2_REMOVE_SHUFFLE_REQUESTED = 18
+private const val SMTC2_ADD_REPEAT_REQUESTED = 19
+private const val SMTC2_REMOVE_REPEAT_REQUESTED = 20
+private const val TIMELINE_SET_START_TIME = 7
+private const val TIMELINE_SET_END_TIME = 9
+private const val TIMELINE_SET_MIN_SEEK_TIME = 11
+private const val TIMELINE_SET_MAX_SEEK_TIME = 13
+private const val TIMELINE_SET_POSITION = 15
 private const val DISPLAY_SET_TYPE = 7
 private const val DISPLAY_GET_MUSIC_PROPERTIES = 12
 private const val DISPLAY_CLEAR_ALL = 16
@@ -641,7 +922,7 @@ private const val DISPLAY_SET_THUMBNAIL = 11
 private const val MUSIC_SET_TITLE = 7
 private const val MUSIC_SET_ARTIST = 9
 private const val MUSIC_SET_ALBUM = 11
-private const val BUTTON_ARGS_GET_BUTTON = 6
+private const val EVENT_ARGS_GET_REQUESTED_VALUE = 6
 private const val RO_INIT_MULTITHREADED = 1
 private const val MEDIA_TYPE_MUSIC = 1
 private const val PLAYBACK_CLOSED = 0
@@ -652,19 +933,27 @@ private const val BUTTON_PAUSE = 1
 private const val BUTTON_STOP = 2
 private const val BUTTON_NEXT = 6
 private const val BUTTON_PREVIOUS = 7
+private const val ABI_REPEAT_NONE = 0
+private const val ABI_REPEAT_TRACK = 1
+private const val ABI_REPEAT_ALL = 2
 private const val S_OK = 0
 private const val E_NOINTERFACE = 0x80004002.toInt()
 private const val E_POINTER = 0x80004003.toInt()
 private const val SMTC_CLASS_NAME = "Windows.Media.SystemMediaTransportControls"
+private const val TIMELINE_PROPERTIES_CLASS =
+    "Windows.Media.SystemMediaTransportControlsTimelineProperties"
 private const val WINDOWS_APP_USER_MODEL_ID = "Wavora"
 private const val STGM_READ = 0
 private const val STREAM_REFERENCE_CREATE_FROM_STREAM = 8
 private const val MAX_ARTWORK_BYTES = 8L * 1024 * 1024
 private const val ARTWORK_TIMEOUT_MS = 5_000
+private const val TICKS_PER_MILLISECOND = 10_000L
+private const val TIMESPAN_BYTES = 8L
 private const val RANDOM_ACCESS_STREAM_REFERENCE_CLASS = "Windows.Storage.Streams.RandomAccessStreamReference"
 
 private val IID_SMTC_INTEROP = Guid.GUID.fromString("{ddb0472d-c911-4a1f-86d9-dc3d71a95f5a}")
 private val IID_SMTC = Guid.GUID.fromString("{99fa3ff4-1742-42a6-902e-087d41f965ec}")
+private val IID_SMTC2 = Guid.GUID.fromString("{EA98D2F6-7F3C-4AF2-A586-72889808EFB1}")
 private val IID_BUTTON_HANDLER = Guid.GUID.fromString("{0557e996-7b23-5bae-aa81-ea0d671143a4}")
 private val IID_IUNKNOWN = Guid.GUID.fromString("{00000000-0000-0000-C000-000000000046}")
 private val IID_IAGILE_OBJECT = Guid.GUID.fromString("{94EA2B94-E9CC-49E0-C0FF-EE64CA8F5B90}")
@@ -672,12 +961,15 @@ private val IID_RANDOM_ACCESS_STREAM = Guid.GUID.fromString("{905A0FE1-BC53-11DF
 private val IID_RANDOM_ACCESS_STREAM_REFERENCE_STATICS =
     Guid.GUID.fromString("{857309DC-3FBF-4E7D-986F-EF3B1A07A964}")
 
-private val ACCEPTED_HANDLER_IIDS =
-    setOf(
-        IID_BUTTON_HANDLER.toGuidString(),
-        IID_IUNKNOWN.toGuidString(),
-        IID_IAGILE_OBJECT.toGuidString(),
-    )
+// Delegate (event-handler) interfaces Windows asks for once the matching event is raised. They are the
+// parameterized TypedEventHandler<SystemMediaTransportControls, ...EventArgs> identities reported by the
+// runtime itself for this Windows build.
+private val IID_PLAYBACK_POSITION_REQUESTED_HANDLER =
+    Guid.GUID.fromString("{44E34F15-BDC0-50A7-ACE4-39E91FB753F1}")
+private val IID_SHUFFLE_ENABLED_REQUESTED_HANDLER =
+    Guid.GUID.fromString("{17ECEA80-27E4-5DAE-ABB4-C858AD1C5307}")
+private val IID_AUTO_REPEAT_MODE_REQUESTED_HANDLER =
+    Guid.GUID.fromString("{A6214BDE-02D5-55B3-AB0D-C6031BE70DA1}")
 
 // Title / artist / album must be three independent, non-repeating fields: no play/view counters in the
 // artist line, no repeated artists, and no album that merely repeats the title or the artist.

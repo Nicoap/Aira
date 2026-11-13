@@ -36,6 +36,28 @@ interface MediaPlayerHandler {
     // Playback control
     suspend fun onPlayerEvent(playerEvent: PlayerEvent)
 
+    /**
+     * Sets an absolute shuffle state. External controllers (Windows media controls) report the
+     * requested state instead of a toggle, and should not flip the player when it already matches.
+     */
+    suspend fun setShuffleEnabled(enabled: Boolean) {
+        if (controlState.value.isShuffle != enabled) {
+            onPlayerEvent(PlayerEvent.Shuffle)
+        }
+    }
+
+    /**
+     * Sets an absolute repeat state. The player only knows how to cycle, so it is cycled until it
+     * reaches the requested state (at most once around the full cycle).
+     */
+    suspend fun setRepeatState(state: RepeatState) {
+        if (controlState.value.repeatState == state) return
+        repeat(REPEAT_CYCLE_LENGTH) {
+            onPlayerEvent(PlayerEvent.Repeat)
+            if (controlState.value.repeatState == state) return
+        }
+    }
+
     fun toggleRadio()
 
     fun toggleLike()
@@ -156,6 +178,10 @@ interface MediaPlayerHandler {
 }
 
 // State classes and enums - these would need to be defined in domain layer
+
+/** RepeatState cycles None -> All -> One -> None. */
+private const val REPEAT_CYCLE_LENGTH = 3
+
 sealed class RepeatState {
     data object None : RepeatState()
 

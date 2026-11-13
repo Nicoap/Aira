@@ -30,6 +30,7 @@ import com.wavora.appdata.di.loader.loadAllModules
 import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.mediaservice.handler.MediaPlayerHandler
 import com.wavora.domain.mediaservice.handler.PlayerEvent
+import com.wavora.domain.mediaservice.handler.RepeatState
 import com.wavora.domain.mediaservice.handler.ToastType
 import com.wavora.domain.mediaservice.session.PlayerSessionAdapter
 import com.wavora.app.di.viewModelModule
@@ -45,12 +46,16 @@ import com.wavora.logger.Logger
 import io.sentry.Sentry
 import io.sentry.SentryLevel
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -78,6 +83,23 @@ import wavora.composeapp.generated.resources.quit_app
 import wavora.composeapp.generated.resources.time_out_check_internet_connection_or_change_piped_instance_in_settings
 
 private const val TAG = "DesktopApp"
+
+/** How often the position is re-published to the Windows media controls to correct drift. */
+private const val TIMELINE_REFRESH_INTERVAL_MS = 5_000L
+
+private fun RepeatState.toWindowsRepeat(): WindowsMediaRepeat =
+    when (this) {
+        RepeatState.None -> WindowsMediaRepeat.Off
+        RepeatState.All -> WindowsMediaRepeat.All
+        RepeatState.One -> WindowsMediaRepeat.One
+    }
+
+private fun WindowsMediaRepeat.toRepeatState(): RepeatState =
+    when (this) {
+        WindowsMediaRepeat.Off -> RepeatState.None
+        WindowsMediaRepeat.All -> RepeatState.All
+        WindowsMediaRepeat.One -> RepeatState.One
+    }
 
 /**
  * Todo lo que necesita la composición principal una vez que el arranque
@@ -729,13 +751,40 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
                                 WindowsMediaCommand.Stop -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Stop)
                                 WindowsMediaCommand.Next -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Next)
                                 WindowsMediaCommand.Previous -> mediaPlayerHandler.onPlayerEvent(PlayerEvent.Previous)
+                                is WindowsMediaCommand.SeekTo -> {
+                                    val duration = runCatching { mediaPlayerHandler.getPlayerDuration() }.getOrDefault(0L)
+                                    if (duration > 0L) {
+                                        val target = command.positionMs.coerceIn(0L, duration)
+                                        mediaPlayerHandler.onPlayerEvent(
+                                            PlayerEvent.UpdateProgress(target.toFloat() * 100f / duration.toFloat()),
+                                        )
+                                    }
+                                }
+
+                                is WindowsMediaCommand.SetShuffle ->
+                                    mediaPlayerHandler.setShuffleEnabled(command.enabled)
+
+                                is WindowsMediaCommand.SetRepeat ->
+                                    mediaPlayerHandler.setRepeatState(command.mode.toRepeatState())
                             }
                         }
                     }
                 } ?: return@LaunchedEffect
 
             try {
-                combine(mediaPlayerHandler.nowPlaying, mediaPlayerHandler.controlState) { song, state ->
+                // Windows extrapolates the position while playing, so a slow tick only corrects drift.
+                val timelineRefresh =
+                    flow {
+                        while (true) {
+                            emit(Unit)
+                            delay(TIMELINE_REFRESH_INTERVAL_MS)
+                        }
+                    }
+                combine(
+                    mediaPlayerHandler.nowPlaying,
+                    mediaPlayerHandler.controlState,
+                    timelineRefresh,
+                ) { song, state, _ ->
                     WindowsMediaSnapshot(
                         title = song?.metadata?.title,
                         artist = song?.metadata?.artist,
@@ -744,8 +793,12 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
                         isPlaying = state.isPlaying,
                         canGoNext = state.isNextAvailable,
                         canGoPrevious = state.isPreviousAvailable,
+                        durationMs = runCatching { mediaPlayerHandler.getPlayerDuration() }.getOrDefault(0L).coerceAtLeast(0L),
+                        positionMs = runCatching { mediaPlayerHandler.getProgress() }.getOrDefault(0L).coerceAtLeast(0L),
+                        shuffleEnabled = state.isShuffle,
+                        repeatMode = state.repeatState.toWindowsRepeat(),
                     )
-                }.collect(mediaSession::update)
+                }.distinctUntilChanged().flowOn(Dispatchers.IO).collect(mediaSession::update)
             } finally {
                 withContext(Dispatchers.IO) { mediaSession.close() }
             }
