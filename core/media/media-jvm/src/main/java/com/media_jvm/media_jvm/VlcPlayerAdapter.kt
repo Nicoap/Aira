@@ -1539,6 +1539,13 @@ class VlcPlayerAdapter(
     ) {
         if (index !in playlist.indices) return
 
+        // Новый трек не должен наследовать позицию предыдущего: `cachedPosition`/`cachedDuration`
+        // читаются SMTC и UI (и по ним же считается `UpdateProgress`), а все остальные
+        // записи кеша идут под `if (pos > 0)`, поэтому сами по себе к нулю не вернутся —
+        // без сброса новый трек стартовал с таймкода предыдущего.
+        cachedPosition = 0L
+        cachedDuration = 0L
+
         val mediaItem = playlist[index]
         val videoId = mediaItem.mediaId
 

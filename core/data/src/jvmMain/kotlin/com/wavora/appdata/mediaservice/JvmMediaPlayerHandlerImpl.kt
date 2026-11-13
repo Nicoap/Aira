@@ -2074,10 +2074,12 @@ class JvmMediaPlayerHandlerImpl(
             )
             Logger.d("MusicSource", "updateCatalog: ${track.title}")
             _queueData.update {
-                it
-                    .copy(
-                        queueState = QueueData.StateSource.STATE_INITIALIZED,
-                    ).addTrackList(catalogMetadata)
+                it.copy(
+                    queueState = QueueData.StateSource.STATE_INITIALIZED,
+                    // Список уже содержит старые треки плюс вставленный — заменяем, а не добавляем,
+                    // иначе очередь удваивается и вставка выглядит как «в конец».
+                    data = it.data.copy(listTracks = catalogMetadata),
+                )
             }
             reorderShuffledQueue(player.getCurrentMediaTimeLine())
         }
@@ -2460,7 +2462,11 @@ class JvmMediaPlayerHandlerImpl(
             }
         }
         queueData.value.data.listTracks.let { list ->
-            if ((list.size > 3 || runBlocking { dataStoreManager.endlessQueue.first() == TRUE }) &&
+            // Автопополнение очереди — только когда «Endless» включён. Раньше здесь стояло
+            // `list.size > 3 || endless`, из-за чего очередь пополнялась всегда, а переключатель
+            // ни на что не влиял.
+            val endless = runBlocking { dataStoreManager.endlessQueue.first() == TRUE }
+            if (endless &&
                 list.size - player.currentMediaItemIndex < 3 &&
                 list.size - player.currentMediaItemIndex >= 0 &&
                 queueData.value.queueState == QueueData.StateSource.STATE_INITIALIZED
