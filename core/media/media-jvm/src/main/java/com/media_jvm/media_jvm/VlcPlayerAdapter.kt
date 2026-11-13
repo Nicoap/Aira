@@ -1750,6 +1750,27 @@ class VlcPlayerAdapter(
             }
     }
 
+    /**
+     * Отдаёт ли сервер прогрессивную ссылку целиком, а не только первый ~1 МиБ.
+     *
+     * WHY: `is403Url` уже запрашивает байты далеко за первым мегабайтом, поэтому его ответ —
+     * это ровно ответ на вопрос «можно ли играть прогрессивный поток до конца». Обрыв
+     * запоминаем на [THROTTLED_MEMO_MS], чтобы не проверять это на каждом треке подряд.
+     */
+    private suspend fun isProgressiveUsable(url: String): Boolean {
+        if (System.currentTimeMillis() < throttledUntil) return false
+        val usable = streamRepository.is403Url(url).firstOrNull() == false
+        if (!usable) throttledUntil = System.currentTimeMillis() + THROTTLED_MEMO_MS
+        return usable
+    }
+
+    /** Манифест вместо файла: проверять его как прогрессивный поток нельзя. */
+    private fun String.isHlsLink(): Boolean = contains("manifest") || contains(".m3u8")
+
+    /** До этого момента прогрессивный поток считается обрезанным и не проверяется. */
+    @Volatile
+    private var throttledUntil = 0L
+
     private fun buildVlcOptions(source: PlayableSource): Array<String> {
         val options = mutableListOf<String>()
         if (source.audioSlaveUrl != null) {
@@ -3074,6 +3095,9 @@ class VlcPlayerAdapter(
         // time below is always derived from the real buffer target, not guessed.
         const val AUDIO_NETWORK_CACHING_MS = 3000L
 
+        // Сколько помним, что прогрессивный поток на этом IP оборван, прежде чем проверить снова.
+        private const val THROTTLED_MEMO_MS = 10 * 60 * 1000L
+
         // Видео буферизуем так же, как аудио: 10 секунд давали слишком долгий старт.
         const val VIDEO_NETWORK_CACHING_MS = 3000L
 
@@ -3674,6 +3698,37 @@ class VlcPlayerAdapter(
                 // VLC accepts absolute file paths directly as MRL
                 return PlayableSource(isVideo = false, url = audioFile.absolutePath)
             }
+        }
+
+        // Прогрессивная ссылка — лучшее качество (opus 251), но только если сервер отдаёт файл
+        // целиком: на «грязном» exit-IP он режет её на ~1 МиБ и дальше отвечает 403. Проверяем
+        // один раз и, если поток полный, играем напрямую — без HLS и потери качества.
+        val progressiveRow = streamRepository.getNewFormat(videoId).lastOrNull()
+        val progressiveAudio = progressiveRow?.audioUrl
+        val progressiveVideo = progressiveRow?.videoUrl
+        if (shouldFindVideo) {
+            val videoOk =
+                !progressiveVideo.isNullOrEmpty() &&
+                    !progressiveVideo.isHlsLink() &&
+                    isProgressiveUsable(progressiveVideo)
+            if (videoOk && progressiveVideo != null) {
+                val slave =
+                    if (progressiveAudio.isNullOrEmpty() || progressiveAudio == progressiveVideo) {
+                        null
+                    } else if (!progressiveAudio.isHlsLink() && isProgressiveUsable(progressiveAudio)) {
+                        progressiveAudio
+                    } else {
+                        null
+                    }
+                Logger.w("Stream", "Video from format (full progressive stream, slave=${slave != null})")
+                return PlayableSource(isVideo = true, url = progressiveVideo, audioSlaveUrl = slave)
+            }
+        } else if (!progressiveAudio.isNullOrEmpty() &&
+            !progressiveAudio.isHlsLink() &&
+            isProgressiveUsable(progressiveAudio)
+        ) {
+            Logger.w("Stream", "Audio from format (full progressive stream)")
+            return PlayableSource(isVideo = false, url = progressiveAudio)
         }
 
         // На этом IP googlevideo отдаёт по прогрессивной ссылке максимум ~1 МиБ, а на всё,
