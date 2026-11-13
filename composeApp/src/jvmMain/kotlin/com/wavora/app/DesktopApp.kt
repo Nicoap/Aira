@@ -631,6 +631,21 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
             DesktopDeepLinkHandler.consumePendingUri()
         }
     }
+    // Живое окно приложения: из трея нужно не только показать его, но и поднять поверх
+    // остальных (иначе клик по иконке ничего визуально не делает, когда окно закрыто в фон).
+    var mainWindow by remember { mutableStateOf<java.awt.Frame?>(null) }
+    val restoreWindow: () -> Unit = {
+        isVisible = true
+        windowState.isMinimized = false
+        mainWindow?.let { frame ->
+            frame.isVisible = true
+            if (frame.extendedState and java.awt.Frame.ICONIFIED != 0) {
+                frame.extendedState = java.awt.Frame.NORMAL
+            }
+            frame.toFront()
+            frame.requestFocus()
+        }
+    }
     val openAppString = stringResource(Res.string.open_app)
     val quitAppString = stringResource(Res.string.quit_app)
     val openMiniPlayer = stringResource(Res.string.open_miniplayer)
@@ -639,14 +654,18 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
         icon = painterResource(Res.drawable.system_app_icon),
         tooltip = stringResource(Res.string.app_name),
         primaryAction = {
-            isVisible = true
-            windowState.isMinimized = false
+            // ЛКМ по иконке работает как переключатель: окно на экране — прячем в трей,
+            // скрыто или свёрнуто — показываем и поднимаем поверх остальных.
+            if (isVisible && !windowState.isMinimized) {
+                isVisible = false
+            } else {
+                restoreWindow()
+            }
         },
     ) {
         if (!isVisible) {
             Item(openAppString) {
-                isVisible = true
-                windowState.isMinimized = false
+                restoreWindow()
             }
         }
         if (MiniPlayerManager.isOpen) {
@@ -695,7 +714,7 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
         visible = isVisible,
         onKeyEvent = { handleAppShortcut(it, sharedViewModel) },
     ) {
-        androidx.compose.runtime.SideEffect { TextInputProbe.window = window }
+        androidx.compose.runtime.SideEffect { TextInputProbe.window = window; mainWindow = window }
         LaunchedEffect(Unit) {
             // Wait for a few real frames, then mark this launch as healthy.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
