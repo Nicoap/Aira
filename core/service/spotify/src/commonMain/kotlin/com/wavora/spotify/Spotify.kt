@@ -80,12 +80,16 @@ class Spotify {
         token: String,
         clientToken: String,
     ) = runCatching {
-        spotifyClient
-            .getSpotifyLyrics(
+        val response =
+            spotifyClient.getSpotifyLyrics(
                 token = token,
                 clientToken = clientToken,
                 trackId,
-            ).body<SpotifyLyricsResponse>()
+            )
+        if (response.status.value !in 200..299) {
+            error("Spotify lyrics request failed (HTTP ${response.status.value})")
+        }
+        response.body<SpotifyLyricsResponse>()
     }
 
     suspend fun getSpotifyCanvas(

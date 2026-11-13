@@ -83,6 +83,7 @@ import com.wavora.domain.utils.toSongEntity
 import com.wavora.app.Platform
 import com.wavora.app.expect.ui.layerBackdrop
 import com.wavora.app.expect.ui.rememberBackdrop
+import com.wavora.app.expect.ui.VerticalScrollBar
 import com.wavora.app.expect.ui.toImageBitmap
 import com.wavora.app.extension.angledGradientBackground
 import com.wavora.app.extension.getColorFromPalette
@@ -258,15 +259,18 @@ fun AlbumScreen(
     Crossfade(uiState.loadState) {
         when (it) {
             LocalPlaylistState.PlaylistLoadState.Success -> {
-                LazyColumn(
-                    modifier =
-                        Modifier
-                            .fillMaxWidth()
-                            .background(if (isMobilePortrait) mutedPaletteBg else Color.Black)
-                            .hazeSource(hazeState),
-                    state = lazyState,
+                Box(
+                    modifier = Modifier.fillMaxSize(),
                 ) {
-                    item(contentType = "header") {
+                    LazyColumn(
+                        modifier =
+                            Modifier
+                                .fillMaxSize()
+                                .background(if (isMobilePortrait) mutedPaletteBg else Color.Black)
+                                .hazeSource(hazeState),
+                        state = lazyState,
+                    ) {
+                        item(contentType = "header") {
                         Box(
                             modifier =
                                 Modifier
@@ -905,9 +909,14 @@ fun AlbumScreen(
                             }
                         }
                     }
-                    item {
-                        EndOfPage()
+                        item {
+                            EndOfPage()
+                        }
                     }
+                    VerticalScrollBar(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        scrollState = lazyState,
+                    )
                 }
                 AnimatedVisibility(
                     visible = shouldHideTopBar,
