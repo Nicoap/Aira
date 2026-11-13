@@ -17,6 +17,7 @@ import com.wavora.domain.repository.StreamRepository
 import com.wavora.domain.utils.Resource
 import com.wavora.scraper.YouTube
 import com.wavora.scraper.extractor.rewriteStreamUrl
+import com.wavora.scraper.extractor.rewriteStreamUrlWithHint
 import com.wavora.scraper.models.MediaType
 import com.wavora.scraper.models.response.PlayerResponse
 import com.wavora.logger.Logger
@@ -224,9 +225,21 @@ internal class StreamRepositoryImpl(
                                 Logger.w("Stream", "Tidal metadata error (paused for $TIDAL_PAUSE): ${it.message?.take(160)}")
                             }
                     }
-                    insertNewFormat(
+                    // HLS-манифест: googlevideo на этом IP отдаёт по прогрессивной ссылке
+                    // максимум ~1 МиБ, дальше отвечает 403 (трек «замирает» на одной и той
+                    // же секунде). Манифест живёт отдельной строкой кэша, чтобы не затирать
+                    // рабочую прогрессивную запись, и несёт в ссылке хинт выбора варианта.
+                    val hlsManifest = response.streamingData?.hlsManifestUrl
+                    val videoQualityHeight =
+                        dataStoreManager.videoQuality.first().filter(Char::isDigit).toIntOrNull() ?: 720
+                    val newFormat =
                         NewFormatEntity(
-                            videoId = if (VIDEO_QUALITY.itags.contains(format?.itag)) "${MERGING_DATA_TYPE.VIDEO}$videoId" else videoId,
+                            videoId =
+                                when {
+                                    muxed -> "${MERGING_DATA_TYPE.HLS}$videoId"
+                                    VIDEO_QUALITY.itags.contains(format?.itag) -> "${MERGING_DATA_TYPE.VIDEO}$videoId"
+                                    else -> videoId
+                                },
                             itag = format?.itag ?: itag ?: 141,
                             mimeType =
                                 Regex("""([^;]+);\s*codecs=["']([^"']+)["']""")
@@ -266,17 +279,31 @@ internal class StreamRepositoryImpl(
                                 ),
                             cpn = data.first,
                             expiredTime = now().plusSeconds(response.streamingData?.expiresInSeconds?.toLong() ?: 0L),
-                            audioUrl = if (muxed) response.streamingData?.hlsManifestUrl else format?.url,
-                            videoUrl = if (muxed) response.streamingData?.hlsManifestUrl else videoFormat?.url,
+                            audioUrl = if (muxed) hlsManifest?.let { rewriteStreamUrlWithHint(it, "audio") } else format?.url,
+                            videoUrl = if (muxed) hlsManifest?.let { rewriteStreamUrlWithHint(it, "video:$videoQualityHeight") } else videoFormat?.url,
                             bpm = tidalBpm,
                             musicKey = tidalMusicKey,
                             keyScale = tidalKeyScale,
-                        ),
-                    )
+                        )
+                    insertNewFormat(newFormat)
+                    // Манифест есть в каждом ответе player(), поэтому кладём его в кэш
+                    // отдельной строкой: плеер сможет играть HLS без второго извлечения,
+                    // когда прогрессивная ссылка упирается в лимит googlevideo.
+                    if (!muxed) {
+                        hlsManifest?.let { manifest ->
+                            insertNewFormat(
+                                newFormat.copy(
+                                    videoId = "${MERGING_DATA_TYPE.HLS}$videoId",
+                                    audioUrl = rewriteStreamUrlWithHint(manifest, "audio"),
+                                    videoUrl = rewriteStreamUrlWithHint(manifest, "video:$videoQualityHeight"),
+                                ),
+                            )
+                        }
+                    }
                     if (data.first != null) {
                         emit(
                             if (muxed) {
-                                response.streamingData?.hlsManifestUrl
+                                hlsManifest?.let { rewriteStreamUrlWithHint(it, "audio") }
                             } else {
                                 format?.url?.let { url ->
                                     if (youTube.isManifestUrl(url)) {
@@ -290,7 +317,7 @@ internal class StreamRepositoryImpl(
                     } else {
                         emit(
                             if (muxed) {
-                                response.streamingData?.hlsManifestUrl
+                                hlsManifest?.let { rewriteStreamUrlWithHint(it, "audio") }
                             } else {
                                 format?.url?.let { url ->
                                     if (youTube.isManifestUrl(url)) {

@@ -45,6 +45,8 @@ private const val FIRST_BYTE_CHUNK = 64L * 1024
  */
 actual fun rewriteStreamUrl(url: String): String = StreamProxy.localize(url)
 
+actual fun rewriteStreamUrlWithHint(url: String, hint: String?): String = StreamProxy.localize(url, hint)
+
 actual fun upstreamStreamUrl(url: String): String = StreamProxy.unwrap(url) ?: url
 
 internal object StreamProxy {
@@ -68,17 +70,37 @@ internal object StreamProxy {
     }
 
     /** Возвращает адрес прокси для переданной ссылки; при любой проблеме — исходную ссылку. */
-    fun localize(url: String): String {
+    fun localize(
+        url: String,
+        hint: String? = null,
+    ): String {
         if (url.isBlank()) return url
         val base = baseUrl() ?: return url
-        if (url.startsWith(base)) return url
-        // A link cached by an earlier run points at that run's (now closed) port: rebuild it on the current one.
+        // Хинт, который уже сидит в ссылке, важнее отсутствующего аргумента: пересборка
+        // ссылки на новый порт не должна терять выбор варианта HLS.
+        val effectiveHint = hint ?: hintOf(url)
+        if (url.startsWith(base)) {
+            return if (effectiveHint == null || url.contains("h=$effectiveHint")) url else swapHint(url, effectiveHint)
+        }
+        // Ссылка из прошлого запуска указывает на закрытый порт — пересобираем на текущем.
         val upstream = unwrap(url) ?: url
         val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(upstream.toByteArray())
-        return "$base${PATH_PREFIX.trimStart('/')}$encoded"
+        val tail = effectiveHint?.let { "?h=$it" }.orEmpty()
+        return "$base${PATH_PREFIX.trimStart('/')}$encoded$tail"
     }
 
-    private val proxyLink = Regex("^http://127\\.0\\.0\\.1:\\d+/stream/([A-Za-z0-9_-]+)$")
+    private val proxyLink = Regex("^http://127\\.0\\.0\\.1:\\d+/stream/([A-Za-z0-9_-]+)(\\?.*)?$")
+
+    private val hintParam = Regex("[?&]h=([A-Za-z0-9:_-]+)")
+
+    /** Хинт выбора варианта HLS (`audio`, `video:720`), зашитый в ссылку прокси. */
+    private fun hintOf(url: String): String? = hintParam.find(url)?.groupValues?.get(1)
+
+    private fun swapHint(url: String, hint: String): String {
+        val without = url.replace(Regex("[?&]h=[A-Za-z0-9:_-]+"), "")
+        val separator = if (without.contains('?')) '&' else '?'
+        return "$without${separator}h=$hint"
+    }
 
     /** Decodes a local proxy link (of any run) back to the upstream googlevideo address; null if it is not one. */
     fun unwrap(url: String): String? {
@@ -139,6 +161,13 @@ internal object StreamProxy {
                 exchange.sendResponseHeaders(200, -1)
                 return
             }
+            // Хинт выбора варианта HLS мог приехать и в query, и в хвост пути (к ссылке
+            // дописывают `&cpn=...`/`&range=...`), поэтому ищем по всей строке запроса.
+            val hint = hintOf(exchange.requestURI.toString())
+            if (isHlsManifest(upstream)) {
+                serveManifest(exchange, upstream, hint)
+                return
+            }
             stream(exchange, upstream, parseRange(exchange.requestHeaders.getFirst("Range")))
         } catch (e: IOException) {
             // Плеер закрыл соединение (перемотка, смена трека) — это нормальный ход событий.
@@ -148,6 +177,98 @@ internal object StreamProxy {
             Logger.w(TAG, "Stream proxy failed: ${e.message?.take(160)}")
             runCatching { respondText(exchange, 502, "stream failed") }
         }
+    }
+
+    private fun isHlsManifest(upstream: String): Boolean =
+        upstream.contains("hls_variant") ||
+            upstream.contains("/api/manifest/") ||
+            upstream.contains(".m3u8")
+
+    /**
+     * Отдаёт мастер-манифест HLS, оставляя в нём ровно один вариант.
+     *
+     * WHY: googlevideo на этом IP отдаёт не больше ~1 МиБ с одной ссылки, а у HLS своя
+     * подпись у каждого сегмента (~100 КБ), поэтому поток не обрывается на 59-й секунде.
+     * Мастер перечисляет варианты от 157 кбит/с до 4 Мбит/с: для музыки берём самый лёгкий,
+     * для видео — ближайший к выбранному качеству.
+     */
+    private fun serveManifest(
+        exchange: HttpExchange,
+        upstream: String,
+        hint: String?,
+    ) {
+        val body =
+            runCatching {
+                client
+                    .newCall(
+                        Request
+                            .Builder()
+                            .url(upstream)
+                            // Мастер-манифест отдаётся только браузерному User-Agent.
+                            .header("User-Agent", YouTubeClient.USER_AGENT_WEB)
+                            .header("Referer", REFERER)
+                            .build(),
+                    ).execute()
+                    .use { response ->
+                        if (response.code !in 200..299) {
+                            Logger.w(TAG, "HLS manifest failed: HTTP ${response.code}")
+                            null
+                        } else {
+                            response.body.string()
+                        }
+                    }
+            }.getOrNull()
+        if (body == null) {
+            respondText(exchange, 502, "manifest unavailable")
+            return
+        }
+        val variants = parseVariants(body)
+        val chosen = hint?.let { chooseVariant(variants, it) }
+        val text =
+            if (chosen == null) {
+                body
+            } else {
+                Logger.d(TAG, "HLS variant for hint=$hint: ${chosen.height}p ${chosen.bandwidth / 1000} kbps")
+                "#EXTM3U\n#EXT-X-INDEPENDENT-SEGMENTS\n${chosen.attributes}\n${chosen.uri}\n"
+            }
+        val bytes = text.toByteArray()
+        exchange.responseHeaders.add("Content-Type", "application/vnd.apple.mpegurl")
+        exchange.sendResponseHeaders(200, bytes.size.toLong())
+        exchange.responseBody.use { it.write(bytes) }
+    }
+
+    private class HlsVariant(
+        val attributes: String,
+        val uri: String,
+        val bandwidth: Long,
+        val height: Int,
+    )
+
+    private fun parseVariants(manifest: String): List<HlsVariant> {
+        val lines = manifest.lines().map { it.trim() }
+        val variants = mutableListOf<HlsVariant>()
+        lines.forEachIndexed { index, line ->
+            if (!line.startsWith("#EXT-X-STREAM-INF")) return@forEachIndexed
+            val uri =
+                lines.drop(index + 1).firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
+                    ?: return@forEachIndexed
+            val bandwidth = Regex("BANDWIDTH=(\\d+)").find(line)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
+            val height = Regex("RESOLUTION=\\d+x(\\d+)").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            variants += HlsVariant(line, uri, bandwidth, height)
+        }
+        return variants
+    }
+
+    private fun chooseVariant(
+        variants: List<HlsVariant>,
+        hint: String,
+    ): HlsVariant? {
+        if (variants.isEmpty()) return null
+        if (hint.startsWith("video:")) {
+            val target = hint.removePrefix("video:").filter(Char::isDigit).toIntOrNull() ?: 720
+            variants.filter { it.height in 1..target }.maxByOrNull { it.height }?.let { return it }
+        }
+        return variants.minByOrNull { it.bandwidth }
     }
 
     private fun stream(exchange: HttpExchange, upstream: String, range: RequestedRange) {
@@ -262,11 +383,18 @@ internal object StreamProxy {
         attempts: Int = CHUNK_ATTEMPTS,
     ): ChunkResponse? {
         var lastError: Exception? = null
+        // Ссылка со встроенным `range=0-N`: googlevideo отдаёт только первые N байт,
+        // а всё, что дальше, отвечает 403. Именно из-за этого трек обрывался на одной
+        // и той же секунде при каждом воспроизведении.
+        val cleanUpstream by lazy { withoutUrlRange(upstream) }
         repeat(attempts) { attempt ->
+            // Первую попытку делаем со ссылкой как есть (она рабочая для первых байт),
+            // а повторы — уже без встроенного диапазона.
+            val target = if (attempt == 0) upstream else cleanUpstream
             val request =
                 Request
                     .Builder()
-                    .url(upstream)
+                    .url(target)
                     .header("Range", "bytes=$from-$to")
                     // Плеерный User-Agent сервер не принимает, запрашиваем как веб-клиент.
                     .header("User-Agent", YouTubeClient.USER_AGENT_WEB)
@@ -299,6 +427,30 @@ internal object StreamProxy {
         Logger.w(TAG, "Stream chunk $from-$to failed (client=${clientTag(upstream)}): ${lastError?.message?.take(200)}")
         return null
     }
+
+    /**
+     * Убирает из ссылки параметры `range`, `rn` и `rbuf`.
+     *
+     * WHY: экстрактор иногда отдаёт ссылку, уже ограниченную первым сегментом
+     * (`range=0-1114111`). Прокси и так запрашивает нужный кусок заголовком `Range`,
+     * а встроенный параметр сервер понимает буквально и на всё, что за ним, отвечает 403.
+     */
+    private fun withoutUrlRange(url: String): String {
+        if (!url.contains("range=") && !url.contains("rn=") && !url.contains("rbuf=")) return url
+        val queryStart = url.indexOf('?')
+        if (queryStart < 0) return url
+        val kept =
+            url.substring(queryStart + 1)
+                .split('&')
+                .filterNot { param ->
+                    param.startsWith("range=") || param.startsWith("rn=") || param.startsWith("rbuf=")
+                }
+        return if (kept.isEmpty()) url.substring(0, queryStart) else "${url.substring(0, queryStart)}?${kept.joinToString("&")}"
+    }
+
+    /** Встроенный в ссылку `range` (для логов) — обычно и есть причина 403. */
+    private fun urlRangeNote(url: String): String =
+        Regex("[?&]range=([^&]*)").find(url)?.groupValues?.getOrNull(1)?.let { ", url range=0-$it" } ?: ""
 
     private fun Response.toChunk(): ChunkResponse? {
         val total =

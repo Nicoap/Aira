@@ -1353,7 +1353,14 @@ class YouTube {
                                     url = streamsList.find { it.first == adaptiveFormats.itag }?.second,
                                 )
                             },
-                        hlsManifestUrl = streamsList.firstOrNull { it.first == 96 }?.second,
+                        // Манифест обязательно отдаём через локальный прокси: hls_variant
+                        // отвечает 403 на «неродной» User-Agent, а прокси представляется
+                        // браузером. Плейлисты вариантов и сегменты VLC тянет сам.
+                        hlsManifestUrl =
+                            streamsList
+                                .firstOrNull { it.first == 96 }
+                                ?.second
+                                ?.let(::rewriteStreamUrl),
                     ),
             )
         decodedSigResponse =

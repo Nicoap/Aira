@@ -5,7 +5,9 @@ import com.wavora.domain.model.player.GenericMediaItem
 import com.wavora.domain.model.player.GenericPlaybackParameters
 import com.wavora.domain.model.player.PlayerConstants
 import com.wavora.domain.model.player.PlayerError
+import com.wavora.domain.extension.isBefore
 import com.wavora.domain.extension.isVideo
+import com.wavora.domain.extension.now
 import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.mediaservice.player.MediaPlayerInterface
 import com.wavora.domain.mediaservice.player.MediaPlayerListener
@@ -3674,9 +3676,36 @@ class VlcPlayerAdapter(
             }
         }
 
-        // Кэш мог заполниться HLS-манифестом (itag 96): VLC его проигрывает, но на каждом
-        // сегменте (~6 секунд) заново поднимает видеовыход — со стороны это выглядит как
-        // регулярные фризы картинки. Такую строку перезаписываем прогрессивным потоком.
+        // На этом IP googlevideo отдаёт по прогрессивной ссылке максимум ~1 МиБ, а на всё,
+        // что дальше, отвечает 403 — трек «замирает» на одной и той же секунде. Поэтому
+        // приоритет у HLS-манифеста: сегменты подписаны каждый отдельно, и лимит на них
+        // не распространяется. Для видео берём вариант нужной высоты, для аудио — самый лёгкий.
+        var hlsFormat = streamRepository.getNewFormat("${MERGING_DATA_TYPE.HLS}$videoId").lastOrNull()
+        // Кэш мог быть заполнен до появления HLS-строки: тогда манифеста нет, и трек играл бы
+        // через прогрессивную ссылку, обрывающуюся на первой мегабайте. Извлекаем один раз
+        // (тот же вызов, что и обычный прогрев) — он кладёт HLS-строку рядом с прогрессивной.
+        if (hlsFormat == null || hlsFormat.expiredTime.isBefore(now())) {
+            streamRepository
+                .getStream(
+                    dataStoreManager,
+                    videoId,
+                    isDownloading = false,
+                    isVideo = false,
+                ).lastOrNull()
+            hlsFormat = streamRepository.getNewFormat("${MERGING_DATA_TYPE.HLS}$videoId").lastOrNull()
+        }
+        val hlsUrl = if (shouldFindVideo) hlsFormat?.videoUrl ?: hlsFormat?.audioUrl else hlsFormat?.audioUrl
+        if (!hlsUrl.isNullOrEmpty()) {
+            Logger.w("Stream", "HLS from format (video=$shouldFindVideo)")
+            return PlayableSource(
+                isVideo = shouldFindVideo,
+                url = hlsUrl,
+                // Манифест уже содержит и видео, и звук: отдельная аудиодорожка не нужна.
+                audioSlaveUrl = null,
+            )
+        }
+
+        // Прогрессивный поток — запасной путь, если манифеста для трека нет.
         var cachedFormat = streamRepository.getNewFormat(videoId).lastOrNull()
         val cachedVideoIsHls =
             cachedFormat?.videoUrl?.let { url -> url.contains("manifest") || url.contains(".m3u8") } == true

@@ -533,6 +533,10 @@ const val TITLE = "TITLE"
 object MERGING_DATA_TYPE {
     const val SONG = "Song"
     const val VIDEO = "Video"
+
+    // Отдельный префикс для HLS-манифеста: строка живёт рядом с прогрессивной
+    // записью трека, но не перезаписывает её (иначе кэш «отравляется» манифестом).
+    const val HLS = "Hls"
 }
 
 enum class LibraryChipType {
