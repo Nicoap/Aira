@@ -1412,7 +1412,8 @@ class YouTube {
         listUrlSig.forEach {
             Logger.d(TAG, "YouTube NewPipe URL $it")
         }
-        val randomUrl = listUrlSig.randomOrNull() ?: return null
+        // A manifest URL in the pool is not a stream: probing it rejected a good track about 1 time in 20.
+        val randomUrl = listUrlSig.filterNot { isManifestUrl(it) }.randomOrNull() ?: return null
         if (listUrlSig.isNotEmpty() && !is403Url(randomUrl)) {
             Logger.d(TAG, "YouTube NewPipe Found URL $randomUrl")
             return decodedSigResponse

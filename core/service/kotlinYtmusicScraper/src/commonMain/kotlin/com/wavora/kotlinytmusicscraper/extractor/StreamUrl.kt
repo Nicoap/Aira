@@ -9,3 +9,10 @@ package com.wavora.scraper.extractor
  * (Android/iOS) ссылка отдаётся как есть.
  */
 expect fun rewriteStreamUrl(url: String): String
+
+/**
+ * Returns the original (upstream) stream address for a link that [rewriteStreamUrl] may have produced.
+ * Links of an earlier run point at a dead local port, so health checks must look at the upstream address.
+ * Anything that is not a local proxy link is returned unchanged.
+ */
+expect fun upstreamStreamUrl(url: String): String

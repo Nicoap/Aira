@@ -16,6 +16,7 @@ import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.repository.StreamRepository
 import com.wavora.domain.utils.Resource
 import com.wavora.scraper.YouTube
+import com.wavora.scraper.extractor.rewriteStreamUrl
 import com.wavora.scraper.models.MediaType
 import com.wavora.scraper.models.response.PlayerResponse
 import com.wavora.logger.Logger
@@ -43,7 +44,17 @@ internal class StreamRepositoryImpl(
             localDataSource.insertNewFormat(newFormat)
         }
 
-    override fun getNewFormat(videoId: String): Flow<NewFormatEntity?> = flow { emit(localDataSource.getNewFormat(videoId)) }.flowOn(Dispatchers.IO)
+    override fun getNewFormat(videoId: String): Flow<NewFormatEntity?> =
+        flow { emit(localDataSource.getNewFormat(videoId)?.withCurrentProxyPort()) }.flowOn(Dispatchers.IO)
+
+    // Links cached by an earlier run point at that run's stream proxy (another, closed port): rebuild them on the current one.
+    private fun NewFormatEntity.withCurrentProxyPort(): NewFormatEntity =
+        copy(
+            audioUrl = audioUrl?.let(::relocalizeProxyUrl),
+            videoUrl = videoUrl?.let(::relocalizeProxyUrl),
+        )
+
+    private fun relocalizeProxyUrl(url: String): String = if (url.startsWith("http://127.0.0.1:")) rewriteStreamUrl(url) else url
 
     override suspend fun getFormatFlow(videoId: String) = localDataSource.getNewFormatAsFlow(videoId)
 

@@ -43,10 +43,12 @@ internal fun List<Pair<Int, String>>.headCheckRandomStream(): Boolean {
             ?: this.filter { it.first in required }.randomOrNull()
             ?: return false
     val t0 = System.nanoTime()
-    // HEAD на googlevideo всегда 403, поэтому проверяем GET и не читаем тело. Range — такой же ограниченный,
-    // какой запрашивает StreamProxy: открытый `bytes=0-` на «грязных» IP отдаёт 403 даже для рабочих ссылок.
+    // HEAD always gets 403 on googlevideo, so probe with a GET and do not read the body. The probe must reach
+    // PAST the first MiB (see PROBE_RANGE): WEB_REMIX/PipePipe links serve only the first ~1.1 MB and then
+    // answer 403, so a probe of the first chunk accepts links that die about a minute into the track.
+    // 416 = the file is shorter than the probe offset, so the whole file lies in the readable part.
     val result = probe(candidate.second, PROBE_RANGE, YouTubeClient.USER_AGENT_WEB)
-    val ok = result.code in 200..299
+    val ok = result.code in 200..299 || result.code == 416
     Logger.d(
         "Extractor",
         "Stream probe itag=${candidate.first} rangeGET=${result.code} ok=$ok in ${(System.nanoTime() - t0) / 1_000_000}ms",
@@ -54,7 +56,8 @@ internal fun List<Pair<Int, String>>.headCheckRandomStream(): Boolean {
     return ok
 }
 
-private const val PROBE_RANGE = "bytes=0-1048575"
+// 1.25 MiB offset: beyond the ~1.1 MB that a link without a PO token is allowed to serve.
+private const val PROBE_RANGE = "bytes=1310720-1311743"
 
 private class ProbeResult(
     val code: Int,

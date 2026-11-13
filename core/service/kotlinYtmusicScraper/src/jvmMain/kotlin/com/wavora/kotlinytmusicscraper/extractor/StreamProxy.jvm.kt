@@ -35,6 +35,8 @@ private const val IO_WINDOW = 64 * 1024
  */
 actual fun rewriteStreamUrl(url: String): String = StreamProxy.localize(url)
 
+actual fun upstreamStreamUrl(url: String): String = StreamProxy.unwrap(url) ?: url
+
 internal object StreamProxy {
     private val lock = Any()
 
@@ -60,9 +62,23 @@ internal object StreamProxy {
         if (url.isBlank()) return url
         val base = baseUrl() ?: return url
         if (url.startsWith(base)) return url
-        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(url.toByteArray())
+        // A link cached by an earlier run points at that run's (now closed) port: rebuild it on the current one.
+        val upstream = unwrap(url) ?: url
+        val encoded = Base64.getUrlEncoder().withoutPadding().encodeToString(upstream.toByteArray())
         return "$base${PATH_PREFIX.trimStart('/')}$encoded"
     }
+
+    private val proxyLink = Regex("^http://127\\.0\\.0\\.1:\\d+/stream/([A-Za-z0-9_-]+)$")
+
+    /** Decodes a local proxy link (of any run) back to the upstream googlevideo address; null if it is not one. */
+    fun unwrap(url: String): String? {
+        val encoded = proxyLink.find(url)?.groupValues?.get(1) ?: return null
+        return runCatching { String(Base64.getUrlDecoder().decode(encoded)) }
+            .getOrNull()
+            ?.takeIf { it.startsWith("http") }
+    }
+
+    private fun clientTag(upstream: String): String = Regex("[?&]c=([A-Z_]+)").find(upstream)?.groupValues?.get(1) ?: "?"
 
     private fun baseUrl(): String? {
         baseUrl?.let { return it }
@@ -237,7 +253,7 @@ internal object StreamProxy {
             if (result.isSuccess) return result.getOrNull()
             if (attempt + 1 < CHUNK_ATTEMPTS) Thread.sleep(RETRY_DELAY_MS * (attempt + 1))
         }
-        Logger.w(TAG, "Stream chunk $from-$to failed: ${lastError?.message?.take(120)}")
+        Logger.w(TAG, "Stream chunk $from-$to failed (client=${clientTag(upstream)}): ${lastError?.message?.take(120)}")
         return null
     }
 

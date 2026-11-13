@@ -1,5 +1,7 @@
 package com.wavora.scraper
 
+import com.wavora.scraper.extractor.upstreamStreamUrl
+
 import com.wavora.domain.extension.now
 import com.wavora.scraper.extractor.Extractor
 import com.wavora.scraper.models.Context
@@ -1214,24 +1216,28 @@ class Ytmusic {
         onComplete(isSuccess, lastException)
     }
 
-    // googlevideo отвечает 403 на HEAD даже для рабочих ссылок, поэтому проверяем GET без чтения тела.
-    // ВАЖНО: проверять надо ограниченный Range (`bytes=0-1048575`) — ровно такими кусками качает наш
-    // StreamProxy. Открытый `bytes=0-` (его шлёт libVLC) этот сервер отдаёт 403 даже для живых ссылок,
-    // поэтому такой пробой нельзя отбраковывать ссылки. expectSuccess=false: 4xx — это результат, а не исключение.
-    suspend fun is403Url(url: String): Boolean =
-        try {
+    // googlevideo answers 403 to HEAD even for working links, so check with a GET and do not read the body.
+    // The probe must reach PAST the first MiB: links of the web client (WEB_REMIX / PipePipe) serve only the
+    // first ~1.1 MB and then answer 403, which made a probe of the first chunk accept links that die about a
+    // minute into the track. 416 (the file is shorter than the offset) is fine: the whole file is readable.
+    // Manifests are tiny, so they are probed from the start. expectSuccess=false: 4xx is a result, not an exception.
+    suspend fun is403Url(url: String): Boolean {
+        val target = upstreamStreamUrl(url)
+        val isManifest = target.contains(".m3u8") || target.contains(".mpd") || target.contains("manifest")
+        return try {
             httpClient
-                .prepareGet(url) {
+                .prepareGet(target) {
                     expectSuccess = false
-                    header(HttpHeaders.Range, "bytes=0-1048575")
+                    header(HttpHeaders.Range, if (isManifest) "bytes=0-1023" else "bytes=1310720-1311743")
                     header(HttpHeaders.UserAgent, DOWNLOAD_USER_AGENT)
-                }.execute { it.status.value in 400..499 }
+                }.execute { it.status.value in 400..499 && it.status.value != 416 }
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
             throw e
         } catch (e: Exception) {
             Logger.w(TAG, "is403Url check failed: ${e.message?.take(120)}")
             true
         }
+    }
 
     suspend fun getTidalOAuthToken() =
         httpClient.submitForm(
