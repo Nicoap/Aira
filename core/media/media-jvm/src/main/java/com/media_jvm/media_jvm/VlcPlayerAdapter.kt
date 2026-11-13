@@ -1756,7 +1756,10 @@ class VlcPlayerAdapter(
         if (source.isVideo) {
             // Video decoding and rendering are more sensitive to network
             // jitter than audio-only playback; keep a larger stream buffer.
-            options.add(":network-caching=10000")
+            // 10 секунд кэша — это очень долгий старт: локальный прокси отдаёт поток
+            // кусками по 1 МБ, и libVLC ждёт заполнения буфера, прежде чем показать кадр.
+            // Держим тот же уровень, что и у аудио.
+            options.add(":network-caching=$VIDEO_NETWORK_CACHING_MS")
             options.add(":http-reconnect")
             // Frames are pulled through a vmem callback surface (system memory, RV32). With hardware
             // decoding (d3d11va/dxva2) libVLC logged "Failed to create video converter" and no frame
@@ -3068,6 +3071,9 @@ class VlcPlayerAdapter(
         // Shared here (instead of duplicated as a magic number) so the pre-roll lead
         // time below is always derived from the real buffer target, not guessed.
         const val AUDIO_NETWORK_CACHING_MS = 3000L
+
+        // Видео буферизуем так же, как аудио: 10 секунд давали слишком долгий старт.
+        const val VIDEO_NETWORK_CACHING_MS = 3000L
 
         // WAVORA CROSSFADE FIX (Windows stutter, remaining gap): a precached player
         // only had `media().prepare()` called on it — URL resolved, demuxer opened,

@@ -29,6 +29,9 @@ private const val IO_WINDOW = 64 * 1024
 /** Окна поменьше, которыми пробуем открыть поток, если крупный диапазон получил 403. */
 private val FIRST_CHUNK_FALLBACKS = longArrayOf(256L * 1024, 64L * 1024)
 
+/** Мелкий первый кусок: нужен, чтобы картинка/звук появились как можно раньше. */
+private const val FIRST_BYTE_CHUNK = 64L * 1024
+
 /**
  * JVM-реализация: подставляет локальный прокси вместо прямого googlevideo-адреса.
  *
@@ -157,7 +160,11 @@ internal object StreamProxy {
             start = (total - range.suffix).coerceAtLeast(0L)
         }
 
-        var first = fetchChunk(upstream, start, start + CHUNK_SIZE - 1)
+        var first =
+            // Первый кусок берём маленьким и без повторов: libVLC покажет кадр только
+            // после первых байтов, а полный мегабайт с ретраями давал старт в 5-9 секунд.
+            fetchChunk(upstream, start, start + FIRST_BYTE_CHUNK - 1, attempts = 1)
+                ?: fetchChunk(upstream, start, start + CHUNK_SIZE - 1)
         if (first == null) {
             // Часть ссылок отвечает 403 на крупный диапазон, но нормально отдаётся мелкими
             // кусками — пробуем окно поменьше, прежде чем считать поток недоступным.
@@ -235,9 +242,14 @@ internal object StreamProxy {
      * Запрашивает у googlevideo ограниченный кусок. Открытый диапазон тут использовать нельзя:
      * сервер отвечает на него 403 даже для рабочих ссылок.
      */
-    private fun fetchChunk(upstream: String, from: Long, to: Long): ChunkResponse? {
+    private fun fetchChunk(
+        upstream: String,
+        from: Long,
+        to: Long,
+        attempts: Int = CHUNK_ATTEMPTS,
+    ): ChunkResponse? {
         var lastError: Exception? = null
-        repeat(CHUNK_ATTEMPTS) { attempt ->
+        repeat(attempts) { attempt ->
             val result =
                 runCatching {
                     val request =
