@@ -741,6 +741,7 @@ fun NowPlayingScreenContent(
             onDismiss = {
                 showQueueBottomSheet = false
             },
+            navController = navController,
         )
     }
 

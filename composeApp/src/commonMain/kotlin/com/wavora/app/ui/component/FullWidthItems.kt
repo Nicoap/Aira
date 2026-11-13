@@ -81,10 +81,6 @@ import com.wavora.domain.utils.connectArtists
 import com.wavora.domain.utils.toListName
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraSecondary
-import io.github.alexzhirkevich.compottie.Compottie
-import io.github.alexzhirkevich.compottie.LottieCompositionSpec
-import io.github.alexzhirkevich.compottie.rememberLottieComposition
-import io.github.alexzhirkevich.compottie.rememberLottiePainter
 import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.resources.painterResource
@@ -134,11 +130,6 @@ fun SongFullWidthItems(
         .getSongAsFlow(songEntity?.videoId ?: track?.videoId ?: "")
         .mapNotNull { it?.downloadState }
         .collectAsState(initial = DownloadState.STATE_NOT_DOWNLOADED)
-    val composition by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/audio_playing_animation.json").decodeToString(),
-        )
-    }
     val rowHover = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val rowHovered by rowHover.collectIsHoveredAsState()
     val offsetX = remember { Animatable(initialValue = 0f) }
@@ -225,15 +216,7 @@ fun SongFullWidthItems(
                 ) {
                     Crossfade(isPlaying) {
                         if (it) {
-                            Image(
-                                painter =
-                                    rememberLottiePainter(
-                                        composition = composition,
-                                        iterations = Compottie.IterateForever,
-                                    ),
-                                contentDescription = "Lottie animation",
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                            )
+                            AudioPlayingIndicator(size = 48.dp)
                         } else if (index == null) {
                             val thumb = track?.thumbnails?.lastOrNull()?.url ?: songEntity?.thumbnails
                             AsyncImage(
@@ -423,11 +406,6 @@ fun SuggestItems(
     onClickListener: (() -> Unit)? = null,
     onAddClickListener: (() -> Unit)? = null,
 ) {
-    val composition by rememberLottieComposition {
-        LottieCompositionSpec.JsonString(
-            Res.readBytes("files/audio_playing_animation.json").decodeToString(),
-        )
-    }
     Box(
         modifier =
             Modifier
@@ -446,15 +424,7 @@ fun SuggestItems(
             Box(modifier = Modifier.size(40.dp)) {
                 Crossfade(isPlaying) {
                     if (it) {
-                        Image(
-                            painter =
-                                rememberLottiePainter(
-                                    composition = composition,
-                                    iterations = Compottie.IterateForever,
-                                ),
-                            contentDescription = "Lottie animation",
-                                colorFilter = androidx.compose.ui.graphics.ColorFilter.tint(androidx.compose.material3.MaterialTheme.colorScheme.primary),
-                        )
+                        AudioPlayingIndicator(size = 40.dp)
                     } else {
                         val thumb = track.thumbnails?.lastOrNull()?.url
                         AsyncImage(

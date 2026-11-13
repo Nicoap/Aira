@@ -134,6 +134,7 @@ import com.wavora.domain.repository.LocalPlaylistRepository
 import com.wavora.domain.utils.FilterState
 import com.wavora.domain.utils.connectArtists
 import com.wavora.domain.utils.toListName
+import com.wavora.domain.utils.toSongEntity
 import com.wavora.logger.Logger
 import com.wavora.app.Platform
 import com.wavora.app.expect.copyToClipboard
@@ -247,6 +248,10 @@ import wavora.composeapp.generated.resources.playlist_name_cannot_be_empty
 import wavora.composeapp.generated.resources.plays
 import wavora.composeapp.generated.resources.processing
 import wavora.composeapp.generated.resources.queue
+import wavora.composeapp.generated.resources.queue_move_to_end
+import wavora.composeapp.generated.resources.queue_move_to_start
+import wavora.composeapp.generated.resources.queue_remove
+import wavora.composeapp.generated.resources.queue_remove_duplicates
 import wavora.composeapp.generated.resources.radio
 import wavora.composeapp.generated.resources.round_speed_24
 import wavora.composeapp.generated.resources.save
@@ -905,6 +910,7 @@ fun InfoPlayerBottomSheet(
 @Composable
 fun QueueBottomSheet(
     onDismiss: () -> Unit,
+    navController: NavController,
     sharedViewModel: SharedViewModel = koinInject(),
     musicServiceHandler: MediaPlayerHandler = koinInject<MediaPlayerHandler>(),
     dataStoreManager: DataStoreManager = koinInject(),
@@ -980,11 +986,39 @@ fun QueueBottomSheet(
         shouldShowQueueItemBottomSheet = true
     }
 
+    val duplicateIndices by remember(queue) {
+        derivedStateOf {
+            val seen = HashSet<String>()
+            queue.mapIndexedNotNull { index, track -> if (seen.add(track.videoId)) null else index }
+        }
+    }
+
     if (shouldShowQueueItemBottomSheet) {
-        QueueItemBottomSheet(
+        val queueSize = queue.size
+        NowPlayingBottomSheet(
             onDismiss = { shouldShowQueueItemBottomSheet = false },
-            index = clickMoreIndex,
-            musicServiceHandler = musicServiceHandler,
+            navController = navController,
+            song = queue.getOrNull(clickMoreIndex)?.toSongEntity(),
+            onQueueMoveToStart = if (clickMoreIndex > 0 && clickMoreIndex < queueSize) {
+                { coroutineScope.launch { musicServiceHandler.swap(clickMoreIndex, 0) } }
+            } else {
+                null
+            },
+            onQueueMoveToEnd = if (clickMoreIndex in 0 until queueSize - 1) {
+                { coroutineScope.launch { musicServiceHandler.swap(clickMoreIndex, queueSize - 1) } }
+            } else {
+                null
+            },
+            onQueueRemove = if (clickMoreIndex in 0 until queueSize) {
+                { musicServiceHandler.removeMediaItem(clickMoreIndex) }
+            } else {
+                null
+            },
+            onQueueRemoveDuplicates = if (duplicateIndices.isNotEmpty()) {
+                { duplicateIndices.sortedDescending().forEach { musicServiceHandler.removeMediaItem(it) } }
+            } else {
+                null
+            },
         )
     }
 
@@ -1214,182 +1248,6 @@ fun QueueBottomSheet(
     }
 }
 
-private enum class QueueItemAction {
-    UP,
-    DOWN,
-    DELETE,
-}
-
-@Composable
-@ExperimentalMaterial3Api
-fun QueueItemBottomSheet(
-    onDismiss: () -> Unit,
-    index: Int,
-    musicServiceHandler: MediaPlayerHandler = koinInject<MediaPlayerHandler>(),
-) {
-    val coroutineScope = rememberCoroutineScope()
-    val modelBottomSheetState =
-        rememberModalBottomSheetState(
-            skipPartiallyExpanded = true,
-        )
-    val hideModalBottomSheet: () -> Unit =
-        {
-            coroutineScope.launch {
-                modelBottomSheetState.hide()
-                onDismiss()
-            }
-        }
-    val listAction =
-        listOf(
-            QueueItemAction.UP,
-            QueueItemAction.DOWN,
-            QueueItemAction.DELETE,
-        )
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = modelBottomSheetState,
-        containerColor = Color.Transparent,
-        contentColor = Color.Transparent,
-        dragHandle = null,
-        scrimColor = Color.Black.copy(alpha = .5f),
-        contentWindowInsets = { WindowInsets(0, 0, 0, 0) },
-    ) {
-        Card(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .wrapContentHeight(),
-            shape = RoundedCornerShape(topStart = 8.dp, topEnd = 8.dp),
-            colors = CardDefaults.cardColors().copy(containerColor = wavoraSurface),
-        ) {
-            Column(
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Spacer(modifier = Modifier.height(5.dp))
-                Card(
-                    modifier =
-                        Modifier
-                            .width(60.dp)
-                            .height(4.dp),
-                    colors =
-                        CardDefaults.cardColors().copy(
-                            containerColor = wavoraBorder,
-                        ),
-                    shape = RoundedCornerShape(50),
-                ) {}
-                Spacer(modifier = Modifier.height(5.dp))
-                LazyColumn {
-                    val canMoveUp =
-                        index > 0 &&
-                            index < (
-                                musicServiceHandler.queueData.value
-                                    ?.data
-                                    ?.listTracks
-                                    ?.size ?: 0
-                            )
-                    val canMoveDown =
-                        index >= 0 &&
-                            index < (
-                                musicServiceHandler.queueData.value
-                                    ?.data
-                                    ?.listTracks
-                                    ?.size ?: 0
-                            ) - 1
-                    items(listAction, key = { it.ordinal }) { action ->
-                        val disable =
-                            when (action) {
-                                QueueItemAction.UP -> !canMoveUp
-                                QueueItemAction.DOWN -> !canMoveDown
-                                QueueItemAction.DELETE -> false
-                            }
-                        if (disable) return@items
-                        Box(
-                            modifier =
-                                Modifier
-                                    .fillMaxWidth()
-                                    .clickable {
-                                        hideModalBottomSheet()
-                                        when (action) {
-                                            QueueItemAction.UP -> {
-                                                coroutineScope.launch {
-                                                    musicServiceHandler.moveItemUp(index)
-                                                }
-                                            }
-
-                                            QueueItemAction.DOWN -> {
-                                                coroutineScope.launch {
-                                                    musicServiceHandler.moveItemDown(index)
-                                                }
-                                            }
-
-                                            QueueItemAction.DELETE -> {
-                                                musicServiceHandler.removeMediaItem(index)
-                                            }
-                                        }
-                                    },
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier =
-                                    Modifier
-                                        .padding(20.dp)
-                                        .align(Alignment.CenterStart),
-                            ) {
-                                when (action) {
-                                    QueueItemAction.UP -> {
-                                        Image(
-                                            painter =
-                                                painterResource(
-                                                    Res.drawable.baseline_keyboard_double_arrow_up_24,
-                                                ),
-                                            contentDescription = "Move up",
-                                        )
-                                    }
-
-                                    QueueItemAction.DOWN -> {
-                                        Image(
-                                            painter =
-                                                painterResource(
-                                                    Res.drawable.baseline_keyboard_double_arrow_down_24,
-                                                ),
-                                            contentDescription = "Move down",
-                                        )
-                                    }
-
-                                    QueueItemAction.DELETE -> {
-                                        Image(
-                                            painter =
-                                                painterResource(
-                                                    Res.drawable.baseline_delete_24,
-                                                ),
-                                            contentDescription = "Delete",
-                                        )
-                                    }
-                                }
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text =
-                                        stringResource(
-                                            when (action) {
-                                                QueueItemAction.UP -> Res.string.move_up
-                                                QueueItemAction.DOWN -> Res.string.move_down
-                                                QueueItemAction.DELETE -> Res.string.delete
-                                            },
-                                        ),
-                                    style = LocalAppTypography.current.labelSmall,
-                                )
-                            }
-                        }
-                    }
-                    item {
-                        EndOfModalBottomSheet()
-                    }
-                }
-            }
-        }
-    }
-}
-
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NowPlayingBottomSheet(
@@ -1402,6 +1260,10 @@ fun NowPlayingBottomSheet(
     onNavigateToOtherScreen: () -> Unit = {},
     onDelete: (() -> Unit)? = null,
     onLibraryDelete: (() -> Unit)? = null,
+    onQueueMoveToStart: (() -> Unit)? = null,
+    onQueueMoveToEnd: (() -> Unit)? = null,
+    onQueueRemove: (() -> Unit)? = null,
+    onQueueRemoveDuplicates: (() -> Unit)? = null,
     dataStoreManager: DataStoreManager = koinInject<DataStoreManager>(),
 ) {
     val radioString = stringResource(Res.string.radio)
@@ -1788,6 +1650,50 @@ fun NowPlayingBottomSheet(
                         text = Res.string.add_to_queue,
                     ) {
                         viewModel.onUIEvent(NowPlayingBottomSheetUIEvent.AddToQueue)
+                    }
+                    Crossfade(targetState = onQueueMoveToStart != null) { enabled ->
+                        if (enabled) {
+                            ActionButton(
+                                icon = painterResource(Res.drawable.baseline_keyboard_double_arrow_up_24),
+                                text = Res.string.queue_move_to_start,
+                            ) {
+                                hideModalBottomSheet()
+                                onQueueMoveToStart?.invoke()
+                            }
+                        }
+                    }
+                    Crossfade(targetState = onQueueMoveToEnd != null) { enabled ->
+                        if (enabled) {
+                            ActionButton(
+                                icon = painterResource(Res.drawable.baseline_keyboard_double_arrow_down_24),
+                                text = Res.string.queue_move_to_end,
+                            ) {
+                                hideModalBottomSheet()
+                                onQueueMoveToEnd?.invoke()
+                            }
+                        }
+                    }
+                    Crossfade(targetState = onQueueRemove != null) { enabled ->
+                        if (enabled) {
+                            ActionButton(
+                                icon = painterResource(Res.drawable.baseline_delete_24),
+                                text = Res.string.queue_remove,
+                            ) {
+                                hideModalBottomSheet()
+                                onQueueRemove?.invoke()
+                            }
+                        }
+                    }
+                    Crossfade(targetState = onQueueRemoveDuplicates != null) { enabled ->
+                        if (enabled) {
+                            ActionButton(
+                                icon = painterResource(Res.drawable.baseline_queue_music_24),
+                                text = Res.string.queue_remove_duplicates,
+                            ) {
+                                hideModalBottomSheet()
+                                onQueueRemoveDuplicates?.invoke()
+                            }
+                        }
                     }
                     ActionButton(
                         icon = painterResource(Res.drawable.baseline_people_alt_24),

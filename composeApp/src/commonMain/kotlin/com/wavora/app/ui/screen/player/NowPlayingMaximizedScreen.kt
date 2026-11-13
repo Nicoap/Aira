@@ -33,7 +33,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FullscreenExit
-import androidx.compose.material.icons.rounded.GraphicEq
 import androidx.compose.material.icons.rounded.MoreVert
 import androidx.compose.material.icons.rounded.Pause
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -91,7 +90,8 @@ import coil3.request.crossfade
 import com.wavora.app.ui.component.DraggableItem
 import com.wavora.app.ui.component.HeartCheckBox
 import com.wavora.app.ui.component.LyricsView
-import com.wavora.app.ui.component.QueueItemBottomSheet
+import com.wavora.app.ui.component.onSecondaryClick
+import com.wavora.domain.utils.toSongEntity
 import com.wavora.app.ui.component.rememberDragDropState
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
 import com.wavora.app.ui.navigation.destination.list.ArtistDestination
@@ -112,6 +112,7 @@ import com.wavora.app.expect.toggleMiniPlayer
 import com.wavora.app.extension.parseTimestampToMilliseconds
 import com.wavora.app.ui.component.AIBadge
 import com.wavora.app.ui.component.AddToPlaylistModalBottomSheet
+import com.wavora.app.ui.component.AudioPlayingIndicator
 import com.wavora.app.ui.component.DescriptionView
 import com.wavora.app.ui.component.InfoPlayerBottomSheet
 import com.wavora.app.ui.component.NowPlayingBottomSheet
@@ -344,6 +345,7 @@ fun NowPlayingPanel(
                     canVote = canVoteLyrics || canVoteTranslatedLyrics,
                     onVote = { showVoteDialog = true },
                     onArtist = ::openArtist,
+                    navController = navController,
                 )
             }
             when {
@@ -899,6 +901,7 @@ private fun SidePane(
     canVote: Boolean,
     onVote: () -> Unit,
     onArtist: (String?) -> Unit,
+    navController: NavController,
 ) {
     val accent = MaterialTheme.colorScheme.primary
     val screenData by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
@@ -931,6 +934,7 @@ private fun SidePane(
                         modifier = Modifier.fillMaxSize(),
                         sharedViewModel = sharedViewModel,
                         onArtist = onArtist,
+                        navController = navController,
                     )
                 else -> AboutTab(sharedViewModel = sharedViewModel, onArtist = onArtist)
             }
@@ -1154,6 +1158,7 @@ private fun MaximizedQueue(
     modifier: Modifier,
     sharedViewModel: SharedViewModel,
     onArtist: (String?) -> Unit,
+    navController: NavController,
     musicServiceHandler: MediaPlayerHandler = koinInject<MediaPlayerHandler>(),
     dataStoreManager: DataStoreManager = koinInject(),
 ) {
@@ -1185,16 +1190,47 @@ private fun MaximizedQueue(
             if (it && loadMoreState == QueueData.StateSource.STATE_INITIALIZED) musicServiceHandler.loadMore()
         }
     }
-    LaunchedEffect(Unit) {
-        val current = musicServiceHandler.currentOrderIndex().takeIf { i -> i > -1 } ?: 0
-        lazyListState.requestScrollToItem((current - 1).coerceAtLeast(0))
+    // Once the queue has loaded and the playing track is known, bring it into view.
+    val queueAndTrackReady = queue.isNotEmpty() && songEntity != null
+    LaunchedEffect(queueAndTrackReady) {
+        if (!queueAndTrackReady) return@LaunchedEffect
+        val playingIndex = queue.indexOfFirst { it.videoId == songEntity?.videoId }
+        if (playingIndex > 0) lazyListState.scrollToItem(playingIndex)
+    }
+
+    val duplicateIndices by remember(queue) {
+        derivedStateOf {
+            val seen = HashSet<String>()
+            queue.mapIndexedNotNull { index, track -> if (seen.add(track.videoId)) null else index }
+        }
     }
 
     if (showItemSheet) {
-        QueueItemBottomSheet(
+        val queueSize = queue.size
+        NowPlayingBottomSheet(
             onDismiss = { showItemSheet = false },
-            index = sheetIndex,
-            musicServiceHandler = musicServiceHandler,
+            navController = navController,
+            song = queue.getOrNull(sheetIndex)?.toSongEntity(),
+            onQueueMoveToStart = if (sheetIndex > 0 && sheetIndex < queueSize) {
+                { coroutineScope.launch { musicServiceHandler.swap(sheetIndex, 0) } }
+            } else {
+                null
+            },
+            onQueueMoveToEnd = if (sheetIndex in 0 until queueSize - 1) {
+                { coroutineScope.launch { musicServiceHandler.swap(sheetIndex, queueSize - 1) } }
+            } else {
+                null
+            },
+            onQueueRemove = if (sheetIndex in 0 until queueSize) {
+                { musicServiceHandler.removeMediaItem(sheetIndex) }
+            } else {
+                null
+            },
+            onQueueRemoveDuplicates = if (duplicateIndices.isNotEmpty()) {
+                { duplicateIndices.sortedDescending().forEach { musicServiceHandler.removeMediaItem(it) } }
+            } else {
+                null
+            },
         )
     }
 
@@ -1311,6 +1347,7 @@ private fun QueueRow(
                 .background(if (hovered) WavoraTone.surface2 else Color.Transparent)
                 .hoverable(source)
                 .clickable(interactionSource = source, indication = null, onClick = onPlay)
+                .onSecondaryClick(onMore)
                 .padding(horizontal = WavoraSpace.xl),
         verticalAlignment = Alignment.CenterVertically,
     ) {
@@ -1330,7 +1367,7 @@ private fun QueueRow(
             )
             if (isCurrent) {
                 Box(Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.55f)), contentAlignment = Alignment.Center) {
-                    Icon(Icons.Rounded.GraphicEq, contentDescription = null, tint = accent, modifier = Modifier.size(22.dp))
+                    AudioPlayingIndicator(size = 44.dp, tint = accent)
                 }
             }
         }

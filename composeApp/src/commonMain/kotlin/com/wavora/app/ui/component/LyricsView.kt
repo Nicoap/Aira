@@ -1251,6 +1251,7 @@ fun FullscreenLyricsSheet(
             onDismiss = {
                 showQueueBottomSheet = false
             },
+            navController = navController,
         )
     }
     if (showInfoBottomSheet) {
