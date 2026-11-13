@@ -15,6 +15,13 @@ import java.util.concurrent.TimeUnit
 private val REQUIRED_AUDIO_ITAGS = setOf(250, 251, 774, 141)
 private val REQUIRED_VIDEO_ITAGS = setOf(137, 136, 134)
 
+/**
+ * Cookie авторизованного пользователя для запросов BravePipe. Без них BravePipe ходит
+ * анонимно и получает `LOGIN_REQUIRED: Sign in to confirm you're not a bot`, хотя в браузере
+ * с этой же машины YouTube Music открывается нормально.
+ */
+internal var braveCookies: String? = null
+
 internal fun List<Pair<Int, String>>.hasRequiredItags(): Boolean {
     val itags = this.mapTo(HashSet()) { it.first }
     val hasAudio = REQUIRED_AUDIO_ITAGS.any { it in itags }
@@ -56,8 +63,9 @@ internal fun List<Pair<Int, String>>.headCheckRandomStream(): Boolean {
     return ok
 }
 
-// 1.25 MiB offset: beyond the ~1.1 MB that a link without a PO token is allowed to serve.
-private const val PROBE_RANGE = "bytes=1310720-1311743"
+// Первый мегабайт: измерено, что ограниченные диапазоны в его пределах отдают 206 даже там,
+// где открытый `bytes=0-` получает 403. Проба дальше по файлу давала ложные отказы.
+private const val PROBE_RANGE = "bytes=0-1048575"
 
 private class ProbeResult(
     val code: Int,
@@ -122,6 +130,9 @@ class BraveNewPipeDownloaderImpl(
                 .method(request.httpMethod(), request.dataToSend()?.toRequestBody())
                 .url(request.url())
                 .addHeader("User-Agent", YouTubeClient.USER_AGENT_WEB)
+
+        // Авторизация: без Cookie BravePipe получает LOGIN_REQUIRED на каждом треке.
+        braveCookies?.takeIf { it.isNotBlank() }?.let { builder.header("Cookie", it) }
 
         request.headers().forEach { (headerName, headerValueList) ->
             if (headerValueList.size > 1) {

@@ -26,6 +26,9 @@ private const val RETRY_DELAY_MS = 300L
 /** Размер окна при перекладывании байтов из ответа googlevideo в ответ плееру. */
 private const val IO_WINDOW = 64 * 1024
 
+/** Окна поменьше, которыми пробуем открыть поток, если крупный диапазон получил 403. */
+private val FIRST_CHUNK_FALLBACKS = longArrayOf(256L * 1024, 64L * 1024)
+
 /**
  * JVM-реализация: подставляет локальный прокси вместо прямого googlevideo-адреса.
  *
@@ -112,7 +115,9 @@ internal object StreamProxy {
                 respondText(exchange, 404, "not found")
                 return
             }
-            val encoded = path.removePrefix(PATH_PREFIX)
+            // Декодируем только сам base64url-хвост: к ссылке могут прицепить тег вида `&c=CLIENT`,
+            // и тогда он попадает в путь (не в query), из-за чего URL-декодер падал на `&`.
+            val encoded = path.removePrefix(PATH_PREFIX).substringBefore('&').substringBefore('?')
             val upstream =
                 runCatching { String(Base64.getUrlDecoder().decode(encoded)) }
                     .getOrNull()
@@ -152,8 +157,16 @@ internal object StreamProxy {
             start = (total - range.suffix).coerceAtLeast(0L)
         }
 
-        val first = fetchChunk(upstream, start, start + CHUNK_SIZE - 1)
-            ?: return respondText(exchange, 502, "stream unavailable")
+        var first = fetchChunk(upstream, start, start + CHUNK_SIZE - 1)
+        if (first == null) {
+            // Часть ссылок отвечает 403 на крупный диапазон, но нормально отдаётся мелкими
+            // кусками — пробуем окно поменьше, прежде чем считать поток недоступным.
+            for (window in FIRST_CHUNK_FALLBACKS) {
+                first = fetchChunk(upstream, start, start + window - 1)
+                if (first != null) break
+            }
+        }
+        first ?: return respondText(exchange, 502, "stream unavailable")
 
         val total = first.total ?: knownTotal
         val headers = exchange.responseHeaders
@@ -183,7 +196,7 @@ internal object StreamProxy {
         }
 
         exchange.responseBody.use { out ->
-            var chunk = first
+            var chunk: ChunkResponse = first ?: return respondText(exchange, 502, "stream unavailable")
             var nextStart = start
             while (true) {
                 var delivered = 0L

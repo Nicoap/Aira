@@ -67,6 +67,18 @@ private const val TAG = "VlcPlayerAdapter"
 private const val EXTRACT_RETRY_ATTEMPTS = 2
 private const val EXTRACT_RETRY_DELAY_MS = 400L
 
+// PRE-ROLL ERROR GUARD: libVLC puede entregar error() через несколько миллисекунд
+// после opening(), ещё до первого прочитанного байта (currentPos == 0). Подтверждено
+// логом: `CB_OPENING player=17` -> `CB_ERROR player=17` через 3 мс, при этом трек
+// после ретрая играл. Такой "пустой" сбой ничего не говорит о медиа, но раньше он
+// шёл прямо в retry-ветку: инвалидация только что полученного формата (повторная
+// экстракция на ~5 с) плюс минус одна из двух попыток - и живые треки скипались.
+// Теперь такой сбой сначала переоткрывает тот же media без инвалидации кэша и без
+// траты попытки; если и это упало до старта воспроизведения, работает обычная
+// retry-логика (реальная ошибка после старта всегда идёт туда же сразу).
+private const val PRE_ROLL_ERROR_GRACE_MS = 1000L
+private const val PRE_ROLL_SOFT_RETRIES = 1
+
 // AUDIT FIX (02/09): tiempo máximo para esperar la confirmación nativa del
 // seek a 0 del player precacheado antes de asumir que ya se aplicó y seguir
 // igual (ver comentario junto a seekAppliedSignal en triggerCrossfadeTransition).
@@ -692,6 +704,29 @@ class VlcPlayerAdapter(
     private var retryCount = 0
     private var retryVideoId: String? = null
     private val maxRetryCount = 2
+
+    // Pre-roll error guard (см. PRE_ROLL_ERROR_GRACE_MS): момент, когда текущий
+    // player получил свежий media - по нему отличаем error() "до первого байта" от
+    // настоящего сбоя посреди воспроизведения.
+    @Volatile
+    private var currentMediaOpenedAtNanos = 0L
+
+    private var preRollRetryVideoId: String? = null
+    private var preRollRetryCount = 0
+
+    /**
+     * true, если error() прилетел до того, как из media был прочитан хоть один
+     * байт: позиция ещё 0 и с момента открытия прошло меньше
+     * [PRE_ROLL_ERROR_GRACE_MS]. Позиция > 0 (в т.ч. resume) - это уже настоящее
+     * воспроизведение, такой сбой обязан идти в обычный retry с инвалидацией.
+     */
+    private fun isPreRollError(): Boolean {
+        if (cachedPosition > 0L) return false
+        val openedAt = currentMediaOpenedAtNanos
+        if (openedAt == 0L) return false
+        val elapsedMs = (System.nanoTime() - openedAt) / 1_000_000L
+        return elapsedMs in 0..PRE_ROLL_ERROR_GRACE_MS
+    }
 
     // Natural end-of-track detection / auto-skip of unplayable tracks.
     // YouTube streams (video ones especially) often end with libVLC firing stopped() instead of
@@ -1684,6 +1719,10 @@ class VlcPlayerAdapter(
                         cachedPosition = startPositionMs
                     }
 
+                    // Отмечаем старт текущего media: по этой метке guard в error()
+                    // отличает сбой "до первого байта" от настоящей ошибки.
+                    currentMediaOpenedAtNanos = System.nanoTime()
+
                     // Always transition to READY first so UI receives
                     // isLoading=false via STATE_READY. The READY handler
                     // will auto-call play() when internalPlayWhenReady is true.
@@ -1869,6 +1908,34 @@ class VlcPlayerAdapter(
                                     Logger.e(TAG, "Audio fallback failed: ${e.message}", e)
                                 }
                             }
+                            // Сбрасываем soft-retry guard при смене трека.
+                            if (preRollRetryVideoId != currentVideoId) {
+                                preRollRetryVideoId = currentVideoId
+                                preRollRetryCount = 0
+                            }
+                            if (isPreRollError() && preRollRetryCount < PRE_ROLL_SOFT_RETRIES) {
+                                // Ошибка до первого байта: кэш формата не трогаем (он
+                                // ничем не подтверждён как плохой) и попытку не тратим.
+                                preRollRetryCount++
+                                Logger.w(
+                                    TAG,
+                                    "Pre-roll error for $currentVideoId (no data read yet) - " +
+                                        "reopening without invalidating cache " +
+                                        "(soft retry $preRollRetryCount/$PRE_ROLL_SOFT_RETRIES)",
+                                )
+                                CrossfadeAudit.log(
+                                    "CB_ERROR_PRE_ROLL_SOFT_RETRY",
+                                    playerId = emittingId,
+                                    details = "videoId=$currentVideoId softRetry=$preRollRetryCount/$PRE_ROLL_SOFT_RETRIES",
+                                )
+                                try {
+                                    loadAndPlayTrackInternal(localCurrentMediaItemIndex, 0L, shouldPlay = true)
+                                    return@launch
+                                } catch (e: Exception) {
+                                    if (e is CancellationException) throw e
+                                    Logger.e(TAG, "Pre-roll reopen failed: ${e.message}", e)
+                                }
+                            }
                             if (retryCount < maxRetryCount) {
                                 retryCount++
                                 Logger.w(TAG, "Retrying playback (attempt $retryCount/$maxRetryCount) for $currentVideoId")
@@ -1921,6 +1988,10 @@ class VlcPlayerAdapter(
                             // Reset retry counter on successful playback
                             retryCount = 0
                             retryVideoId = null
+                            // Воспроизведение реально стартовало - soft-retry guard
+                            // для этого трека больше не нужен.
+                            preRollRetryCount = 0
+                            preRollRetryVideoId = null
                             consecutiveAutoSkips = 0
                         }
                     }
@@ -2049,6 +2120,10 @@ class VlcPlayerAdapter(
 
                 override fun opening(mediaPlayer: MediaPlayer) {
                     Logger.d(TAG, "VLC opening media")
+                    // Точка отсчёта для pre-roll guard (см. isPreRollError).
+                    if (currentPlayer?.mediaPlayer === mediaPlayer) {
+                        currentMediaOpenedAtNanos = System.nanoTime()
+                    }
                     CrossfadeAudit.log("CB_OPENING", playerId = playerIdFor(mediaPlayer))
                 }
             }

@@ -46,6 +46,8 @@ actual class Extractor {
 
     actual fun logIn(cookie: String?) {
         ServiceList.YouTube.tokens = cookie ?: ""
+        // BravePipe не умеет токены сервиса: cookie подставляем сами в его downloader.
+        braveCookies = cookie
     }
 
     actual fun newPipePlayer(videoId: String): List<Pair<Int, String>> {
@@ -71,19 +73,21 @@ actual class Extractor {
                     "PipePipe missing required itags for $videoId (got=${pipeResult.map { it.first }}), falling back to BravePipe",
                 )
                 notePipePipeFailure()
-            } else if (!pipeResult.headCheckRandomStream()) {
-                Logger.d(
-                    TAG,
-                    "PipePipe stream URL HEAD check failed (non 2xx) for $videoId, falling back to BravePipe",
-                )
-                notePipePipeFailure()
             } else {
+                // Отдельную пробу ссылки не делаем: она стоит ~0.7 с на каждый трек и отвечает
+                // 403 даже на живых ссылках, а реальную живость покажет прокси, когда начнёт
+                // тянуть куски.
                 pipeFailStreak = 0
                 return pipeResult
             }
         } catch (e: Throwable) {
             Logger.w(TAG, "PipePipe extractor failed for $videoId: ${e.message}, falling back to BravePipe")
-            notePipePipeFailure()
+            // Неизвестный itag — пробел в библиотеке PipePipe, а не блокировка YouTube. Такую
+            // неудачу не засчитываем в счётчик: иначе после трёх таких треков PipePipe
+            // отключается на полчаса и каждый трек идёт через медленный BravePipe.
+            if (e !is dev.maxrave.pipepipe.extractor.exceptions.ParsingException) {
+                notePipePipeFailure()
+            }
         }
 
         return runCatching {
