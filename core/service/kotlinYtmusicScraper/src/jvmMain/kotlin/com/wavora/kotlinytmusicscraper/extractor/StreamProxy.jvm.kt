@@ -20,14 +20,18 @@ private const val CHUNK_SIZE = 1L shl 20
 
 private const val PATH_PREFIX = "/stream/"
 private const val REFERER = "https://music.youtube.com/"
-private const val CHUNK_ATTEMPTS = 3
+private const val CHUNK_ATTEMPTS = 2
 private const val RETRY_DELAY_MS = 300L
 
 /** Размер окна при перекладывании байтов из ответа googlevideo в ответ плееру. */
 private const val IO_WINDOW = 64 * 1024
 
-/** Окна поменьше, которыми пробуем открыть поток, если крупный диапазон получил 403. */
-private val FIRST_CHUNK_FALLBACKS = longArrayOf(256L * 1024, 64L * 1024)
+/**
+ * Окна, которыми пробуем взять кусок: на крупный диапазон сервер чаще отвечает 403,
+ * а тот же участок мелким окном отдаёт нормально. Раньше 403 на 1 МиБ обрывал поток
+ * посреди трека — из-за этого музыка и видео «заедали».
+ */
+private val CHUNK_WINDOWS = longArrayOf(CHUNK_SIZE, 256L * 1024, 64L * 1024)
 
 /** Мелкий первый кусок: нужен, чтобы картинка/звук появились как можно раньше. */
 private const val FIRST_BYTE_CHUNK = 64L * 1024
@@ -160,20 +164,12 @@ internal object StreamProxy {
             start = (total - range.suffix).coerceAtLeast(0L)
         }
 
-        var first =
+        val first =
             // Первый кусок берём маленьким и без повторов: libVLC покажет кадр только
             // после первых байтов, а полный мегабайт с ретраями давал старт в 5-9 секунд.
             fetchChunk(upstream, start, start + FIRST_BYTE_CHUNK - 1, attempts = 1)
-                ?: fetchChunk(upstream, start, start + CHUNK_SIZE - 1)
-        if (first == null) {
-            // Часть ссылок отвечает 403 на крупный диапазон, но нормально отдаётся мелкими
-            // кусками — пробуем окно поменьше, прежде чем считать поток недоступным.
-            for (window in FIRST_CHUNK_FALLBACKS) {
-                first = fetchChunk(upstream, start, start + window - 1)
-                if (first != null) break
-            }
-        }
-        first ?: return respondText(exchange, 502, "stream unavailable")
+                ?: fetchWindow(upstream, start, knownTotal?.minus(1) ?: Long.MAX_VALUE)
+                ?: return respondText(exchange, 502, "stream unavailable")
 
         val total = first.total ?: knownTotal
         val headers = exchange.responseHeaders
@@ -181,13 +177,13 @@ internal object StreamProxy {
         first.contentType?.let { headers.add("Content-Type", it) }
 
         // Сколько байт нужно отдать плееру: до конца файла или до явно запрошенного конца.
-        var remaining =
+        val lastByte =
             if (total != null) {
-                val last = if (range.end != null) minOf(range.end, total - 1) else total - 1
-                (last - start + 1).coerceAtLeast(0L)
+                if (range.end != null) minOf(range.end, total - 1) else total - 1
             } else {
-                -1L // размер неизвестен — отдаём потоком, без Content-Length
+                null
             }
+        val remaining = if (lastByte != null) (lastByte - start + 1).coerceAtLeast(0L) else -1L
 
         if (total != null && remaining > 0) {
             headers.add("Content-Range", "bytes $start-${start + remaining - 1}/$total")
@@ -203,39 +199,56 @@ internal object StreamProxy {
         }
 
         exchange.responseBody.use { out ->
-            var chunk: ChunkResponse = first ?: return respondText(exchange, 502, "stream unavailable")
+            var chunk: ChunkResponse = first
             var nextStart = start
+            var left = remaining
             while (true) {
                 var delivered = 0L
-                var needNext = true
+                var clientDone = false
                 chunk.response.use { response ->
                     val input = response.body.byteStream()
                     if (input == null) {
-                        needNext = false
+                        clientDone = true
                         return@use
                     }
                     val buffer = ByteArray(IO_WINDOW)
-                    while (remaining != 0L) {
+                    while (left != 0L) {
                         val read = input.read(buffer)
                         if (read <= 0) break
-                        val toWrite = if (remaining > 0 && read > remaining) remaining.toInt() else read
+                        val toWrite = if (left > 0 && read > left) left.toInt() else read
                         out.write(buffer, 0, toWrite)
                         delivered += toWrite
-                        if (remaining > 0) remaining -= toWrite
-                        if (toWrite < read || remaining == 0L) {
-                            needNext = false
+                        if (left > 0) left -= toWrite
+                        if (toWrite < read || left == 0L) {
+                            clientDone = true
                             break
                         }
                     }
                 }
-                if (!needNext || delivered <= 0L) break
                 nextStart += delivered
-                if (total != null && nextStart >= total) break
-                val nextEnd =
-                    if (total != null) minOf(nextStart + CHUNK_SIZE - 1, total - 1) else nextStart + CHUNK_SIZE - 1
-                chunk = fetchChunk(upstream, nextStart, nextEnd) ?: break
+                if (clientDone || delivered <= 0L) break
+                if (lastByte != null && nextStart > lastByte) break
+                // Продолжаем с того байта, на котором реально остановились: окно могло
+                // оказаться меньше запрошенного, а недокачанный кусок не должен теряться.
+                chunk =
+                    fetchWindow(upstream, nextStart, lastByte ?: (nextStart + CHUNK_SIZE - 1))
+                        ?: break
             }
         }
+    }
+
+    /**
+     * Достаёт кусок [from, limit], перебирая окна разного размера: если крупный диапазон
+     * получил 403, тот же участок мелким окном обычно отдаётся нормально.
+     */
+    private fun fetchWindow(upstream: String, from: Long, limit: Long): ChunkResponse? {
+        if (from > limit) return null
+        for (window in CHUNK_WINDOWS) {
+            val to = minOf(from + window - 1, limit)
+            val chunk = fetchChunk(upstream, from, to)
+            if (chunk != null) return chunk
+        }
+        return null
     }
 
     /**
@@ -250,35 +263,40 @@ internal object StreamProxy {
     ): ChunkResponse? {
         var lastError: Exception? = null
         repeat(attempts) { attempt ->
-            val result =
-                runCatching {
-                    val request =
-                        Request
-                            .Builder()
-                            .url(upstream)
-                            .header("Range", "bytes=$from-$to")
-                            // Плеерный User-Agent сервер не принимает, запрашиваем как веб-клиент.
-                            .header("User-Agent", YouTubeClient.USER_AGENT_WEB)
-                            .header("Referer", REFERER)
-                            .header("Origin", REFERER)
-                            .build()
-                    val response = client.newCall(request).execute()
-                    if (response.code in 200..299) {
-                        return response.toChunk()
-                    }
-                    val code = response.code
-                    response.close()
-                    if (code == 416) {
-                        // Запросили байты за концом файла — это штатный конец потока, а не сбой.
-                        return null
-                    }
-                    throw IOException("HTTP $code")
-                }
+            val request =
+                Request
+                    .Builder()
+                    .url(upstream)
+                    .header("Range", "bytes=$from-$to")
+                    // Плеерный User-Agent сервер не принимает, запрашиваем как веб-клиент.
+                    .header("User-Agent", YouTubeClient.USER_AGENT_WEB)
+                    .header("Referer", REFERER)
+                    .header("Origin", REFERER)
+                    .build()
+            val result = runCatching { client.newCall(request).execute() }
             result.exceptionOrNull()?.let { lastError = it as? Exception }
-            if (result.isSuccess) return result.getOrNull()
-            if (attempt + 1 < CHUNK_ATTEMPTS) Thread.sleep(RETRY_DELAY_MS * (attempt + 1))
+            val response = result.getOrNull()
+            if (response != null) {
+                if (response.code in 200..299) return response.toChunk()
+                val code = response.code
+                if (code == 416) {
+                    // Запросили байты за концом файла — это штатный конец потока, а не сбой.
+                    response.close()
+                    return null
+                }
+                // Тело ответа объясняет отказ (истёкшая подпись, лимит, PO-token) — без него
+                // в логах видно только «HTTP 403» и причину не найти.
+                val detail =
+                    runCatching {
+                        val text = response.body.string().replace('\n', ' ').trim()
+                        response.header("Retry-After")?.let { "retry-after $it: $text" } ?: text
+                    }.getOrNull()
+                response.close()
+                lastError = IOException("HTTP $code${detail?.takeIf { it.isNotBlank() }?.let { ": ${it.take(200)}" } ?: ""}")
+            }
+            if (attempt + 1 < attempts) Thread.sleep(RETRY_DELAY_MS * (attempt + 1))
         }
-        Logger.w(TAG, "Stream chunk $from-$to failed (client=${clientTag(upstream)}): ${lastError?.message?.take(120)}")
+        Logger.w(TAG, "Stream chunk $from-$to failed (client=${clientTag(upstream)}): ${lastError?.message?.take(200)}")
         return null
     }
 

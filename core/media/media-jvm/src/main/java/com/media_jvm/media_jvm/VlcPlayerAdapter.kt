@@ -3674,8 +3674,26 @@ class VlcPlayerAdapter(
             }
         }
 
+        // Кэш мог заполниться HLS-манифестом (itag 96): VLC его проигрывает, но на каждом
+        // сегменте (~6 секунд) заново поднимает видеовыход — со стороны это выглядит как
+        // регулярные фризы картинки. Такую строку перезаписываем прогрессивным потоком.
+        var cachedFormat = streamRepository.getNewFormat(videoId).lastOrNull()
+        val cachedVideoIsHls =
+            cachedFormat?.videoUrl?.let { url -> url.contains("manifest") || url.contains(".m3u8") } == true
+        if (shouldFindVideo && cachedVideoIsHls) {
+            Logger.w(TAG, "Cached video is an HLS manifest, refreshing progressive stream")
+            streamRepository
+                .getStream(
+                    dataStoreManager,
+                    videoId,
+                    isDownloading = false,
+                    isVideo = false,
+                ).lastOrNull()
+            cachedFormat = streamRepository.getNewFormat(videoId).lastOrNull()
+        }
+
         // Try new format API (returns both audio and video URLs)
-        streamRepository.getNewFormat(videoId).lastOrNull()?.let { format ->
+        cachedFormat?.let { format ->
             val audioUrl = format.audioUrl
             val videoUrl = format.videoUrl
 

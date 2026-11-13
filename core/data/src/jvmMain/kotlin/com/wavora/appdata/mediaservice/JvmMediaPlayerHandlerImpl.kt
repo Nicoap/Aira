@@ -2579,7 +2579,8 @@ class JvmMediaPlayerHandlerImpl(
         if (cached != null && !cached.expiredTime.isBefore(now())) {
             val hasUrl =
                 if (isVideo) {
-                    !cached.videoUrl.isNullOrEmpty()
+                    val videoUrl = cached.videoUrl
+                    !videoUrl.isNullOrEmpty() && !videoUrl.isHlsManifest()
                 } else {
                     !cached.audioUrl.isNullOrEmpty()
                 }
@@ -2590,12 +2591,15 @@ class JvmMediaPlayerHandlerImpl(
                 dataStoreManager,
                 videoId,
                 isDownloading = false,
-                isVideo = isVideo,
-                // Для видео плеер берёт HLS-манифест (muxed), поэтому прогрев должен
-                // идти тем же путём — иначе в кэш ляжет не та строка.
-                muxed = isVideo,
+                // Всегда прогреваем как аудио: этот вызов кладёт в кэш сразу обе ссылки —
+                // на аудио и на прогрессивное видео. Отдельный видео-прогрев (muxed) писал
+                // HLS-манифест, и VLC на нём пересобирал видеовыход на каждом сегменте.
+                isVideo = false,
             ).lastOrNull()
     }
+
+    /** HLS-манифест (m3u8) отдаётся кусками по ~6 секунд и заставляет VLC перезапускать видеовыход. */
+    private fun String.isHlsManifest(): Boolean = contains("manifest") || contains(".m3u8")
 
     private fun mayBeTrackingListeningLocal(
         song: SongEntity,
