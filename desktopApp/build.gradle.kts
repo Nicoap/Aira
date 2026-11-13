@@ -295,7 +295,7 @@ compose.desktop {
                 )
             }
             targetFormats(*listTarget.toTypedArray())
-            modules("jdk.unsupported")
+            modules("jdk.unsupported", "jdk.httpserver")
             packageName = "Wavora"
             macOS {
                 val formatedDate =

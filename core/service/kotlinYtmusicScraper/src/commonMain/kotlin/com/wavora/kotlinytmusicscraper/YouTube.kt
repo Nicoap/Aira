@@ -3,6 +3,7 @@ package com.wavora.scraper
 import com.eygraber.uri.toKmpUri
 import com.wavora.scraper.YouTube.Companion.DEFAULT_VISITOR_DATA
 import com.wavora.scraper.extension.toListFormat
+import com.wavora.scraper.extractor.rewriteStreamUrl
 import com.wavora.scraper.models.AccountInfo
 import com.wavora.scraper.models.AlbumItem
 import com.wavora.scraper.models.Artist
@@ -1533,10 +1534,30 @@ class YouTube {
                 decodedSigResponse.copy(
                     videoDetails = decodedSigResponse.videoDetails?.copy(),
                     playbackTracking = decodedSigResponse.playbackTracking,
+                    streamingData = decodedSigResponse.streamingData?.localizedStreamUrls(),
                 ),
                 thumbnails,
             )
         }
+
+    /**
+     * Переписывает ссылки на потоки в адреса локального прокси.
+     *
+     * googlevideo отдаёт 403 на открытый `Range: bytes=0-`, который шлёт libVLC, и 206 на короткий
+     * ограниченный диапазон. Прокси режет такие запросы на куски; на Android и iOS функция возвращает
+     * ссылку без изменений.
+     */
+    private fun PlayerResponse.StreamingData.localizedStreamUrls(): PlayerResponse.StreamingData =
+        copy(
+            formats = formats?.map { it.localizedUrl() },
+            adaptiveFormats = adaptiveFormats.map { it.localizedUrl() },
+        )
+
+    private fun PlayerResponse.StreamingData.Format.localizedUrl(): PlayerResponse.StreamingData.Format {
+        val url = url ?: return this
+        if (isManifestUrl(url)) return this
+        return copy(url = rewriteStreamUrl(url))
+    }
 
     suspend fun updateWatchTime(
         watchtimeUrl: String,

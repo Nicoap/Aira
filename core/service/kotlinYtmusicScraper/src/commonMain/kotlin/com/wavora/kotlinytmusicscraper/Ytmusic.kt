@@ -1210,15 +1210,15 @@ class Ytmusic {
     }
 
     // googlevideo отвечает 403 на HEAD даже для рабочих ссылок, поэтому проверяем GET без чтения тела.
-    // ВАЖНО: Range должен быть таким же, как у libVLC (`bytes=0-`, открытый). Измерено на WEB_REMIX-ссылках:
-    // `bytes=0-0` и `0-1048575` -> 206, а `bytes=0-` (и запрос без Range) -> 403, то есть ссылка "проходит"
-    // короткую пробу, но VLC получает 403. expectSuccess=false: 4xx — это результат, а не исключение.
+    // ВАЖНО: проверять надо ограниченный Range (`bytes=0-1048575`) — ровно такими кусками качает наш
+    // StreamProxy. Открытый `bytes=0-` (его шлёт libVLC) этот сервер отдаёт 403 даже для живых ссылок,
+    // поэтому такой пробой нельзя отбраковывать ссылки. expectSuccess=false: 4xx — это результат, а не исключение.
     suspend fun is403Url(url: String): Boolean =
         try {
             httpClient
                 .prepareGet(url) {
                     expectSuccess = false
-                    header(HttpHeaders.Range, "bytes=0-")
+                    header(HttpHeaders.Range, "bytes=0-1048575")
                     header(HttpHeaders.UserAgent, DOWNLOAD_USER_AGENT)
                 }.execute { it.status.value in 400..499 }
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
