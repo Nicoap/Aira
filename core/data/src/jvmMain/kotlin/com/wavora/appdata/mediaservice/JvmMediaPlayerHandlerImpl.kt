@@ -31,6 +31,7 @@ import com.wavora.domain.model.player.GenericPlaybackParameters
 import com.wavora.domain.model.player.GenericTracks
 import com.wavora.domain.model.player.PlayerConstants
 import com.wavora.domain.model.player.PlayerError
+import com.wavora.domain.extension.isBefore
 import com.wavora.domain.extension.isVideo
 import com.wavora.domain.extension.now
 import com.wavora.domain.extension.toGenericMediaItem
@@ -64,6 +65,7 @@ import com.wavora.domain.utils.toTrack
 import com.wavora.logger.Logger
 import com.my.kizzy.DiscordRPC
 import com.my.kizzy.DiscordRpcSettings
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -95,6 +97,7 @@ import org.koin.mp.KoinPlatform.getKoin
 import com.wavora.nowplayingcenter.NPYC
 import com.wavora.nowplayingcenter.domain.NowPlayingListener
 import com.wavora.nowplayingcenter.domain.Platform
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.math.pow
 
 private val TAG = "JvmMediaPlayerHandler"
@@ -262,6 +265,20 @@ class JvmMediaPlayerHandlerImpl(
     private var jobWatchtime: Job? = null
 
     private var getDataOfNowPlayingTrackStateJob: Job? = null
+
+    // ПРЕДЗАГРУЗКА СЛЕДУЮЩИХ ТРЕКОВ.
+    // Извлечение playable URL (youTube.player + запись формата в БД) занимает 4-5 с и раньше
+    // целиком происходило в момент переключения трека — из-за этого «next» стартовал с задержкой.
+    // Формат кэшируется в таблице `new_format` до `expiredTime`, поэтому тот же запрос,
+    // сделанный заранее, пока играет текущий трек, делает следующий переход мгновенным.
+    private val PREFETCH_AHEAD = 3
+    private val PREFETCH_START_DELAY_MILLIS = 2_500L
+    // Один и тот же трек прогреваем не чаще раза в минуту: при листании очереди вперёд-назад
+    // иначе получим шквал одинаковых запросов к YouTube.
+    private val PREFETCH_DEDUP_WINDOW_MILLIS = 60_000L
+    private val PREFETCH_CACHE_MAX_ENTRIES = 512
+    private val prefetchedAt = ConcurrentHashMap<String, Long>()
+    private var prefetchJob: Job? = null
 
     private val json =
         Json {
@@ -2481,6 +2498,88 @@ class JvmMediaPlayerHandlerImpl(
             resetCrossfade()
         }
         mayBeSaveRecentSong()
+        // Заранее прогреваем следующие треки, чтобы они стартовали без 4-5 с извлечения URL.
+        prefetchUpcomingTracks()
+    }
+
+    /**
+     * Прогревает кэш форматов для [PREFETCH_AHEAD] треков после текущего.
+     *
+     * WHY: `StreamRepositoryImpl.getStream` идёт в YouTube, получает потоки и кладёт результат
+     * в `new_format` с `expiredTime`. Тот же вызов, сделанный заранее, превращает следующий
+     * переход в мгновенный — плеер просто читает готовый формат из БД.
+     *
+     * Ничего не блокирует и не бросает исключений: id резолвятся синхронно в том же потоке,
+     * где уже читаются остальные `player.*` (VLC не потокобезопасен), а загрузка уходит в IO.
+     */
+    private fun prefetchUpcomingTracks() {
+        val currentIndex = player.currentMediaItemIndex
+        if (currentIndex < 0) return
+        val startIndex = currentIndex + 1
+        val currentId = player.currentMediaItem?.mediaId
+        // Берём таймлайн плеера, а не список из UI: он совпадает с тем, что реально заиграет
+        // следующим, и не рассинхронизируется после вставок/перемещений в очереди.
+        val upcomingIds =
+            (startIndex until startIndex + PREFETCH_AHEAD)
+                .mapNotNull { index -> player.getMediaItemAt(index)?.mediaId }
+                .filter { it.isNotBlank() && it != currentId }
+                .distinct()
+        if (upcomingIds.isEmpty()) return
+
+        val now = System.currentTimeMillis()
+        val idsToPrefetch =
+            upcomingIds.filter { id ->
+                val last = prefetchedAt[id]
+                last == null || now - last >= PREFETCH_DEDUP_WINDOW_MILLIS
+            }
+        if (idsToPrefetch.isEmpty()) return
+
+        // Помечаем сразу, до запуска: так повторный переход не поставит тот же трек в очередь.
+        idsToPrefetch.forEach { prefetchedAt[it] = now }
+        // Чистим устаревшие записи, иначе map растёт вместе с очередью.
+        if (prefetchedAt.size > PREFETCH_CACHE_MAX_ENTRIES) {
+            val cutoff = now - PREFETCH_DEDUP_WINDOW_MILLIS
+            prefetchedAt.entries.removeAll { it.value < cutoff }
+        }
+
+        // Быстрое листание: предыдущий прогрев отменяем, иначе на каждый переход улетает
+        // по три запроса, и они конкурируют друг с другом за один и тот же клиент YouTube.
+        prefetchJob?.cancel()
+        prefetchJob =
+            backgroundScope.launch {
+                // Небольшая пауза, чтобы не конкурировать с извлечением текущего трека.
+                delay(PREFETCH_START_DELAY_MILLIS)
+                for (videoId in idsToPrefetch) {
+                    try {
+                        warmStreamCache(videoId)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Throwable) {
+                        // Прогрев — best effort: сеть/403/таймаут не должны влиять на плеер,
+                        // он всё равно извлечёт URL сам в момент перехода.
+                        Logger.d(TAG, "prefetch failed for $videoId: ${e.message}")
+                    }
+                }
+            }
+    }
+
+    /**
+     * Кладёт формат трека в локальный кэш, если его там ещё нет (или он протух).
+     * Использует ровно тот же вызов, что и `VlcPlayerAdapter.extractPlayableUrl`,
+     * поэтому попадание в кэш гарантирует попадание в тёплый путь плеера.
+     */
+    private suspend fun warmStreamCache(videoId: String) {
+        val cached = streamRepository.getNewFormat(videoId).lastOrNull()
+        if (cached != null && !cached.audioUrl.isNullOrEmpty() && !cached.expiredTime.isBefore(now())) {
+            return
+        }
+        streamRepository
+            .getStream(
+                dataStoreManager,
+                videoId,
+                isDownloading = false,
+                isVideo = false,
+            ).lastOrNull()
     }
 
     private fun mayBeTrackingListeningLocal(
