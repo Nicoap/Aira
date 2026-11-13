@@ -215,6 +215,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
         return
     }
     RenderGuard.markStarting()
+    UiStallWatchdog.start() // diagnostics: logs the UI thread's stack when the window stops responding
 
     // First instance only: deliver our own deep link (non-macOS passes URI via args).
     // Safe to call even before Koin/SharedViewModel exist: DesktopDeepLinkHandler
