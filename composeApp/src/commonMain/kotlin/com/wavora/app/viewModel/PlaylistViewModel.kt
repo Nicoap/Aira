@@ -179,6 +179,24 @@ class PlaylistViewModel(
         checkDownloadedPlaylist = null
     }
 
+    /**
+     * Keeps the reported track count aligned with the tracks actually loaded so far,
+     * so the header count grows with pagination instead of staying at the value
+     * parsed from the YouTube header (which can be stale or wrong for big playlists).
+     * When [exact] is true the count is replaced by the loaded size (pagination exhausted).
+     */
+    private fun syncTrackCount(exact: Boolean = false) {
+        _uiState.update { state ->
+            val data = state.data ?: return@update state
+            val loaded = _tracks.value.size
+            Success(
+                data = data.copy(
+                    trackCount = if (exact) loaded else maxOf(data.trackCount, loaded),
+                ),
+            )
+        }
+    }
+
     fun getData(id: String) {
         resetData()
         viewModelScope.launch {
@@ -214,6 +232,7 @@ class PlaylistViewModel(
                                     )
                                 _tracks.value = data.first.tracks
                                 _continuation.value = data.second
+                                syncTrackCount(exact = data.second.isNullOrEmpty())
                                 if (data.second.isNullOrEmpty()) _tracksListState.value = ListState.PAGINATION_EXHAUST
                                 playlistRepository.insertRadioPlaylist(data.first.toPlaylistEntity())
                             }
@@ -254,6 +273,7 @@ class PlaylistViewModel(
                                     )
                                 _tracks.value = data.first.tracks
                                 _continuation.value = data.second
+                                syncTrackCount(exact = data.second.isNullOrEmpty())
                                 if (data.second.isNullOrEmpty()) _tracksListState.value = ListState.PAGINATION_EXHAUST
                                 getPlaylistEntity(id = data.first.id, playlistBrowse = data.first)
                             }
@@ -301,6 +321,7 @@ class PlaylistViewModel(
                             newList.addAll(res.first ?: emptyList())
                             newList
                         }
+                        syncTrackCount(exact = res.second.isNullOrEmpty())
                         if (res.second.isNullOrEmpty()) {
                             _continuation.value = null
                             _tracksListState.value = ListState.PAGINATION_EXHAUST
@@ -383,6 +404,7 @@ class PlaylistViewModel(
                             .singleOrNull()
                             ?.let { song ->
                                 _tracks.value = song.map { it.toTrack() }
+                                syncTrackCount(exact = true)
                             }
                     }
                     _tracksListState.value = ListState.PAGINATION_EXHAUST

@@ -165,26 +165,20 @@ internal fun parsePlaylistData(
                      * Fuck Kotlin
                      * Ref: https://stackoverflow.com/q/48379981/20605098
                      */
+                    // Заголовок локализуется («396 треков», «396 songs»), поэтому ищем число
+                    // по соседнему слову songs/tracks, а не «первый токен строки».
                     trackCount =
                         try {
-                            if (secondSubtitle.size >= 5) {
-                                secondSubtitle
-                                    .getOrNull(2)
-                                    ?.text
-                                    ?.split("\\s".toRegex())
-                                    ?.firstOrNull()
-                                    ?.toInt() ?: 0
-                            } else {
-                                secondSubtitle
-                                    .firstOrNull()
-                                    ?.text
-                                    ?.split("\\s".toRegex())
-                                    ?.firstOrNull()
-                                    ?.toInt() ?: 0
-                            }
+                            val subtitleText = secondSubtitle.joinToString(" ") { it.text }
+                            Regex("(\\d[\\d,.]*)\\s+(songs?|tracks?)\\b", RegexOption.IGNORE_CASE)
+                                .find(subtitleText)
+                                ?.groupValues
+                                ?.getOrNull(1)
+                                ?.replace(",", "")
+                                ?.replace(".", "")
+                                ?.toIntOrNull() ?: 0
                         } catch (e: Exception) {
                             Logger.e("PlaylistParser", "Error parsing track count: ${e.message}")
-                            e.printStackTrace()
                             0
                         }
                 }
@@ -368,7 +362,7 @@ internal fun parsePlaylistData(
             privacy = "PUBLIC",
             thumbnails = listThumbnails,
             title = title,
-            trackCount = if (trackCount == 0) listContent.size else trackCount,
+            trackCount = if (trackCount == 0) listTrack.size else trackCount,
             tracks = listTrack,
             year = year,
         )

@@ -423,7 +423,7 @@ internal class PlaylistRepositoryImpl(
                                             playlist.tracks.toMutableList().apply {
                                                 addAll(listContent)
                                             },
-                                        trackCount = (playlist.trackCount + listContent.size),
+                                        trackCount = maxOf(playlist.trackCount, playlist.tracks.size + listContent.size),
                                     ),
                                 ),
                             )
@@ -522,7 +522,7 @@ internal class PlaylistRepositoryImpl(
                                                     playlist.tracks.toMutableList().apply {
                                                         addAll(listContent)
                                                     },
-                                                trackCount = (playlist.trackCount + listContent.size),
+                                                trackCount = maxOf(playlist.trackCount, playlist.tracks.size + listContent.size),
                                                 shuffleEndpoint = shuffleEndpoint?.toYouTubeWatchEndpoint(),
                                                 radioEndpoint = radioEndpoint?.toYouTubeWatchEndpoint(),
                                             ),

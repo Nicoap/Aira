@@ -65,7 +65,7 @@ class AlbumViewModel(
                                             name = "",
                                         ),
                                     year = data.year ?: now().year.toString(),
-                                    trackCount = data.trackCount,
+                                    trackCount = maxOf(data.trackCount, data.tracks.size),
                                     description = data.description,
                                     length = data.duration ?: "",
                                     listTrack = data.tracks,
@@ -112,6 +112,12 @@ class AlbumViewModel(
                     is Resource.Error -> {
                         albumRepository.getAlbum(browseId).singleOrNull().let { albumEntity ->
                             if (albumEntity != null) {
+                                val loadedTracks =
+                                    (
+                                        songRepository
+                                            .getSongsByListVideoId(albumEntity.tracks ?: emptyList())
+                                            .singleOrNull() ?: emptyList()
+                                    ).toArrayListTrack()
                                 _uiState.update {
                                     it.copy(
                                         browseId = browseId,
@@ -123,15 +129,10 @@ class AlbumViewModel(
                                                 name = albumEntity.artistName?.firstOrNull() ?: "",
                                             ),
                                         year = albumEntity.year ?: now().year.toString(),
-                                        trackCount = albumEntity.trackCount,
+                                        trackCount = maxOf(albumEntity.trackCount, loadedTracks.size),
                                         description = albumEntity.description,
                                         length = albumEntity.duration ?: "",
-                                        listTrack =
-                                            (
-                                                songRepository
-                                                    .getSongsByListVideoId(albumEntity.tracks ?: emptyList())
-                                                    .singleOrNull() ?: emptyList()
-                                            ).toArrayListTrack(),
+                                        listTrack = loadedTracks,
                                         loadState = LocalPlaylistState.PlaylistLoadState.Success,
                                     )
                                 }
