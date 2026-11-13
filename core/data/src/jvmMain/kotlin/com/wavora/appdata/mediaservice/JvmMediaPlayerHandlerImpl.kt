@@ -2519,23 +2519,26 @@ class JvmMediaPlayerHandlerImpl(
         val currentId = player.currentMediaItem?.mediaId
         // Берём таймлайн плеера, а не список из UI: он совпадает с тем, что реально заиграет
         // следующим, и не рассинхронизируется после вставок/перемещений в очереди.
-        val upcomingIds =
+        // Пара «id + видео ли трек»: для видео-треков прогревать нужно именно video-формат,
+        // иначе плеер всё равно извлекает его при переходе.
+        val upcomingItems =
             (startIndex until startIndex + PREFETCH_AHEAD)
-                .mapNotNull { index -> player.getMediaItemAt(index)?.mediaId }
-                .filter { it.isNotBlank() && it != currentId }
-                .distinct()
-        if (upcomingIds.isEmpty()) return
+                .mapNotNull { index -> player.getMediaItemAt(index) }
+                .filter { it.mediaId.isNotBlank() && it.mediaId != currentId }
+                .distinctBy { it.mediaId }
+                .map { it.mediaId to it.isVideo() }
+        if (upcomingItems.isEmpty()) return
 
         val now = System.currentTimeMillis()
         val idsToPrefetch =
-            upcomingIds.filter { id ->
+            upcomingItems.filter { (id, _) ->
                 val last = prefetchedAt[id]
                 last == null || now - last >= PREFETCH_DEDUP_WINDOW_MILLIS
             }
         if (idsToPrefetch.isEmpty()) return
 
         // Помечаем сразу, до запуска: так повторный переход не поставит тот же трек в очередь.
-        idsToPrefetch.forEach { prefetchedAt[it] = now }
+        idsToPrefetch.forEach { (id, _) -> prefetchedAt[id] = now }
         // Чистим устаревшие записи, иначе map растёт вместе с очередью.
         if (prefetchedAt.size > PREFETCH_CACHE_MAX_ENTRIES) {
             val cutoff = now - PREFETCH_DEDUP_WINDOW_MILLIS
@@ -2549,9 +2552,9 @@ class JvmMediaPlayerHandlerImpl(
             backgroundScope.launch {
                 // Небольшая пауза, чтобы не конкурировать с извлечением текущего трека.
                 delay(PREFETCH_START_DELAY_MILLIS)
-                for (videoId in idsToPrefetch) {
+                for ((videoId, isVideo) in idsToPrefetch) {
                     try {
-                        warmStreamCache(videoId)
+                        warmStreamCache(videoId, isVideo)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Throwable) {
@@ -2568,17 +2571,29 @@ class JvmMediaPlayerHandlerImpl(
      * Использует ровно тот же вызов, что и `VlcPlayerAdapter.extractPlayableUrl`,
      * поэтому попадание в кэш гарантирует попадание в тёплый путь плеера.
      */
-    private suspend fun warmStreamCache(videoId: String) {
+    private suspend fun warmStreamCache(
+        videoId: String,
+        isVideo: Boolean,
+    ) {
         val cached = streamRepository.getNewFormat(videoId).lastOrNull()
-        if (cached != null && !cached.audioUrl.isNullOrEmpty() && !cached.expiredTime.isBefore(now())) {
-            return
+        if (cached != null && !cached.expiredTime.isBefore(now())) {
+            val hasUrl =
+                if (isVideo) {
+                    !cached.videoUrl.isNullOrEmpty()
+                } else {
+                    !cached.audioUrl.isNullOrEmpty()
+                }
+            if (hasUrl) return
         }
         streamRepository
             .getStream(
                 dataStoreManager,
                 videoId,
                 isDownloading = false,
-                isVideo = false,
+                isVideo = isVideo,
+                // Для видео плеер берёт HLS-манифест (muxed), поэтому прогрев должен
+                // идти тем же путём — иначе в кэш ляжет не та строка.
+                muxed = isVideo,
             ).lastOrNull()
     }
 

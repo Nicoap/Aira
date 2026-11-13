@@ -3685,11 +3685,15 @@ class VlcPlayerAdapter(
                 if (!is403Video) {
                     // Return video URL with audio as slave for merging
                     val audioSlave =
-                        if (!audioUrl.isNullOrEmpty()) {
+                        if (audioUrl.isNullOrEmpty() || audioUrl == videoUrl) {
+                            // HLS-манифест уже содержит и видео, и звук. Раньше в этом случае
+                            // тот же манифест подключался ещё и как `:input-slave`, то есть
+                            // libVLC открывал один и тот же поток дважды — по логам это давало
+                            // лишние ~4 секунды до первого кадра и двойной сетевой трафик.
+                            null
+                        } else {
                             val is403Audio = streamRepository.is403Url(audioUrl).firstOrNull() != false
                             if (!is403Audio) audioUrl else null
-                        } else {
-                            null
                         }
 
                     Logger.w("Stream", "Video from format (with audio slave: ${audioSlave != null})")
