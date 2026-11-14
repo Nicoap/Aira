@@ -88,9 +88,14 @@ import com.wavora.app.ui.navigation.destination.list.ArtistDestination
 import com.wavora.app.ui.navigation.destination.list.PlaylistDestination
 import com.wavora.app.ui.navigation.destination.list.PodcastDestination
 import com.wavora.app.ui.theme.typo
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material3.Icon
 import com.wavora.app.viewModel.HomeViewModel
+import com.wavora.app.viewModel.SharedViewModel
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
+import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.album
@@ -313,6 +318,36 @@ fun HomeItemContentPlaylist(
             }
             .tvFocusIndicator(),
     ) {
+        // Кнопка Play поверх обложки: запускает альбом целиком, не заходя внутрь.
+        // Раньше, чтобы начать слушать альбом, приходилось открывать его экран.
+        val albumId =
+            when (data) {
+                is AlbumEntity -> data.browseId
+                is ResultAlbum -> data.browseId
+                is AlbumsResult -> data.browseId
+                else -> null
+            }
+        if (!albumId.isNullOrBlank()) {
+            val sharedViewModel: SharedViewModel = koinInject()
+            Box(
+                modifier =
+                    Modifier
+                        .align(Alignment.TopEnd)
+                        .padding(top = 16.dp, end = 16.dp)
+                        .size(34.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.55f))
+                        .clickable { sharedViewModel.playAlbum(albumId) },
+                contentAlignment = Alignment.Center,
+            ) {
+                Icon(
+                    imageVector = Icons.Rounded.PlayArrow,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(20.dp),
+                )
+            }
+        }
         Column(
             modifier =
                 Modifier

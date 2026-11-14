@@ -126,10 +126,13 @@ fun SongFullWidthItems(
     val coroutineScope = rememberCoroutineScope()
     val density = LocalDensity.current
     val songRepository: SongRepository = koinInject<SongRepository>()
-    val downloadState by songRepository
-        .getSongAsFlow(songEntity?.videoId ?: track?.videoId ?: "")
-        .mapNotNull { it?.downloadState }
-        .collectAsState(initial = DownloadState.STATE_NOT_DOWNLOADED)
+    val songId = songEntity?.videoId ?: track?.videoId ?: ""
+    // Один поток на строку: из него берём и состояние загрузки, и «сердечко» лайка.
+    val songState by remember(songId) {
+        songRepository.getSongAsFlow(songId)
+    }.collectAsState(initial = null)
+    val downloadState = songState?.downloadState ?: DownloadState.STATE_NOT_DOWNLOADED
+    val isLiked = songState?.liked == true
     val rowHover = remember { androidx.compose.foundation.interaction.MutableInteractionSource() }
     val rowHovered by rowHover.collectIsHoveredAsState()
     val offsetX = remember { Animatable(initialValue = 0f) }
@@ -375,6 +378,17 @@ fun SongFullWidthItems(
                                 .clickable { onAddToQueue(track?.videoId ?: songEntity?.videoId ?: "") }
                                 .padding(7.dp),
                     )
+                }
+                // Сердечко лайка — вплотную к «троеточию», как в остальных списках треков.
+                if (songId.isNotBlank()) {
+                    HeartCheckBox(
+                        size = 22,
+                        checked = isLiked,
+                    ) {
+                        coroutineScope.launch {
+                            songRepository.updateLikeStatus(songId, if (isLiked) 0 else 1)
+                        }
+                    }
                 }
                 if (onMoreClickListener != null) {
                     RippleIconButton(resId = Res.drawable.baseline_more_vert_24, fillMaxSize = false) {

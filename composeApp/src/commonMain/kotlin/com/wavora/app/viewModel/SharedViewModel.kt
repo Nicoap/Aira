@@ -10,7 +10,11 @@ import com.wavora.domain.model.entities.DownloadState
 import com.wavora.domain.model.entities.LocalPlaylistEntity
 import com.wavora.domain.model.entities.PlaylistEntity
 import com.wavora.domain.repository.CacheRepository
+import com.wavora.common.Config
 import com.wavora.common.Config.DOWNLOAD_CACHE
+import com.wavora.domain.mediaservice.handler.PlaylistType
+import com.wavora.domain.mediaservice.handler.QueueData
+import com.wavora.domain.utils.Resource
 import com.wavora.domain.model.entities.NewFormatEntity
 import com.wavora.domain.model.model.canvas.CanvasResult
 import com.wavora.domain.model.model.download.DownloadProgress
@@ -109,6 +113,40 @@ class SharedViewModel(
         type: String,
         index: Int? = null,
     ) = player.loadMediaItemFromTrack(track, type, index)
+
+    /**
+     * Играет альбом целиком, не открывая экран альбома.
+     *
+     * WHY: на карточке альбома нет кнопки воспроизведения — раньше приходилось заходить
+     * внутрь и запускать оттуда. Данные загружаются тем же запросом, что и в AlbumViewModel,
+     * а очередь наполняется так же, как при нажатии Play внутри альбома.
+     */
+    fun playAlbum(browseId: String) {
+        if (browseId.isBlank()) return
+        viewModelScope.launch {
+            val album =
+                runCatching {
+                    albumRepository
+                        .getAlbumData(browseId)
+                        .first { it is Resource.Success<*> }
+                        .data
+                }.getOrNull() ?: return@launch
+            val tracks = album.tracks
+            if (tracks.isEmpty()) return@launch
+            val first = tracks.first()
+            setQueueData(
+                QueueData.Data(
+                    listTracks = tracks.toCollection(ArrayList()),
+                    firstPlayedTrack = first,
+                    playlistId = browseId.removePrefix("VL"),
+                    playlistName = album.title,
+                    playlistType = PlaylistType.PLAYLIST,
+                    continuation = null,
+                ),
+            )
+            loadMediaItem(first, Config.ALBUM_CLICK, 0)
+        }
+    }
 
     // ── Backwards-compatible delegates — NowPlayingViewModel ──────────────
     val nowPlayingScreenData: StateFlow<NowPlayingScreenData> get() = nowPlaying.nowPlayingScreenData

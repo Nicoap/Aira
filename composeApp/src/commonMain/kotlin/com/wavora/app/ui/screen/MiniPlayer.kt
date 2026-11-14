@@ -22,6 +22,7 @@ import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -709,7 +710,10 @@ fun MiniPlayer(
                     }
                 }
                 // Part 2
-                Box(modifier = Modifier.weight(1f)) {
+                BoxWithConstraints(modifier = Modifier.weight(1f)) {
+                    // На узкой панели таймкоды не помещаются рядом со слайдером — убираем их,
+                    // иначе ползунок схлопывается в ноль и всё наезжает.
+                    val narrowTimes = maxWidth < 360.dp
                     Column(Modifier.widthIn(max = 600.dp).fillMaxWidth().padding(horizontal = 24.dp), horizontalAlignment = Alignment.CenterHorizontally) {
                         Box(
                             contentAlignment = Alignment.Center,
@@ -727,6 +731,7 @@ fun MiniPlayer(
                                 .wrapContentHeight(),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
+                            if (!narrowTimes) {
                             Text(
                                 text = formatDuration((timelineState.total * (sliderValue / 100f)).roundToLong()),
                                 style = LocalAppTypography.current.bodyMedium,
@@ -735,6 +740,7 @@ fun MiniPlayer(
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.width(50.dp),
                             )
+                            }
                             // Real Slider
                             Box(
                                 modifier =
@@ -829,6 +835,7 @@ fun MiniPlayer(
                                     )
                                 }
                             }
+                            if (!narrowTimes) {
                             Text(
                                 text = formatDuration(timelineState.total),
                                 style = LocalAppTypography.current.bodyMedium,
@@ -837,10 +844,15 @@ fun MiniPlayer(
                                 overflow = TextOverflow.Ellipsis,
                                 modifier = Modifier.width(50.dp),
                             )
+                            }
                         }
                     }
                 }
-                Box(Modifier.weight(1f)) {
+                BoxWithConstraints(Modifier.weight(1f)) {
+                    // Узкая панель (открыта боковая панель плеера или окно сжато): прячем
+                    // второстепенные элементы — иначе их фиксированные размеры наезжают друг
+                    // на друга и перекрывают соседей.
+                    val narrow = maxWidth < 320.dp
                     Row(
                         Modifier
                             .fillMaxHeight()
@@ -861,7 +873,7 @@ fun MiniPlayer(
                         }
                         Spacer(Modifier.width(4.dp))
                         // Desktop mini player button (JVM only)
-                        if (getPlatform() == Platform.Desktop) {
+                        if (getPlatform() == Platform.Desktop && !narrow) {
                             SimpleTooltip(stringResource(Res.string.toggle_desktop_miniplayer)) {
                                 IconButton(onClick = { toggleMiniPlayer() }) {
                                     Icon(
@@ -907,6 +919,7 @@ fun MiniPlayer(
                                 volumeValue = controllerState.volume
                             }
                         }
+                        if (!narrow) {
                         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
                             Slider(
                                 value = volumeValue,
@@ -981,6 +994,7 @@ fun MiniPlayer(
                                     )
                                 },
                             )
+                        }
                         }
                         Spacer(Modifier.width(8.dp))
                         // Closing stops playback and clears the queue: keep it visually apart from the volume.
