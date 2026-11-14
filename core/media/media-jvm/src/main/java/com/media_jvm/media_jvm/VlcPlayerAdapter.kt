@@ -1694,6 +1694,29 @@ class VlcPlayerAdapter(
                             "wasAlreadyIntentional=${player.preRollIntentionallyUnmuted}",
                     )
 
+                    // Страховка от «трек играет, но без звука»: у промоушенного
+                    // предзагруженного плеера VLC иногда снова выставляет isMute=true
+                    // уже после принудительного unmute выше. Первые секунды проверяем
+                    // и чиним молча, не трогая звук, если всё в порядке.
+                    launch {
+                        repeat(AUDIO_WATCHDOG_CHECKS) {
+                            delay(AUDIO_WATCHDOG_INTERVAL_MS)
+                            if (currentPlayer?.id != player.id) return@launch
+                            val audio = runCatching { player.mediaPlayer.audio() }.getOrNull() ?: return@launch
+                            val muted = runCatching { audio.isMute }.getOrNull()
+                            if (muted == true) {
+                                runCatching { audio.isMute = false }
+                                runCatching { audio.setVolume((internalVolume * 100).toInt()) }
+                                player.preRollIntentionallyUnmuted = true
+                                CrossfadeAudit.log(
+                                    "AUDIO_WATCHDOG_RESTORED",
+                                    playerId = player.id,
+                                    details = "check=$it volume=${(internalVolume * 100).toInt()}",
+                                )
+                            }
+                        }
+                    }
+
                     if (cachedPrecache != null) {
                         if (shouldPlay) {
                             player.mediaPlayer.controls().play()
@@ -3094,6 +3117,11 @@ class VlcPlayerAdapter(
         // Shared here (instead of duplicated as a magic number) so the pre-roll lead
         // time below is always derived from the real buffer target, not guessed.
         const val AUDIO_NETWORK_CACHING_MS = 3000L
+
+        // Страховка «играет, но без звука»: сколько раз и с каким шагом проверяем
+        // флаг mute у только что запущенного плеера.
+        private const val AUDIO_WATCHDOG_CHECKS = 6
+        private const val AUDIO_WATCHDOG_INTERVAL_MS = 800L
 
         // Сколько помним, что прогрессивный поток на этом IP оборван, прежде чем проверить снова.
         private const val THROTTLED_MEMO_MS = 10 * 60 * 1000L

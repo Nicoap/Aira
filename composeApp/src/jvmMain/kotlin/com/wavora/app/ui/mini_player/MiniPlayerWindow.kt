@@ -1,5 +1,7 @@
 package com.wavora.app.ui.mini_player
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -7,38 +9,38 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPlacement
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.WindowState
-import com.wavora.logger.Logger
 import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.app.viewModel.UIEvent
 import org.jetbrains.compose.resources.painterResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.system_app_icon
-import java.awt.Dimension
+
 import java.util.prefs.Preferences
 
 /**
  * Mini player window - a separate always-on-top window for music controls.
- * Spotify-style frameless design with custom close button.
  *
- * Features:
- * - Always on top of other windows
- * - Frameless (no title bar)
- * - Resizable (default 400x110 dp)
- * - Shares player state with main window
- * - Close-safe (doesn't close main app)
- * - Remembers window position
- * - Keyboard shortcuts (Space: play/pause, Arrow keys: prev/next)
+ * Now shaped like a "dynamic island": a small pill when idle (cover, title,
+ * play/pause + next), expanding on hover into the full mini player with
+ * artwork, seek bar and the rest of the controls. The window is not resizable
+ * and its size is driven entirely by [expanded], so it always looks the same
+ * on every machine and nothing can be dragged into a broken layout.
  */
+@OptIn(ExperimentalComposeUiApi::class)
 @Composable
 fun MiniPlayerWindow(
     sharedViewModel: SharedViewModel,
@@ -46,15 +48,15 @@ fun MiniPlayerWindow(
 ) {
     val prefs = remember { Preferences.userRoot().node("Wavora/MiniPlayer") }
 
-    // Minimum size constraints
-    val minWidth = 420f
-    val minHeight = 80f
+    // Island sizes in dp: idle pill vs hovered panel.
+    val compactSize = DpSize(340.dp, 72.dp)
+    val expandedSize = DpSize(460.dp, 188.dp)
 
-    // Load saved position or use default (with minimum constraints)
+    // Load saved position or use default
     val savedX = prefs.getFloat("windowX", Float.NaN)
     val savedY = prefs.getFloat("windowY", Float.NaN)
-    val savedWidth = prefs.getFloat("windowWidth", 480f).coerceAtLeast(minWidth)
-    val savedHeight = prefs.getFloat("windowHeight", 110f).coerceAtLeast(minHeight)
+
+    var expanded by remember { mutableStateOf(false) }
 
     var windowState by remember {
         mutableStateOf(
@@ -66,21 +68,36 @@ fun MiniPlayerWindow(
                     } else {
                         WindowPosition(savedX.coerceAtLeast(0f).dp, savedY.coerceAtLeast(0f).dp)
                     },
-                size = DpSize(savedWidth.coerceAtLeast(0f).dp, savedHeight.coerceAtLeast(0f).dp),
+                size = compactSize,
             ),
         )
     }
 
-    // Save position on change
-    LaunchedEffect(windowState.position, windowState.size) {
+    // Island behaviour: keep the centre in place while growing/shrinking, so the
+    // pill does not jump to the side when the pointer enters it.
+    LaunchedEffect(expanded) {
+        val target = if (expanded) expandedSize else compactSize
+        val current = windowState.size
+        if (current != target) {
+            val position = windowState.position
+            if (position is WindowPosition.Absolute) {
+                windowState.position =
+                    WindowPosition(
+                        position.x + (current.width - target.width) / 2,
+                        position.y + (current.height - target.height) / 2,
+                    )
+            }
+            windowState.size = target
+        }
+    }
+
+    // Save position only: the size is owned by the island above.
+    LaunchedEffect(windowState.position) {
         val pos = windowState.position
-        Logger.w("MiniPlayerWindow", "Saving position: $pos")
         if (pos is WindowPosition.Absolute) {
             prefs.putFloat("windowX", pos.x.value)
             prefs.putFloat("windowY", pos.y.value)
         }
-        prefs.putFloat("windowWidth", windowState.size.width.value)
-        prefs.putFloat("windowHeight", windowState.size.height.value)
     }
 
     // WAVORA FIX: transparent + undecorated windows are invisible on Windows
@@ -96,7 +113,7 @@ fun MiniPlayerWindow(
         alwaysOnTop = true,
         undecorated = true,
         transparent = true,
-        resizable = true,
+        resizable = false,
         state = windowState,
         onKeyEvent = { keyEvent ->
             when {
@@ -121,20 +138,20 @@ fun MiniPlayerWindow(
             }
         },
     ) {
-        // Set minimum size at AWT level to prevent flickering
-        LaunchedEffect(Unit) {
-            (window as? java.awt.Window)?.minimumSize =
-                Dimension(
-                    (minWidth * window.graphicsConfiguration.defaultTransform.scaleX).toInt(),
-                    (minHeight * window.graphicsConfiguration.defaultTransform.scaleY).toInt(),
-                )
+        // Остров: в покое это компактная пилюля, при наведении раскрывается.
+        Box(
+            modifier =
+                Modifier
+                    .fillMaxSize()
+                    .onPointerEvent(PointerEventType.Enter) { expanded = true }
+                    .onPointerEvent(PointerEventType.Exit) { expanded = false },
+        ) {
+            MiniPlayerRoot(
+                sharedViewModel = sharedViewModel,
+                onClose = onCloseRequest,
+                windowState = windowState,
+                window = window,
+            )
         }
-
-        MiniPlayerRoot(
-            sharedViewModel = sharedViewModel,
-            onClose = onCloseRequest,
-            windowState = windowState,
-            window = window,
-        )
     }
 }

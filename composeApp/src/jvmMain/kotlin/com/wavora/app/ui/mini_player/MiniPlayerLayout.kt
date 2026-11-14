@@ -74,6 +74,7 @@ import coil3.compose.AsyncImage
 import com.wavora.domain.model.model.streams.TimeLine
 import com.wavora.domain.mediaservice.handler.ControlState
 import com.wavora.app.extension.parseRichSyncWords
+import com.wavora.app.ui.component.AudioPlayingIndicator
 import com.wavora.app.ui.component.PlayPauseButton
 import com.wavora.app.ui.component.RichSyncLyricsLineItem
 import com.wavora.app.ui.component.RippleIconButton
@@ -847,34 +848,14 @@ private fun MiniPlayerAudioVisualizer(
     isPlaying: Boolean,
     modifier: Modifier = Modifier,
 ) {
-    val transition = rememberInfiniteTransition(label = "mini-player-audio-visualizer")
-    Row(
-        modifier = modifier.height(16.dp),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        repeat(9) { index ->
-            val pulse by transition.animateFloat(
-                initialValue = 0.16f,
-                targetValue = 0.34f + ((index * 37) % 63) / 100f,
-                animationSpec =
-                    infiniteRepeatable(
-                        animation = tween(durationMillis = 320 + index * 47, delayMillis = index * 31),
-                        repeatMode = RepeatMode.Reverse,
-                    ),
-                label = "mini-player-visualizer-bar-$index",
-            )
-            val barHeight = if (isPlaying) pulse else 0.12f
-            Box(
-                modifier =
-                    Modifier
-                        .width(3.dp)
-                        .fillMaxHeight(barHeight)
-                        .clip(CircleShape)
-                        .background(themeAccentBrush()),
-            )
-        }
-    }
+    // Раньше здесь жил `rememberInfiniteTransition` с девятью анимациями: пока окно
+    // мини-плеера открыто, Compose перерисовывал его на каждом vsync даже в паузе.
+    // Теперь тот же приём, что и в основном окне, — Canvas с тикером на 5 Гц.
+    AudioPlayingIndicator(
+        size = 16.dp,
+        modifier = modifier,
+        playing = isPlaying,
+    )
 }
 
 /**

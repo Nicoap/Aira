@@ -25,6 +25,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -63,6 +64,8 @@ import com.wavora.domain.utils.connectArtists
 import com.wavora.domain.utils.toArrayListTrack
 import com.wavora.domain.utils.toTrack
 import com.wavora.logger.Logger
+import com.wavora.app.Platform
+import com.wavora.app.getPlatform
 import com.wavora.app.extension.getScreenSizeInfo
 import com.wavora.app.extension.getStringBlocking
 import com.wavora.app.ui.component.CenterLoadingBox
@@ -845,31 +848,35 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                     .align(Alignment.TopCenter),
             title = {},
             navigationIcon = {
-                Box(
-                    modifier =
-                        Modifier
-                            .clip(CircleShape)
-                            .wrapContentSize()
-                            .align(Alignment.TopStart)
-                            .padding(
-                                12.dp,
-                            ),
-                ) {
-                    IconButton(
-                        onClick = { navController.navigateUp() },
-                        colors =
-                            IconButtonDefaults.iconButtonColors().copy(
-                                containerColor =
-                                    wavoraSurface.copy(
-                                        alpha = 0.8f,
-                                    ),
-                                contentColor =
-                                    Color.White.copy(
-                                        alpha = 0.6f,
-                                    ),
-                            ),
+                // Статистика — такая же страница в рейле, как «Главная»: на десктопе
+                // кнопка «назад» не нужна.
+                if (getPlatform() != Platform.Desktop) {
+                    Box(
+                        modifier =
+                            Modifier
+                                .clip(CircleShape)
+                                .wrapContentSize()
+                                .align(Alignment.TopStart)
+                                .padding(
+                                    12.dp,
+                                ),
                     ) {
-                        Icon(Icons.Default.ArrowBackIosNew, "Back")
+                        IconButton(
+                            onClick = { navController.navigateUp() },
+                            colors =
+                                IconButtonDefaults.iconButtonColors().copy(
+                                    containerColor =
+                                        MaterialTheme.colorScheme.surface.copy(
+                                            alpha = 0.8f,
+                                        ),
+                                    contentColor =
+                                        MaterialTheme.colorScheme.onSurface.copy(
+                                            alpha = 0.6f,
+                                        ),
+                                ),
+                        ) {
+                            Icon(Icons.Default.ArrowBackIosNew, "Back")
+                        }
                     }
                 }
             },

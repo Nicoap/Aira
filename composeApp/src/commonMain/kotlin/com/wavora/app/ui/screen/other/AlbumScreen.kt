@@ -232,7 +232,7 @@ fun AlbumScreen(
     // foldable open state, landscape orientation, and Desktop keep the existing layout.
     val screenInfo = getScreenSizeInfo()
     val isMobilePortrait = getPlatform() == Platform.Android && screenInfo.wDP < screenInfo.hDP
-    val dominantColor = uiState.colors.firstOrNull() ?: md_theme_dark_background
+    val dominantColor = uiState.colors.firstOrNull() ?: MaterialTheme.colorScheme.background
     // Apple Music-style page background: derived from palette's Muted swatch (medium-bright,
     // unlike getColorFromPalette which prefers DarkVibrant/DarkMuted and turns near-black for
     // B&W artwork). Slight darkening for white-text readability.
@@ -246,9 +246,11 @@ fun AlbumScreen(
                     ?: p?.getDarkMutedColor(0)?.takeIf { it != 0 }
                     ?: p?.getDominantColor(0)?.takeIf { it != 0 }
             if (rgb != null) {
-                lerp(Color(rgb), md_theme_dark_background, 0.45f)
+                // Тянем палитру обложки к фону ТЕМЫ, а не к жёсткому тёмному цвету:
+                // иначе светлые темы получали тёмный градиент и белый текст на нём.
+                lerp(Color(rgb), MaterialTheme.colorScheme.background, 0.45f)
             } else {
-                md_theme_dark_background
+                MaterialTheme.colorScheme.background
             }
         }
     val artworkSizeDp =
@@ -404,7 +406,7 @@ fun AlbumScreen(
                                                     Text(
                                                         text = uiState.title,
                                                         style = LocalAppTypography.current.titleLarge,
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         maxLines = 2,
                                                         textAlign = TextAlign.Center,
                                                     )
@@ -412,7 +414,7 @@ fun AlbumScreen(
                                                     Text(
                                                         text = uiState.artist.name,
                                                         style = LocalAppTypography.current.titleSmall,
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         textAlign = TextAlign.Center,
                                                         modifier =
                                                             Modifier.clickable {
@@ -833,7 +835,7 @@ fun AlbumScreen(
                                                         (uiState.trackCount).toString(),
                                                         uiState.length,
                                                     ),
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onBackground,
                                                 style = LocalAppTypography.current.bodyMedium,
                                                 modifier = Modifier.padding(vertical = 8.dp),
                                             )
@@ -958,6 +960,9 @@ fun AlbumScreen(
                         colors =
                             TopAppBarDefaults.topAppBarColors(
                                 containerColor = Color.Transparent,
+                                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                                actionIconContentColor = MaterialTheme.colorScheme.onBackground,
                             ),
                         modifier =
                             if (isMobilePortrait) {
@@ -968,7 +973,9 @@ fun AlbumScreen(
                                     tints = listOf(HazeTint(mutedPaletteBg.copy(alpha = 0.55f)))
                                 }
                             } else {
-                                Modifier.angledGradientBackground(uiState.colors, 90f)
+                                // Сплошной фон темы вместо «серого» градиента: шапка, которая
+                                // выезжает при прокрутке, должна читаться в любой теме.
+                                Modifier.background(MaterialTheme.colorScheme.background)
                             },
                     )
                 }

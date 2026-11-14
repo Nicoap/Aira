@@ -35,17 +35,20 @@ fun AppNavigationGraph(
     NavHost(
         navController,
         startDestination = startDestination,
+        // Только плавное появление: экранный слайд на всю ширину рисовался поверх
+        // левой навигационной панели, потому что NavHost не обрезает содержимое
+        // по своим границам (соседний рейл находится вне его Box).
         enterTransition = {
-            fadeIn() + slideInHorizontally { -it }
+            fadeIn()
         },
         exitTransition = {
-            fadeOut() + slideOutHorizontally { it }
+            fadeOut()
         },
         popEnterTransition = {
-            fadeIn() + slideInHorizontally { -it }
+            fadeIn()
         },
         popExitTransition = {
-            fadeOut() + slideOutHorizontally { it }
+            fadeOut()
         },
     ) {
         // Bottom bar destinations

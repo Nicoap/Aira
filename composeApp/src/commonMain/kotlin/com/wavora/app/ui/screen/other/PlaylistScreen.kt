@@ -345,7 +345,7 @@ fun PlaylistScreen(
     // foldable open state, landscape orientation, and Desktop keep the existing layout.
     val screenInfo = getScreenSizeInfo()
     val isMobilePortrait = getPlatform() == Platform.Android && screenInfo.wDP < screenInfo.hDP
-    val dominantColor = listColors.firstOrNull() ?: md_theme_dark_background
+    val dominantColor = listColors.firstOrNull() ?: MaterialTheme.colorScheme.background
     // Apple Music-style page background: derived from palette's Muted swatch (medium-bright,
     // unlike getColorFromPalette which prefers DarkVibrant/DarkMuted and turns near-black for
     // B&W artwork). Slight darkening for white-text readability.
@@ -359,9 +359,10 @@ fun PlaylistScreen(
                     ?: p?.getDarkMutedColor(0)?.takeIf { it != 0 }
                     ?: p?.getDominantColor(0)?.takeIf { it != 0 }
             if (rgb != null) {
-                lerp(Color(rgb), md_theme_dark_background, 0.45f)
+                // Подмешиваем к фону темы, иначе в светлых темах шапка остаётся тёмной.
+                lerp(Color(rgb), MaterialTheme.colorScheme.background, 0.45f)
             } else {
-                md_theme_dark_background
+                MaterialTheme.colorScheme.background
             }
         }
     val artworkSizeDp =
@@ -470,7 +471,7 @@ LazyColumn(
                                                     showSearchBar = !showSearchBar
                                                 },
                                             ) {
-                                                Icon(Icons.Rounded.Search, null, tint = Color.White)
+                                                Icon(Icons.Rounded.Search, null, tint = MaterialTheme.colorScheme.onBackground)
                                             }
                                         }
                                     }
@@ -539,7 +540,7 @@ LazyColumn(
                                                         Text(
                                                             text = data.title,
                                                             style = LocalAppTypography.current.titleLarge,
-                                                            color = Color.White,
+                                                            color = MaterialTheme.colorScheme.onBackground,
                                                             maxLines = 2,
                                                             textAlign = TextAlign.Center,
                                                         )
@@ -566,7 +567,7 @@ LazyColumn(
                                                                 Text(
                                                                     text = data.author.name,
                                                                     style = LocalAppTypography.current.titleSmall,
-                                                                    color = Color.White,
+                                                                    color = MaterialTheme.colorScheme.onBackground,
                                                                     textAlign = TextAlign.Center,
                                                                 )
                                                             }
@@ -1318,12 +1319,19 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                                     showSearchBar = !showSearchBar
                                 },
                             ) {
-                                Icon(Icons.Rounded.Search, null, tint = Color.White)
+                                Icon(
+                                    Icons.Rounded.Search,
+                                    null,
+                                    tint = MaterialTheme.colorScheme.onBackground,
+                                )
                             }
                         },
                         colors =
                             TopAppBarDefaults.topAppBarColors(
                                 containerColor = Color.Transparent,
+                                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
+                                actionIconContentColor = MaterialTheme.colorScheme.onBackground,
                             ),
                         modifier =
                             if (isMobilePortrait) {
@@ -1334,7 +1342,9 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                                     tints = listOf(HazeTint(mutedPaletteBg.copy(alpha = 0.55f)))
                                 }
                             } else {
-                                Modifier.angledGradientBackground(listColors, 90f)
+                                // Сплошной фон темы вместо «серого» градиента, который не менялся
+                                // вместе с темой и вылезал поверх контента при прокрутке.
+                                Modifier.background(MaterialTheme.colorScheme.background)
                             },
                     )
                 }

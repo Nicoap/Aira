@@ -30,6 +30,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -72,7 +73,6 @@ import com.wavora.logger.Logger
 import com.wavora.app.extension.getColorFromPalette
 import com.wavora.app.extension.getScreenSizeInfo
 import com.wavora.app.extension.rgbFactor
-import com.wavora.app.ui.theme.md_theme_dark_background
 import com.wavora.app.ui.theme.wavoraSurface
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -116,7 +116,9 @@ fun CollapsingToolbarParallaxEffect(
     var bitmap by remember {
         mutableStateOf<ImageBitmap?>(null)
     }
-    var color by remember { mutableStateOf(md_theme_dark_background) }
+    // Тему нельзя читать внутри `remember { ... }`: это не composable-контекст.
+    val themeBackground = MaterialTheme.colorScheme.background
+    var color by remember(themeBackground) { mutableStateOf(themeBackground) }
     var showBackButton by rememberSaveable {
         mutableStateOf(true)
     }
@@ -200,7 +202,7 @@ fun CollapsingToolbarParallaxEffect(
                                     alpha = 0.8f,
                                 ),
                             contentColor =
-                                Color.White.copy(
+                                MaterialTheme.colorScheme.onSurface.copy(
                                     alpha = 0.6f,
                                 ),
                         ),
@@ -264,10 +266,10 @@ private fun Header(
                                 listOf(
                                     Color.Transparent,
                                     Color.Transparent,
-                                    Color.Black.copy(alpha = 0.3f),
-                                    Color.Black.copy(alpha = 0.6f),
-                                    Color.Black.copy(alpha = 0.85f),
-                                    md_theme_dark_background,
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.3f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.6f),
+                                    MaterialTheme.colorScheme.background.copy(alpha = 0.85f),
+                                    MaterialTheme.colorScheme.background,
                                 ),
                             startY = headerHeightPx / 2, // Start fade at middle of header
                             endY = headerHeightPx, // Complete at bottom of header
@@ -295,7 +297,7 @@ private fun Body(
         Spacer(Modifier.height(headerHeight))
         Box(
             Modifier.background(
-                md_theme_dark_background,
+                MaterialTheme.colorScheme.background,
             ),
         ) {
             content()
@@ -310,7 +312,7 @@ private fun Toolbar(
     scroll: ScrollState,
     headerHeightPx: Float,
     toolbarHeightPx: Float,
-    backgroundColor: Color = md_theme_dark_background,
+    backgroundColor: Color = MaterialTheme.colorScheme.background,
     onShow: (Boolean) -> Unit,
     onBack: () -> Unit,
 ) {
@@ -361,7 +363,7 @@ private fun Toolbar(
                     Icon(
                         imageVector = Icons.Default.ArrowBackIosNew,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onBackground,
                     )
                 }
             },
@@ -391,7 +393,7 @@ private fun Title(
         text = title,
         fontSize = 30.sp, // Reduced from 48.sp — still bold and prominent, fits longer names
         fontWeight = FontWeight.Bold,
-        color = Color.White,
+        color = MaterialTheme.colorScheme.onBackground,
         maxLines = 1,
         overflow = TextOverflow.Ellipsis,
         modifier =

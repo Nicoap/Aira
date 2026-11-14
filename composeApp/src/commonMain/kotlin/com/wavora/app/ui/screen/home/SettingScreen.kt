@@ -3112,25 +3112,31 @@ fun SettingScreen(
             )
         },
         navigationIcon = {
-            Box(Modifier.padding(horizontal = 5.dp)) {
-                RippleIconButton(
-                    Res.drawable.baseline_arrow_back_ios_new_24,
-                    Modifier
-                        .size(32.dp),
-                    true,
-                ) {
-                    navController.navigateUp()
+            // Настройки — полноценная страница в левом рейле, как «Главная»: на десктопе
+            // кнопка «назад» там лишняя и сбивает с толку. На мобильных оставляем.
+            if (getPlatform() != Platform.Desktop) {
+                Box(Modifier.padding(horizontal = 5.dp)) {
+                    RippleIconButton(
+                        Res.drawable.baseline_arrow_back_ios_new_24,
+                        Modifier
+                            .size(32.dp),
+                        true,
+                    ) {
+                        navController.navigateUp()
+                    }
                 }
             }
         },
         modifier =
             Modifier
-                .hazeEffect(hazeState, style = HazeMaterials.ultraThin()) {
-                    blurEnabled = true
-                },
+                .background(MaterialTheme.colorScheme.background),
         colors =
             TopAppBarDefaults.topAppBarColors(
-                containerColor = Color.Transparent,
+                // Раньше здесь был hazeEffect: на светлых темах он подмешивал тёмную
+                // подложку, и заголовок «Настройки» сливался с фоном.
+                containerColor = MaterialTheme.colorScheme.background,
+                titleContentColor = MaterialTheme.colorScheme.onBackground,
+                navigationIconContentColor = MaterialTheme.colorScheme.onBackground,
             ),
     )
 }

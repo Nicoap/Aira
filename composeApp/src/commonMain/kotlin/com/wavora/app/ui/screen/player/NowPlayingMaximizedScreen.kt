@@ -100,7 +100,6 @@ import com.wavora.app.ui.navigation.destination.list.ArtistDestination
 import com.wavora.app.ui.theme.LocalAppTypography
 import com.wavora.app.ui.theme.WavoraRadius
 import com.wavora.app.ui.theme.WavoraSpace
-import com.wavora.app.ui.theme.WavoraTone
 import androidx.compose.material.icons.automirrored.outlined.OpenInNew
 import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material.icons.filled.OpenInFull
@@ -285,7 +284,7 @@ fun NowPlayingPanel(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(WavoraTone.ground),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         PanelHeader(
             compact = compact,
@@ -408,7 +407,7 @@ private fun PanelHeader(
                 Icon(
                     imageVector = if (compact) Icons.AutoMirrored.Rounded.ArrowForwardIos else Icons.Filled.FullscreenExit,
                     contentDescription = stringResource(Res.string.collapse_now_playing),
-                    tint = WavoraTone.ink,
+                    tint = MaterialTheme.colorScheme.onSurface,
                 )
             }
         }
@@ -416,11 +415,11 @@ private fun PanelHeader(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = stringResource(Res.string.now_playing),
-                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
             Text(
                 text = context,
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.ink, fontWeight = FontWeight.Medium),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -428,18 +427,18 @@ private fun PanelHeader(
         if (compact && onMaximize != null) {
             SimpleTooltip("Maximize") {
                 IconButton(onClick = onMaximize) {
-                    Icon(Icons.Filled.OpenInFull, contentDescription = "Maximize", tint = WavoraTone.ink)
+                    Icon(Icons.Filled.OpenInFull, contentDescription = "Maximize", tint = MaterialTheme.colorScheme.onSurface)
                 }
             }
         }
         SimpleTooltip("Mini Player") {
             IconButton(onClick = onMiniPlayer) {
-                Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Mini Player", tint = WavoraTone.ink)
+                Icon(Icons.AutoMirrored.Outlined.OpenInNew, contentDescription = "Mini Player", tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         SimpleTooltip(stringResource(Res.string.more)) {
             IconButton(onClick = onMore) {
-                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(Res.string.more), tint = WavoraTone.ink)
+                Icon(Icons.Rounded.MoreVert, contentDescription = stringResource(Res.string.more), tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         if (!compact) {
@@ -453,7 +452,7 @@ private fun PanelHeader(
             Spacer(Modifier.width(WavoraSpace.sm))
             Text(
                 text = "Wavora",
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.ink, fontWeight = FontWeight.SemiBold),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold),
             )
         }
     }
@@ -535,7 +534,7 @@ private fun PlayerBlock(
                     Modifier
                         .size(artW, artH)
                         .clip(RoundedCornerShape(WavoraRadius.art))
-                        .background(WavoraTone.surface1),
+                        .background(MaterialTheme.colorScheme.surface),
             ) {
                 if (videoMode) {
                     com.wavora.app.expect.ui.MediaPlayerViewWithSubtitle(
@@ -592,7 +591,7 @@ private fun PlayerBlock(
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = title,
-                    style = LocalAppTypography.current.titleLarge.copy(color = WavoraTone.ink, fontWeight = FontWeight.SemiBold, fontSize = if (compact) 22.sp else 26.sp),
+                    style = LocalAppTypography.current.titleLarge.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold, fontSize = if (compact) 22.sp else 26.sp),
                     maxLines = 1,
                     modifier = Modifier.hoverMarquee(),
                 )
@@ -606,7 +605,7 @@ private fun PlayerBlock(
                                 onClick = { onArtist(artistIds.getOrNull(index)) },
                             )
                             if (index < artistNames.lastIndex) {
-                                Text(", ", style = LocalAppTypography.current.bodyLarge.copy(color = WavoraTone.muted))
+                                Text(", ", style = LocalAppTypography.current.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                             }
                         }
                     } else if (fallbackArtist.isNotBlank()) {
@@ -617,7 +616,7 @@ private fun PlayerBlock(
                         )
                     }
                     if (!albumName.isNullOrBlank()) {
-                        Text("  ·  ", style = LocalAppTypography.current.bodyLarge.copy(color = WavoraTone.muted))
+                        Text("  ·  ", style = LocalAppTypography.current.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
                         LinkText(
                             text = albumName,
                             style = LocalAppTypography.current.bodyLarge,
@@ -635,12 +634,12 @@ private fun PlayerBlock(
             Spacer(Modifier.width(WavoraSpace.xs))
             SimpleTooltip("Add to playlist") {
                 IconButton(onClick = onAddToPlaylist) {
-                    Icon(Icons.Rounded.AddCircleOutline, contentDescription = null, tint = WavoraTone.muted)
+                    Icon(Icons.Rounded.AddCircleOutline, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
             SimpleTooltip(stringResource(Res.string.song_info)) {
                 IconButton(onClick = onInfo) {
-                    Icon(Icons.Outlined.Info, contentDescription = stringResource(Res.string.song_info), tint = WavoraTone.muted)
+                    Icon(Icons.Outlined.Info, contentDescription = stringResource(Res.string.song_info), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                 }
             }
         }
@@ -691,7 +690,7 @@ private fun PlayerControls(
             verticalAlignment = Alignment.CenterVertically,
         ) {
             IconButton(onClick = { sharedViewModel.onUIEvent(UIEvent.Shuffle) }) {
-                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = if (isShuffle) accent else WavoraTone.muted)
+                Icon(Icons.Rounded.Shuffle, contentDescription = null, tint = if (isShuffle) accent else MaterialTheme.colorScheme.onSurfaceVariant)
             }
             Spacer(Modifier.width(12.dp))
             IconButton(
@@ -701,7 +700,7 @@ private fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipPrevious,
                     contentDescription = null,
-                    tint = if (isPreviousAvailable) WavoraTone.ink else WavoraTone.hairline,
+                    tint = if (isPreviousAvailable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -711,7 +710,7 @@ private fun PlayerControls(
                     Modifier
                         .size(60.dp)
                         .clip(CircleShape)
-                        .background(WavoraTone.ink)
+                        .background(MaterialTheme.colorScheme.onSurface)
                         .pointerHoverIcon(PointerIcon.Hand)
                         .clickable { sharedViewModel.onUIEvent(UIEvent.PlayPause) },
                 contentAlignment = Alignment.Center,
@@ -720,13 +719,13 @@ private fun PlayerControls(
                     CircularProgressIndicator(
                         modifier = Modifier.size(26.dp),
                         strokeWidth = 2.5.dp,
-                        color = WavoraTone.ground,
+                        color = MaterialTheme.colorScheme.background,
                     )
                 } else {
                     Icon(
                         imageVector = if (isPlaying) Icons.Rounded.Pause else Icons.Rounded.PlayArrow,
                         contentDescription = null,
-                        tint = WavoraTone.ground,
+                        tint = MaterialTheme.colorScheme.background,
                         modifier = Modifier.size(34.dp),
                     )
                 }
@@ -739,7 +738,7 @@ private fun PlayerControls(
                 Icon(
                     Icons.Rounded.SkipNext,
                     contentDescription = null,
-                    tint = if (isNextAvailable) WavoraTone.ink else WavoraTone.hairline,
+                    tint = if (isNextAvailable) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.outlineVariant,
                     modifier = Modifier.size(32.dp),
                 )
             }
@@ -748,7 +747,7 @@ private fun PlayerControls(
                 Icon(
                     imageVector = if (repeatState == RepeatState.One) Icons.Rounded.RepeatOne else Icons.Rounded.Repeat,
                     contentDescription = null,
-                    tint = if (repeatState == RepeatState.None) WavoraTone.muted else accent,
+                    tint = if (repeatState == RepeatState.None) MaterialTheme.colorScheme.onSurfaceVariant else accent,
                 )
             }
         }
@@ -762,14 +761,14 @@ private fun PlayerControls(
             Icon(
                 imageVector = if (volume <= 0.001f) Icons.Rounded.VolumeOff else Icons.Rounded.VolumeUp,
                 contentDescription = null,
-                tint = WavoraTone.muted,
+                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.width(12.dp))
             ThinSlider(
                 value = if (volumeDragging) volumeValue else volume,
                 valueRange = 0f..1f,
-                accent = WavoraTone.ink,
+                accent = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.width(160.dp),
                 onValueChange = {
                     volumeDragging = true
@@ -815,8 +814,8 @@ private fun SeekBar(
             },
         )
         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(clock(shownMs), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted))
-            Text(clock(timeline.total), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted))
+            Text(clock(shownMs), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
+            Text(clock(timeline.total), style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = MaterialTheme.colorScheme.onSurfaceVariant))
         }
     }
 }
@@ -847,7 +846,7 @@ private fun ThinSlider(
                 Modifier
                     .size(if (hovered) 12.dp else 0.dp)
                     .clip(CircleShape)
-                    .background(WavoraTone.ink),
+                    .background(MaterialTheme.colorScheme.onSurface),
             )
         },
         track = {
@@ -856,7 +855,7 @@ private fun ThinSlider(
                     .fillMaxWidth()
                     .height(4.dp)
                     .clip(RoundedCornerShape(2.dp))
-                    .background(WavoraTone.hairline),
+                    .background(MaterialTheme.colorScheme.outlineVariant),
             ) {
                 Box(
                     Modifier
@@ -881,7 +880,7 @@ private fun LinkText(
         text = text,
         style =
             style.copy(
-                color = if (hovered) WavoraTone.ink else WavoraTone.muted,
+                color = if (hovered) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
                 textDecoration = if (hovered) TextDecoration.Underline else TextDecoration.None,
             ),
         maxLines = 1,
@@ -912,7 +911,7 @@ private fun SidePane(
         modifier =
             modifier
                 .clip(RoundedCornerShape(WavoraRadius.panel))
-                .background(WavoraTone.surface1),
+                .background(MaterialTheme.colorScheme.surface),
     ) {
         Row(
             modifier = Modifier.padding(start = WavoraSpace.xl, end = WavoraSpace.xl, top = 18.dp),
@@ -926,7 +925,7 @@ private fun SidePane(
             Modifier
                 .fillMaxWidth()
                 .height(1.dp)
-                .background(WavoraTone.hairline),
+                .background(MaterialTheme.colorScheme.outlineVariant),
         )
         Box(modifier = Modifier.fillMaxSize()) {
             when (tab) {
@@ -956,7 +955,7 @@ private fun LyricsTab(
         Box(Modifier.fillMaxSize()) {
             Text(
                 text = stringResource(Res.string.no_lyrics_for_track),
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -992,7 +991,7 @@ private fun LyricsTab(
             }
             Text(
                 text = listOf(syncLabel, providerLabel).filter { it.isNotBlank() }.joinToString("  \u00B7  "),
-                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f),
@@ -1003,7 +1002,7 @@ private fun LyricsTab(
                         Icon(
                             imageVector = Icons.Rounded.ThumbsUpDown,
                             contentDescription = stringResource(Res.string.rate_lyrics),
-                            tint = WavoraTone.muted,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.size(20.dp),
                         )
                     }
@@ -1019,7 +1018,7 @@ private fun LyricsTab(
                     .weight(1f)
                     .fillMaxWidth()
                     .padding(horizontal = WavoraSpace.xl),
-            backgroundColor = WavoraTone.surface1,
+            backgroundColor = MaterialTheme.colorScheme.surface,
         )
     }
 }
@@ -1041,7 +1040,7 @@ private fun AboutTab(
         Box(Modifier.fillMaxSize()) {
             Text(
                 text = stringResource(Res.string.no_description),
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 modifier = Modifier.align(Alignment.Center),
             )
         }
@@ -1066,7 +1065,7 @@ private fun AboutTab(
                 Modifier
                     .fillMaxWidth()
                     .clip(RoundedCornerShape(WavoraRadius.art))
-                    .background(WavoraTone.surface2)
+                    .background(MaterialTheme.colorScheme.surfaceVariant)
                     .clickable { onArtist(artistId) }
                     .padding(WavoraSpace.md),
             verticalAlignment = Alignment.CenterVertically,
@@ -1088,13 +1087,13 @@ private fun AboutTab(
             Column(Modifier.weight(1f)) {
                 Text(
                     text = info.author ?: "",
-                    style = LocalAppTypography.current.titleSmall.copy(color = WavoraTone.ink),
+                    style = LocalAppTypography.current.titleSmall.copy(color = MaterialTheme.colorScheme.onSurface),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
                 Text(
                     text = info.subscribers ?: "",
-                    style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                    style = LocalAppTypography.current.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                 )
@@ -1103,15 +1102,15 @@ private fun AboutTab(
         Column(verticalArrangement = Arrangement.spacedBy(WavoraSpace.xs)) {
             Text(
                 text = stringResource(Res.string.published_at, info.uploadDate ?: ""),
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
             Text(
                 text = stringResource(Res.string.view_count, info.viewCount?.toString()?.let(::groupDigits) ?: ""),
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
             Text(
                 text = stringResource(Res.string.like_and_dislike, info.like ?: 0, info.dislike ?: 0),
-                style = LocalAppTypography.current.bodyMedium.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
             )
         }
         DescriptionView(
@@ -1142,7 +1141,7 @@ private fun PaneTab(
     ) {
         Text(
             text = label,
-            style = LocalAppTypography.current.bodyLarge.copy(color = if (selected) WavoraTone.ink else WavoraTone.muted, fontWeight = FontWeight.Medium),
+            style = LocalAppTypography.current.bodyLarge.copy(color = if (selected) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant, fontWeight = FontWeight.Medium),
             modifier = Modifier.padding(bottom = 12.dp),
         )
         Box(
@@ -1243,12 +1242,12 @@ private fun MaximizedQueue(
         ) {
             Text(
                 text = queue.size.toString(),
-                style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 modifier = Modifier.weight(1f),
             )
             Text(
                 text = "Endless",
-                style = LocalAppTypography.current.bodySmall.copy(color = WavoraTone.muted),
+                style = LocalAppTypography.current.bodySmall.copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
                 modifier = Modifier.padding(end = 8.dp),
             )
             Switch(
@@ -1257,10 +1256,10 @@ private fun MaximizedQueue(
                 colors =
                     SwitchDefaults.colors(
                         checkedTrackColor = accent,
-                        checkedThumbColor = WavoraTone.ground,
-                        uncheckedTrackColor = WavoraTone.hairline,
-                        uncheckedThumbColor = WavoraTone.muted,
-                        uncheckedBorderColor = WavoraTone.hairline,
+                        checkedThumbColor = MaterialTheme.colorScheme.background,
+                        uncheckedTrackColor = MaterialTheme.colorScheme.outlineVariant,
+                        uncheckedThumbColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        uncheckedBorderColor = MaterialTheme.colorScheme.outlineVariant,
                     ),
             )
         }
@@ -1353,7 +1352,7 @@ private fun QueueRow(
             Modifier
                 .fillMaxWidth()
                 .height(60.dp)
-                .background(if (hovered) WavoraTone.surface2 else Color.Transparent)
+                .background(if (hovered) MaterialTheme.colorScheme.surfaceVariant else Color.Transparent)
                 .hoverable(source)
                 .clickable(interactionSource = source, indication = null, onClick = onPlay)
                 .onSecondaryClick(onMore)
@@ -1365,7 +1364,7 @@ private fun QueueRow(
                 Modifier
                     .size(44.dp)
                     .clip(RoundedCornerShape(WavoraRadius.thumb))
-                    .background(WavoraTone.surface2),
+                    .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center,
         ) {
             AsyncImage(
@@ -1384,7 +1383,7 @@ private fun QueueRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 text = title,
-                style = LocalAppTypography.current.bodyLarge.copy(color = if (isCurrent) accent else WavoraTone.ink, fontWeight = FontWeight.Medium),
+                style = LocalAppTypography.current.bodyLarge.copy(color = if (isCurrent) accent else MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.Medium),
                 maxLines = 1,
                 overflow = TextOverflow.Ellipsis,
             )
@@ -1395,7 +1394,7 @@ private fun QueueRow(
         Spacer(Modifier.width(12.dp))
         Text(
             text = duration,
-            style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
+            style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = MaterialTheme.colorScheme.onSurfaceVariant),
         )
         HeartCheckBox(size = 28, checked = isLiked) {
             likeScope.launch {
@@ -1407,7 +1406,7 @@ private fun QueueRow(
             Icon(
                 Icons.Rounded.MoreVert,
                 contentDescription = null,
-                tint = if (hovered || isCurrent) WavoraTone.ink else Color.Transparent,
+                tint = if (hovered || isCurrent) MaterialTheme.colorScheme.onSurface else Color.Transparent,
                 modifier = Modifier.size(20.dp),
             )
         }

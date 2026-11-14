@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -69,6 +71,8 @@ import com.wavora.domain.utils.LocalResource
 import com.wavora.logger.Logger
 import com.wavora.app.extension.copy
 import com.wavora.app.extension.isScrollingUp
+import com.wavora.app.Platform
+import com.wavora.app.getPlatform
 import com.wavora.app.ui.component.Chip
 import com.wavora.app.ui.component.EndOfPage
 import com.wavora.app.ui.component.GridLibraryPlaylist
@@ -77,6 +81,7 @@ import com.wavora.app.ui.component.LibraryItemState
 import com.wavora.app.ui.component.LibraryItemType
 import com.wavora.app.ui.component.LibraryTilingBox
 import com.wavora.app.ui.component.ScrollArrows
+import com.wavora.app.expect.ui.HorizontalScrollBar
 import com.wavora.app.expect.ui.VerticalScrollBar
 import com.wavora.app.ui.navigation.destination.home.AnalyticsDestination
 import com.wavora.app.ui.theme.transparent
@@ -156,7 +161,7 @@ fun LibraryScreen(
         viewModel.getRecentlyAdded()
     }
 
-    val chipRowState = rememberScrollState()
+    val chipListState = rememberLazyListState()
     val currentFilter by viewModel.currentScreen.collectAsStateWithLifecycle()
 
     LaunchedEffect(currentFilter) {
@@ -509,18 +514,14 @@ fun LibraryScreen(
                 }
             },
         )
-        // Стрелки нужны, потому что горизонтальная прокрутка чипов на десктопе неочевидна,
-        // а уплотнённая панель плеера может закрывать правый край ряда.
-        ScrollArrows(state = chipRowState) {
-            Row(
-                modifier =
-                    Modifier
-                        .horizontalScroll(chipRowState)
-                        .padding(horizontal = 15.dp)
-                        .padding(bottom = 8.dp)
-                        .background(Color.Transparent),
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
+        // Скроллбар вместо стрелок, как на главной: видно, что ряд прокручивается,
+        // и ничего не перекрывает чипы.
+        LazyRow(
+            state = chipListState,
+            modifier = Modifier.fillMaxWidth(),
+            contentPadding = PaddingValues(horizontal = 15.dp),
+            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
             // AUDIT FIX (revisión de Biblioteca): CHART ("Gráficos Wavora") apunta a
             // chart.wavora.org, que todavía no existe (el repositorio ya devuelve
             // una lista vacía a propósito, ver PlaylistRepositoryImpl.getChartPlaylist)
@@ -528,11 +529,12 @@ fun LibraryScreen(
             // saca directamente a pedido. El enum se deja intacto (no se borran los
             // valores) para no romper nada que los referencie y por si se retoma
             // Charts más adelante.
-            LibraryChipType.entries
-                .filter { it != LibraryChipType.CHART && it != LibraryChipType.FAVORITE_PODCAST }
-                .forEach { type ->
+            val chipTypes =
+                LibraryChipType.entries
+                    .filter { it != LibraryChipType.CHART && it != LibraryChipType.FAVORITE_PODCAST }
+            items(chipTypes, key = { it.name }) { type ->
                 if ((type == LibraryChipType.YOUTUBE_MUSIC_PLAYLIST || type == LibraryChipType.YOUTUBE_MIX_FOR_YOU) && !loggedIn) {
-                    return@forEach
+                    return@items
                 }
                 Chip(
                     isAnimated = false,
@@ -552,7 +554,12 @@ fun LibraryScreen(
                     viewModel.setCurrentScreen(type)
                 }
             }
-            }
+        }
+        if (getPlatform() == Platform.Desktop) {
+            HorizontalScrollBar(
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 15.dp),
+                scrollState = chipListState,
+            )
         }
     }
 }

@@ -9,6 +9,7 @@ import androidx.compose.material3.ElevatedFilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -16,8 +17,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import com.wavora.app.ui.theme.wavoraBorder
-import com.wavora.app.ui.theme.wavoraTextSecondary
 import org.jetbrains.compose.resources.stringResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.done
@@ -42,11 +41,14 @@ fun Chip(
                 shape = CircleShape,
                 colors =
                     FilterChipDefaults.elevatedFilterChipColors(
-                        containerColor = Color.Transparent,
-                        iconColor = Color.White,
-                        selectedContainerColor = wavoraBorder.copy(alpha = 0.8f),
-                        labelColor = wavoraTextSecondary,
-                        selectedLabelColor = Color.White,
+                        // Чипы жили на жёстких токенах (прозрачный фон + белый текст), поэтому
+                        // в светлых темах выглядели как белые пятна. Теперь они на поверхности
+                        // и акценте темы.
+                        containerColor = MaterialTheme.colorScheme.surface,
+                        iconColor = MaterialTheme.colorScheme.onPrimary,
+                        selectedContainerColor = MaterialTheme.colorScheme.primary,
+                        labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                        selectedLabelColor = MaterialTheme.colorScheme.onPrimary,
                     ),
                 onClick = { onClick.invoke() },
                 label = {
@@ -57,7 +59,7 @@ fun Chip(
                         enabled = true,
                         selected = isSelected,
                         selectedBorderColor = Color.Transparent,
-                        borderColor = wavoraBorder,
+                        borderColor = MaterialTheme.colorScheme.outlineVariant,
                     ),
                 selected = isSelected,
                 leadingIcon = {
