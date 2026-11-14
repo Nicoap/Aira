@@ -77,4 +77,4 @@ private val FRAMES =
 
 private val RESTING_FRAME = floatArrayOf(0.5f, 0.5f, 0.5f, 0.5f)
 
-private const val FRAME_MILLIS = 110L
+private const val FRAME_MILLIS = 180L

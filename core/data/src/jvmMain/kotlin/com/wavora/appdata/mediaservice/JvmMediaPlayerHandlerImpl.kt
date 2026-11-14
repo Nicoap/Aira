@@ -852,7 +852,9 @@ class JvmMediaPlayerHandlerImpl(
         progressJob =
             coroutineScope.launch {
                 while (true) {
-                    delay(100)
+                    // 10 обновлений в секунду заставляли Compose перерисовывать всё окно
+                    // десять раз в секунду даже без анимаций. Для ползунка хватает 4 Гц.
+                    delay(250)
                     _simpleMediaState.value = SimpleMediaState.Progress(player.currentPosition)
                     updateMacOSElapsedTime()
                     // Only update Discord RPC every 15 s and only when it's enabled.
