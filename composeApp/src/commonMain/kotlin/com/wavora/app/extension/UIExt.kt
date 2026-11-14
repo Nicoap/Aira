@@ -143,6 +143,28 @@ fun LazyListState.visibilityPercent(info: LazyListItemInfo): Float {
 
 fun Modifier.greyScale() = this.then(GreyScaleModifier())
 
+/**
+ * Мягкое свечение от обложки вместо диагонального градиента: цвета палитры альбома
+ * растворяются в фоне страницы, поэтому экран остаётся в теме, а не «всегда тёмным».
+ */
+fun Modifier.artworkGlow(
+    colors: List<Color>,
+    alpha: Float = 0.5f,
+): Modifier =
+    this.then(
+        Modifier.drawBehind {
+            val top = colors.getOrNull(0)?.copy(alpha = alpha) ?: return@drawBehind
+            val second = colors.getOrNull(1)?.copy(alpha = alpha * 0.55f)
+            drawRect(
+                brush =
+                    Brush.radialGradient(
+                        colors = listOfNotNull(top, second, Color.Transparent),
+                        radius = size.maxDimension * 0.85f,
+                    ),
+            )
+        },
+    )
+
 fun Modifier.angledGradientBackground(
     colors: List<Color>,
     degrees: Float,

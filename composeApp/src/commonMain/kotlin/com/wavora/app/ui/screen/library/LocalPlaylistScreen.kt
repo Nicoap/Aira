@@ -53,6 +53,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -114,6 +115,7 @@ import com.wavora.app.Platform
 import com.wavora.app.expect.ui.layerBackdrop
 import com.wavora.app.expect.ui.rememberBackdrop
 import com.wavora.app.extension.angledGradientBackground
+import com.wavora.app.extension.artworkGlow
 import com.wavora.app.extension.displayNameRes
 import com.wavora.app.extension.getColorFromPalette
 import com.wavora.app.extension.getScreenSizeInfo
@@ -461,7 +463,8 @@ LazyColumn(
         modifier =
             Modifier
                 .fillMaxWidth()
-                .background(if (isMobilePortrait) mutedPaletteBg else Color.Black)
+                .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
+                .artworkGlow(uiState.colors)
                 .hazeSource(hazeState)
                 .pointerInput(changingOrder) {
                     if (!changingOrder) return@pointerInput
@@ -542,7 +545,7 @@ LazyColumn(
                                     .height(260.dp)
                                     .clip(
                                         RoundedCornerShape(8.dp),
-                                    ).angledGradientBackground(uiState.colors, 25f),
+                                    ).artworkGlow(uiState.colors),
                         )
                         Box(
                             modifier =
@@ -555,8 +558,8 @@ LazyColumn(
                                             Brush.verticalGradient(
                                                 listOf(
                                                     Color.Transparent,
-                                                    Color(0x75000000),
-                                                    Color.Black,
+                                                    Color.Transparent,
+                                                    MaterialTheme.colorScheme.background,
                                                 ),
                                             ),
                                     ),
@@ -648,7 +651,7 @@ LazyColumn(
                                         Text(
                                             text = uiState.title,
                                             style = LocalAppTypography.current.titleLarge,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             maxLines = 2,
                                             textAlign = TextAlign.Center,
                                         )
@@ -656,7 +659,7 @@ LazyColumn(
                                         Text(
                                             text = stringResource(Res.string.your_playlist),
                                             style = LocalAppTypography.current.titleSmall,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                             textAlign = TextAlign.Center,
                                         )
                                         Spacer(modifier = Modifier.height(2.dp))
@@ -803,7 +806,7 @@ LazyColumn(
                                     Text(
                                         text = uiState.title,
                                         style = LocalAppTypography.current.titleMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                     )
                                     Column(
                                         modifier = Modifier.padding(vertical = 8.dp),
@@ -811,7 +814,7 @@ LazyColumn(
                                         Text(
                                             text = stringResource(Res.string.your_playlist),
                                             style = LocalAppTypography.current.titleSmall,
-                                            color = Color.White,
+                                            color = MaterialTheme.colorScheme.onBackground,
                                         )
                                         Spacer(modifier = Modifier.height(8.dp))
                                         Text(
@@ -1149,7 +1152,7 @@ LazyColumn(
                                             (uiState.trackCount).toString(),
                                             "",
                                         ),
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     style = LocalAppTypography.current.bodyMedium,
                                     modifier = Modifier.padding(vertical = 8.dp),
                                 )
@@ -1166,7 +1169,7 @@ LazyColumn(
                                                     stringResource(
                                                         Res.string.suggest,
                                                     ),
-                                                color = Color.White,
+                                                color = MaterialTheme.colorScheme.onBackground,
                                                 modifier =
                                                     Modifier
                                                         .padding(vertical = 8.dp)
@@ -1180,7 +1183,7 @@ LazyColumn(
                                             ) {
                                                 Text(
                                                     text = stringResource(Res.string.reload),
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                     modifier =
                                                         Modifier.align(
                                                             Alignment.CenterVertically,
@@ -1253,7 +1256,7 @@ LazyColumn(
                                                                 uiState.filterState.displayNameRes(),
                                                             ),
                                                     style = LocalAppTypography.current.bodySmall,
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                 )
                                             }
                                         } else {

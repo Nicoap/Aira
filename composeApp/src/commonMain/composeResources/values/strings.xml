@@ -167,6 +167,7 @@
     <string name="now_playing">Now Playing</string>
     <string name="queue">Queue</string>
     <string name="recently">Recently</string>
+    <string name="statistics">Statistics</string>
     <string name="settings">Settings</string>
     <string name="now_playing_upper">NOW PLAYING</string>
     <string name="language">Language</string>
@@ -317,7 +318,7 @@
     <string name="credit_app">Wavora is a free, open source music app that lets you stream from YouTube and YouTube Music — no ads, no tracking, no limits.\n\nFeatures include:\n - High quality audio streaming\n - Synced lyrics with AI translation\n - Crossfade &amp; DJ-style transitions\n - Discord Rich Presence\n - Offline playback &amp; caching\n - Android Auto support\n\nWavora is always free.\n\nMade with ❤️ by wavora-dev</string>
     <string name="issue_tracker">Issue Tracker</string>
     <string name="copyright" translatable="false">©2025 wavora-dev</string>
-    <string name="featured_playlists">Featured Playlists</string>
+    <string name="featured_playlists">Featured Albums</string>
     <string name="podcasts" translatable="false">Podcasts</string>
     <string name="featured_inArtist">Featured on</string>
     <string name="audio_quality">Audio quality</string>

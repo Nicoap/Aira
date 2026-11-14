@@ -49,6 +49,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.LocalTextStyle
 import androidx.compose.material3.SearchBar
@@ -101,6 +102,7 @@ import com.wavora.app.expect.ui.layerBackdrop
 import com.wavora.app.expect.ui.rememberBackdrop
 import com.wavora.app.expect.ui.toImageBitmap
 import com.wavora.app.extension.angledGradientBackground
+import com.wavora.app.extension.artworkGlow
 import com.wavora.app.extension.getColorFromPalette
 import com.wavora.app.extension.getScreenSizeInfo
 import com.wavora.app.extension.getStringBlocking
@@ -396,7 +398,8 @@ LazyColumn(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .background(if (isMobilePortrait) mutedPaletteBg else Color.Black)
+                            .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
+                            .artworkGlow(listColors)
                             .hazeSource(hazeState),
                     state = lazyState,
                 ) {
@@ -423,7 +426,7 @@ LazyColumn(
                                                     .height(260.dp)
                                                     .clip(
                                                         RoundedCornerShape(8.dp),
-                                                    ).angledGradientBackground(listColors, 25f),
+                                                    ).artworkGlow(listColors),
                                         )
                                         Box(
                                             modifier =
@@ -436,8 +439,8 @@ LazyColumn(
                                                             Brush.verticalGradient(
                                                                 listOf(
                                                                     Color.Transparent,
-                                                                    Color(0x75000000),
-                                                                    Color.Black,
+                                                                    Color.Transparent,
+                                                                    MaterialTheme.colorScheme.background,
                                                                 ),
                                                             ),
                                                     ),
@@ -680,7 +683,7 @@ LazyColumn(
                                                     Text(
                                                         text = data.title,
                                                         style = LocalAppTypography.current.titleMedium,
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         maxLines = 2,
                                                     )
                                                     Column(
@@ -708,7 +711,7 @@ LazyColumn(
                                                                 Text(
                                                                     text = data.author.name,
                                                                     style = LocalAppTypography.current.labelSmall,
-                                                                    color = Color.White,
+                                                                    color = MaterialTheme.colorScheme.onBackground,
                                                                 )
                                                             }
                                                         }

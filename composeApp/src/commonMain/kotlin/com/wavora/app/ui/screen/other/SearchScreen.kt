@@ -487,13 +487,13 @@ fun SearchScreen(
                                             Text(
                                                 text = "Recent",
                                                 style = LocalAppTypography.current.labelMedium,
-                                                color = Color.White.copy(alpha = 0.5f),
+                                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f),
                                             )
                                             TextButton(onClick = { searchViewModel.deleteSearchHistory() }) {
                                                 Text(
                                                     text = stringResource(Res.string.clear_search_history),
                                                     style = LocalAppTypography.current.labelSmall,
-                                                    color = Color.White.copy(alpha = 0.4f),
+                                                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.4f),
                                                 )
                                             }
                                         }
@@ -525,7 +525,7 @@ fun SearchScreen(
                                                         Text(
                                                             text = historyItem,
                                                             style = LocalAppTypography.current.bodySmall,
-                                                            color = Color.White,
+                                                            color = MaterialTheme.colorScheme.onSurface,
                                                             maxLines = 1,
                                                         )
                                                     },
@@ -534,18 +534,18 @@ fun SearchScreen(
                                                             painter = painterResource(Res.drawable.baseline_history_24),
                                                             contentDescription = null,
                                                             modifier = Modifier.size(14.dp),
-                                                            tint = Color.White.copy(alpha = 0.6f),
+                                                            tint = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                                         )
                                                     },
                                                     colors = androidx.compose.material3.InputChipDefaults.inputChipColors(
-                                                        containerColor = Color.White.copy(alpha = 0.08f),
-                                                        labelColor = Color.White,
-                                                        leadingIconColor = Color.White.copy(alpha = 0.6f),
+                                                        containerColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f),
+                                                        labelColor = MaterialTheme.colorScheme.onSurface,
+                                                        leadingIconColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f),
                                                     ),
                                                     border = androidx.compose.material3.InputChipDefaults.inputChipBorder(
                                                         enabled = true,
                                                         selected = false,
-                                                        borderColor = Color.White.copy(alpha = 0.15f),
+                                                        borderColor = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.15f),
                                                         selectedBorderColor = Color.Transparent,
                                                     ),
                                                 )

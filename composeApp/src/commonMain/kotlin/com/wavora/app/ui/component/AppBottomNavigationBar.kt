@@ -4,6 +4,9 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Insights
+import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -21,7 +24,9 @@ import androidx.navigation.NavDestination.Companion.hasRoute
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import com.wavora.app.extension.greyScale
+import com.wavora.app.ui.navigation.destination.home.AnalyticsDestination
 import com.wavora.app.ui.navigation.destination.home.HomeDestination
+import com.wavora.app.ui.navigation.destination.home.SettingsDestination
 import com.wavora.app.ui.navigation.destination.library.LibraryDestination
 import com.wavora.app.ui.navigation.destination.search.SearchDestination
 import com.wavora.app.ui.theme.typo
@@ -224,6 +229,35 @@ fun AppNavigationRail(
                 },
             )
         }
+        // Настройки и статистика живут в рейле отдельной группой внизу: раньше их
+        // приходилось искать в шапке главного экрана.
+        Spacer(Modifier.height(8.dp))
+        HorizontalDivider(
+            modifier = Modifier.padding(horizontal = 12.dp),
+            thickness = 1.dp,
+            color = MaterialTheme.colorScheme.outlineVariant,
+        )
+        Spacer(Modifier.height(8.dp))
+        val onSettings =
+            currentBackStackEntry?.destination?.hierarchy?.any {
+                it.hasRoute(SettingsDestination::class)
+            } == true
+        val onStatistics =
+            currentBackStackEntry?.destination?.hierarchy?.any {
+                it.hasRoute(AnalyticsDestination::class)
+            } == true
+        NavigationRailItem(
+            icon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
+            label = { Text(stringResource(Res.string.settings), style = LocalAppTypography.current.bodySmall) },
+            selected = onSettings,
+            onClick = { navController.navigate(SettingsDestination) { launchSingleTop = true } },
+        )
+        NavigationRailItem(
+            icon = { Icon(Icons.Rounded.Insights, contentDescription = null) },
+            label = { Text(stringResource(Res.string.statistics), style = LocalAppTypography.current.bodySmall) },
+            selected = onStatistics,
+            onClick = { navController.navigate(AnalyticsDestination) { launchSingleTop = true } },
+        )
         Spacer(Modifier.height(32.dp))
     }
 }

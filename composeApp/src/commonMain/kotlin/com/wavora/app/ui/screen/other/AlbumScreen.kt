@@ -44,6 +44,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
@@ -86,6 +87,7 @@ import com.wavora.app.expect.ui.rememberBackdrop
 import com.wavora.app.expect.ui.VerticalScrollBar
 import com.wavora.app.expect.ui.toImageBitmap
 import com.wavora.app.extension.angledGradientBackground
+import com.wavora.app.extension.artworkGlow
 import com.wavora.app.extension.getColorFromPalette
 import com.wavora.app.extension.getScreenSizeInfo
 import com.wavora.app.getPlatform
@@ -266,7 +268,8 @@ fun AlbumScreen(
                         modifier =
                             Modifier
                                 .fillMaxSize()
-                                .background(if (isMobilePortrait) mutedPaletteBg else Color.Black)
+                                .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
+                                .artworkGlow(uiState.colors)
                                 .hazeSource(hazeState),
                         state = lazyState,
                     ) {
@@ -291,7 +294,7 @@ fun AlbumScreen(
                                                 .height(260.dp)
                                                 .clip(
                                                     RoundedCornerShape(8.dp),
-                                                ).angledGradientBackground(uiState.colors, 25f),
+                                                ).artworkGlow(uiState.colors),
                                     )
                                     Box(
                                         modifier =
@@ -304,8 +307,8 @@ fun AlbumScreen(
                                                         Brush.verticalGradient(
                                                             listOf(
                                                                 Color.Transparent,
-                                                                Color(0x75000000),
-                                                                Color.Black,
+                                                                Color.Transparent,
+                                                                MaterialTheme.colorScheme.background,
                                                             ),
                                                         ),
                                                 ),
@@ -431,7 +434,7 @@ fun AlbumScreen(
                                                                 stringResource(Res.string.album),
                                                             ),
                                                         style = LocalAppTypography.current.bodyMedium,
-                                                        color = Color(0xC4FFFFFF),
+                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f),
                                                         textAlign = TextAlign.Center,
                                                     )
                                                 }
@@ -520,7 +523,7 @@ fun AlbumScreen(
                                                 Text(
                                                     text = uiState.title,
                                                     style = LocalAppTypography.current.titleLarge,
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                     maxLines = 2,
                                                 )
                                                 Column(
@@ -530,7 +533,7 @@ fun AlbumScreen(
                                                     Text(
                                                         text = uiState.artist.name,
                                                         style = LocalAppTypography.current.titleSmall,
-                                                        color = Color.White,
+                                                        color = MaterialTheme.colorScheme.onBackground,
                                                         modifier =
                                                             Modifier.clickable {
                                                                 uiState.artist.id?.let { channelId ->
@@ -551,7 +554,7 @@ fun AlbumScreen(
                                                                 stringResource(Res.string.album),
                                                             ),
                                                         style = LocalAppTypography.current.bodyMedium,
-                                                        color = Color(0xC4FFFFFF),
+                                                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.72f),
                                                     )
                                                 }
                                             }

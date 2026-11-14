@@ -137,6 +137,7 @@
     <string name="now_playing">Сейчас играет</string>
     <string name="queue">Очередь</string>
     <string name="recently">Недавние</string>
+    <string name="statistics">Статистика</string>
     <string name="settings">Настройки</string>
     <string name="now_playing_upper">СЕЙЧАС ИГРАЕТ</string>
     <string name="language">Язык</string>
@@ -283,7 +284,7 @@
     <string name="added_date">Дата добавления</string>
     <string name="credit_app">Простое музыкальное приложение, использующее YouTube Music в качестве серверной части. \n\nWavora — это проект с открытым исходным кодом для потоковой передачи музыки с YouTube и YouTube Music без рекламы и отслеживания. Wavora предоставляет множество функций:\n\n - Потоковое воспроизведение музыки \n - Синхронизированные тексты песен\n - Персонализация данных\n - и т. д. \n\nWavora бесплатен и без рекламы\n\nСоздал с ❤️ Туан Минь Нгуен Дык (wavora-dev)</string>
     <string name="issue_tracker">Трекер проблем</string>
-    <string name="featured_playlists">Избранные плейлисты</string>
+    <string name="featured_playlists">Избранные альбомы</string>
     <string name="featured_inArtist">Где встречается</string>
     <string name="audio_quality">Качество звука</string>
     <string name="play_video_for_video_track_instead_of_audio_only">Воспроизводить видео для треков, а не только аудио</string>

@@ -1918,7 +1918,7 @@ fun HeartCheckBox(
                 },
     ) {
         Crossfade(targetState = checked, modifier = Modifier.fillMaxSize()) {
-            val tint = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            val tint = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
             Image(
                 painter =
                     painterResource(

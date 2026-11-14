@@ -48,6 +48,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -919,7 +920,7 @@ fun HomeTopAppBar(navController: NavController) {
                 Text(
                     text = stringResource(Res.string.app_name),
                     style = LocalAppTypography.current.titleMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier = Modifier.padding(bottom = 4.dp),
                 )
                 Text(
@@ -961,6 +962,8 @@ fun HomeTopAppBar(navController: NavController) {
                     navController.navigate(LocalMixDestination)
                 }
             }
+            // На телефоне левой панели нет, поэтому настройки остаются здесь; на десктопе
+            // они уже есть в рейле, и эта кнопка просто дублирует точку входа.
             SimpleTooltip(text = stringResource(Res.string.settings)) {
                 RippleIconButton(resId = Res.drawable.baseline_settings_24) {
                     navController.navigate(SettingsDestination)
@@ -983,7 +986,7 @@ fun AccountLayout(
         Text(
             text = stringResource(Res.string.welcome_back),
             style = LocalAppTypography.current.bodyMedium,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier = Modifier.padding(bottom = 3.dp),
         )
         Row(
@@ -1013,7 +1016,7 @@ fun AccountLayout(
             Text(
                 text = accountName,
                 style = LocalAppTypography.current.headlineMedium,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier =
                     Modifier
                         .padding(start = 8.dp),
@@ -1050,7 +1053,7 @@ fun QuickPicks(
         Text(
             text = stringResource(Res.string.quick_picks),
             style = LocalAppTypography.current.headlineMedium,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             maxLines = 1,
             modifier =
                 Modifier
