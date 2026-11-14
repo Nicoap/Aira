@@ -1234,8 +1234,10 @@ class Ytmusic {
         } catch (e: kotlin.coroutines.cancellation.CancellationException) {
             throw e
         } catch (e: Exception) {
-            Logger.w(TAG, "is403Url check failed: ${e.message?.take(120)}")
-            true
+            // A dropped connection or a timeout says nothing about the link itself. Reporting it as a 403 made
+            // the player treat a healthy link as dead (and, via the throttle memo, skip tracks for minutes).
+            Logger.w(TAG, "is403Url check inconclusive (treated as usable): ${e.message?.take(120)}")
+            false
         }
     }
 

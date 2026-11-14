@@ -800,6 +800,8 @@ class VlcPlayerAdapter(
         return try {
             streamRepository.invalidateFormat(videoId)
             streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$videoId")
+            // The HLS manifest row too: reopening with the very same (possibly stale) manifest fails the same way.
+            streamRepository.invalidateFormat("${MERGING_DATA_TYPE.HLS}$videoId")
             precachedPlayers.remove(videoId)?.player?.release()
             delay(500L * prematureEndCount)
             // The user may have moved on while we waited.
@@ -3193,7 +3195,7 @@ class VlcPlayerAdapter(
         private const val AUDIO_WATCHDOG_INTERVAL_MS = 800L
 
         // Сколько помним, что прогрессивный поток на этом IP оборван, прежде чем проверить снова.
-        private const val THROTTLED_MEMO_MS = 10 * 60 * 1000L
+        private const val THROTTLED_MEMO_MS = 2 * 60 * 1000L
 
         // Видео буферизуем так же, как аудио: 10 секунд давали слишком долгий старт.
         const val VIDEO_NETWORK_CACHING_MS = 3000L
@@ -3952,15 +3954,23 @@ class VlcPlayerAdapter(
                 // просим muxed-ответ (он отдаёт HLS-манифест) и играем его; иначе VLC
                 // зацикливает последнюю секунду вместо перехода к следующему треку.
                 if (!audioUrl.isHlsLink() && !isProgressiveUsable(audioUrl)) {
-                    val muxedUrl =
-                        streamRepository
-                            .getStream(
-                                dataStoreManager,
-                                videoId,
-                                isDownloading = false,
-                                isVideo = true,
-                                muxed = true,
-                            ).lastOrNull()
+                    // Whether a response carries the manifest varies between extractions, so a second
+                    // fresh request often succeeds where the first did not. Skipping the track on the
+                    // first miss is what made tracks vanish that play fine when started again.
+                    var muxedUrl: String? = null
+                    for (attempt in 0 until 3) {
+                        if (attempt > 0) delay(400L * attempt)
+                        muxedUrl =
+                            streamRepository
+                                .getStream(
+                                    dataStoreManager,
+                                    videoId,
+                                    isDownloading = false,
+                                    isVideo = true,
+                                    muxed = true,
+                                ).lastOrNull()
+                        if (!muxedUrl.isNullOrEmpty() && muxedUrl.isHlsLink()) break
+                    }
                     if (!muxedUrl.isNullOrEmpty() && muxedUrl.isHlsLink()) {
                         Logger.w("Stream", "Audio from muxed manifest (progressive is throttled)")
                         return PlayableSource(isVideo = false, url = muxedUrl)
