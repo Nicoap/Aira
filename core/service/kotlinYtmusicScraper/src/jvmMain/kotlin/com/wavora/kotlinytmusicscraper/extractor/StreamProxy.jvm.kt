@@ -105,6 +105,9 @@ internal object StreamProxy {
     /** Хинт выбора варианта HLS (`audio`, `video:720`), зашитый в ссылку прокси. */
     private fun hintOf(url: String): String? = hintParam.find(url)?.groupValues?.get(1)
 
+    /** Часть хинта, отвечающая за выбор варианта: `audio` / `video:<height>` без технических полей. */
+    private fun variantHintOf(hint: String?): String? = hint?.substringBefore('|')?.takeIf { it.isNotBlank() }
+
     private fun swapHint(url: String, hint: String): String {
         val without = url.replace(Regex("[?&]h=[A-Za-z0-9:_-]+"), "")
         val separator = if (without.contains('?')) '&' else '?'
@@ -232,12 +235,15 @@ internal object StreamProxy {
             return
         }
         val variants = parseVariants(body)
-        val chosen = hint?.let { chooseVariant(variants, it) }
+        // Без хинта отдаём самый лёгкий вариант, а не весь мастер: адаптивный выбор libVLC
+        // переключает варианты прямо на сегментах, и каждый переход пересоздаёт видеовыход —
+        // со стороны это выглядит как «заедает и играет только первый загруженный кусок».
+        val chosen = chooseVariant(variants, variantHintOf(hint) ?: "audio")
         val text =
             if (chosen == null) {
                 body
             } else {
-                Logger.d(TAG, "HLS variant for hint=$hint: ${chosen.height}p ${chosen.bandwidth / 1000} kbps")
+                Logger.d(TAG, "HLS variant for hint=$hint: ${chosen.shortSide}p ${chosen.bandwidth / 1000} kbps")
                 "#EXTM3U\n#EXT-X-INDEPENDENT-SEGMENTS\n${chosen.attributes}\n${chosen.uri}\n"
             }
         val bytes = text.toByteArray()
@@ -250,8 +256,17 @@ internal object StreamProxy {
         val attributes: String,
         val uri: String,
         val bandwidth: Long,
+        val width: Int,
         val height: Int,
-    )
+    ) {
+        /**
+         * Короткая сторона кадра. Качество сравниваем именно по ней: у портретных роликов
+         * `RESOLUTION` выглядит как 1080x1920, и фильтр «высота <= 720» не находил ни одного
+         * варианта — в итоге libVLC получал весь список и скакал по нему на каждом сегменте.
+         */
+        val shortSide: Int
+            get() = if (width in 1 until height) width else height
+    }
 
     private fun parseVariants(manifest: String): List<HlsVariant> {
         val lines = manifest.lines().map { it.trim() }
@@ -262,8 +277,10 @@ internal object StreamProxy {
                 lines.drop(index + 1).firstOrNull { it.isNotEmpty() && !it.startsWith("#") }
                     ?: return@forEachIndexed
             val bandwidth = Regex("BANDWIDTH=(\\d+)").find(line)?.groupValues?.get(1)?.toLongOrNull() ?: 0L
-            val height = Regex("RESOLUTION=\\d+x(\\d+)").find(line)?.groupValues?.get(1)?.toIntOrNull() ?: 0
-            variants += HlsVariant(line, uri, bandwidth, height)
+            val resolution = Regex("RESOLUTION=(\\d+)x(\\d+)").find(line)
+            val width = resolution?.groupValues?.get(1)?.toIntOrNull() ?: 0
+            val height = resolution?.groupValues?.get(2)?.toIntOrNull() ?: 0
+            variants += HlsVariant(line, uri, bandwidth, width, height)
         }
         return variants
     }
@@ -275,7 +292,10 @@ internal object StreamProxy {
         if (variants.isEmpty()) return null
         if (hint.startsWith("video:")) {
             val target = hint.removePrefix("video:").filter(Char::isDigit).toIntOrNull() ?: 720
-            variants.filter { it.height in 1..target }.maxByOrNull { it.height }?.let { return it }
+            // Ближайший к выбранному качеству, но не выше него. Если все варианты выше
+            // цели (портретное видео), берём самый лёгкий из них, а не весь список.
+            return variants.filter { it.shortSide in 1..target }.maxByOrNull { it.shortSide }
+                ?: variants.minByOrNull { it.bandwidth }
         }
         // Для звука берём самый лёгкий вариант с полноценным AAC, а не облегчённым 50 кбит/с.
         return variants.filter { it.bandwidth >= AUDIO_MIN_BANDWIDTH }.minByOrNull { it.bandwidth }

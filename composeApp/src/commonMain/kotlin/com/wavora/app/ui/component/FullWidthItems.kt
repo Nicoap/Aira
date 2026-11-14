@@ -382,7 +382,7 @@ fun SongFullWidthItems(
                 // Сердечко лайка — вплотную к «троеточию», как в остальных списках треков.
                 if (songId.isNotBlank()) {
                     HeartCheckBox(
-                        size = 26,
+                        size = 32,
                         checked = isLiked,
                     ) {
                         coroutineScope.launch {

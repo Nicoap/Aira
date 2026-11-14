@@ -1397,7 +1397,7 @@ private fun QueueRow(
             text = duration,
             style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
         )
-        HeartCheckBox(size = 26, checked = isLiked) {
+        HeartCheckBox(size = 28, checked = isLiked) {
             likeScope.launch {
                 songRepository.updateLikeStatus(videoId, if (isLiked) 0 else 1)
             }

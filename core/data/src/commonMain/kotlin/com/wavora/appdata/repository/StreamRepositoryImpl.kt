@@ -303,7 +303,7 @@ internal class StreamRepositoryImpl(
                     if (data.first != null) {
                         emit(
                             if (muxed) {
-                                hlsManifest?.let { rewriteStreamUrlWithHint(it, "audio") }
+                                hlsManifest?.let { rewriteStreamUrlWithHint(it, if (isVideo) "video:$videoQualityHeight" else "audio") }
                             } else {
                                 format?.url?.let { url ->
                                     if (youTube.isManifestUrl(url)) {
@@ -317,7 +317,7 @@ internal class StreamRepositoryImpl(
                     } else {
                         emit(
                             if (muxed) {
-                                hlsManifest?.let { rewriteStreamUrlWithHint(it, "audio") }
+                                hlsManifest?.let { rewriteStreamUrlWithHint(it, if (isVideo) "video:$videoQualityHeight" else "audio") }
                             } else {
                                 format?.url?.let { url ->
                                     if (youTube.isManifestUrl(url)) {
