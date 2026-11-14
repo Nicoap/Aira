@@ -1,5 +1,7 @@
 package com.wavora.app.extension
 
+import androidx.compose.ui.composed
+
 import androidx.compose.animation.core.LinearOutSlowInEasing
 import androidx.compose.animation.core.animateFloat
 import androidx.compose.animation.core.animateFloatAsState
@@ -151,19 +153,56 @@ fun Modifier.artworkGlow(
     colors: List<Color>,
     alpha: Float = 0.5f,
 ): Modifier =
-    this.then(
+    composed {
+        val background = androidx.compose.material3.MaterialTheme.colorScheme.background
+        val light = (0.2126f * background.red + 0.7152f * background.green + 0.0722f * background.blue) > 0.5f
+        val accent = androidx.compose.runtime.remember(colors, light) { colors.firstOrNull()?.let { glowAccent(it, light) } }
         Modifier.drawBehind {
-            val top = colors.getOrNull(0)?.copy(alpha = alpha) ?: return@drawBehind
-            val second = colors.getOrNull(1)?.copy(alpha = alpha * 0.55f)
+            val glow = accent ?: return@drawBehind
+            val strength = if (light) alpha * 0.7f else alpha
             drawRect(
                 brush =
                     Brush.radialGradient(
-                        colors = listOfNotNull(top, second, Color.Transparent),
-                        radius = size.maxDimension * 0.85f,
+                        colors =
+                            listOf(
+                                glow.copy(alpha = strength),
+                                glow.copy(alpha = strength * 0.45f),
+                                Color.Transparent,
+                            ),
+                        center = Offset(size.width / 2f, 0f),
+                        radius = size.width * 0.75f,
                     ),
             )
-        },
-    )
+        }
+    }
+
+/**
+ * The album palette colour is a dark swatch (DarkVibrant/DarkMuted) that turns into a muddy grey haze on a
+ * light page. Keep only its hue and rebuild the glow colour for the current theme; near-greyscale covers stay grey.
+ */
+private fun glowAccent(
+    source: Color,
+    light: Boolean,
+): Color {
+    val r = source.red
+    val g = source.green
+    val b = source.blue
+    val max = maxOf(r, g, b)
+    val min = minOf(r, g, b)
+    val d = max - min
+    val saturation = if (max == 0f) 0f else d / max
+    var hue =
+        when {
+            d == 0f -> 0f
+            max == r -> 60f * (((g - b) / d) % 6f)
+            max == g -> 60f * ((b - r) / d + 2f)
+            else -> 60f * ((r - g) / d + 4f)
+        }
+    if (hue < 0f) hue += 360f
+    val s = if (saturation < 0.12f) saturation else saturation.coerceIn(0.5f, 0.9f)
+    val v = if (light) 0.95f else 0.7f
+    return Color.hsv(hue, s, v)
+}
 
 fun Modifier.angledGradientBackground(
     colors: List<Color>,

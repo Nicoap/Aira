@@ -271,7 +271,6 @@ fun AlbumScreen(
                             Modifier
                                 .fillMaxSize()
                                 .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
-                                .artworkGlow(uiState.colors)
                                 .hazeSource(hazeState),
                         state = lazyState,
                     ) {

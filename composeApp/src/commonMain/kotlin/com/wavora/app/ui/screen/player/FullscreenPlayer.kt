@@ -204,8 +204,8 @@ fun FullscreenPlayer(
             lyricsData = nowPlayingState.lyricsData?.lyrics,
             translatedLyricsData = nowPlayingState.lyricsData?.translatedLyrics?.first,
             isInPipMode = isInPipMode,
-            mainTextStyle = LocalAppTypography.current.bodyLarge,
-            translatedTextStyle = LocalAppTypography.current.bodyMedium,
+            mainTextStyle = LocalAppTypography.current.bodyLarge.copy(color = Color.White),
+            translatedTextStyle = LocalAppTypography.current.bodyMedium.copy(color = Color.White),
         )
         if (!isInPipMode) {
             Row(Modifier.fillMaxSize()) {
@@ -352,7 +352,7 @@ fun FullscreenPlayer(
                             title = {
                                 Text(
                                     text = nowPlayingState.nowPlayingTitle,
-                                    style = LocalAppTypography.current.titleMedium,
+                                    style = LocalAppTypography.current.titleMedium.copy(color = Color.White),
                                     maxLines = 1,
                                     modifier =
                                         Modifier
@@ -660,12 +660,12 @@ fun FullscreenPlayer(
                                 ) {
                                     Text(
                                         text = formatDuration((timelineState.total * (sliderValue / 100f)).roundToLong()),
-                                        style = LocalAppTypography.current.labelSmall,
+                                        style = LocalAppTypography.current.labelSmall.copy(color = Color.White),
                                     )
                                     Spacer(Modifier.width(4.dp))
                                     Text(
                                         text = " / ${formatDuration(timelineState.total)}",
-                                        style = LocalAppTypography.current.bodySmall,
+                                        style = LocalAppTypography.current.bodySmall.copy(color = Color.White),
                                     )
                                 }
                                 Row(

@@ -400,7 +400,6 @@ LazyColumn(
                         Modifier
                             .fillMaxWidth()
                             .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
-                            .artworkGlow(listColors)
                             .hazeSource(hazeState),
                     state = lazyState,
                 ) {

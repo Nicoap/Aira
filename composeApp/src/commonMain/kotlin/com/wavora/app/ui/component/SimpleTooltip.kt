@@ -30,7 +30,7 @@ fun SimpleTooltip(
         positionProvider = TooltipDefaults.rememberTooltipPositionProvider(),
         tooltip = {
             PlainTooltip {
-                Text(text = text, style = LocalAppTypography.current.bodySmall, modifier = androidx.compose.ui.Modifier.padding(2.dp))
+                Text(text = text, style = LocalAppTypography.current.bodySmall, color = androidx.compose.material3.MaterialTheme.colorScheme.inverseOnSurface, modifier = androidx.compose.ui.Modifier.padding(2.dp))
             }
         },
         state = rememberTooltipState(),

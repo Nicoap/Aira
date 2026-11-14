@@ -177,7 +177,7 @@ fun AppTheme(
                 inversePrimary = primary,
             )
         }
-    val typography = typo()
+    val typography = typo().themed(colorScheme)
     // Нейтральная рампа интерфейса считается из темы и обновляется на каждой её смене:
     // панель плеера, очередь и все прочие потребители WavoraTone больше не зашиты в тёмные
     // константы и следуют выбранным цветам.
@@ -284,4 +284,32 @@ fun themeAccentBrush(): Brush {
     return remember(primary, gradientEnd) {
         Brush.horizontalGradient(listOf(primary, gradientEnd))
     }
+}
+
+/**
+ * typo() is written for a dark theme: titles are hard-coded white and body text light grey. On a light theme
+ * every Text without an explicit colour was therefore nearly invisible. Map those two constants to the
+ * colours of the active scheme so text is readable on any theme. Text placed over images or video that must
+ * stay light sets its colour explicitly.
+ */
+private fun androidx.compose.material3.Typography.themed(scheme: androidx.compose.material3.ColorScheme): androidx.compose.material3.Typography {
+    fun androidx.compose.ui.text.TextStyle.fix(): androidx.compose.ui.text.TextStyle =
+        when (color) {
+            Color.White -> copy(color = scheme.onBackground)
+            wavoraTextSecondary -> copy(color = scheme.onSurfaceVariant)
+            else -> this
+        }
+    return copy(
+        titleSmall = titleSmall.fix(),
+        titleMedium = titleMedium.fix(),
+        titleLarge = titleLarge.fix(),
+        bodySmall = bodySmall.fix(),
+        bodyMedium = bodyMedium.fix(),
+        bodyLarge = bodyLarge.fix(),
+        displayLarge = displayLarge.fix(),
+        headlineMedium = headlineMedium.fix(),
+        headlineLarge = headlineLarge.fix(),
+        labelMedium = labelMedium.fix(),
+        labelSmall = labelSmall.fix(),
+    )
 }

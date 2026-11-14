@@ -464,7 +464,6 @@ LazyColumn(
             Modifier
                 .fillMaxWidth()
                 .background(if (isMobilePortrait) mutedPaletteBg else MaterialTheme.colorScheme.background)
-                .artworkGlow(uiState.colors)
                 .hazeSource(hazeState)
                 .pointerInput(changingOrder) {
                     if (!changingOrder) return@pointerInput
