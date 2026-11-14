@@ -471,6 +471,7 @@ fun LibraryScreen(
                     containerColor = Color.Transparent,
                 ),
             actions = {
+                if (getPlatform() != Platform.Desktop) {
                 IconButton(
                     onClick = {
                         navController.navigate(AnalyticsDestination)
@@ -487,6 +488,7 @@ fun LibraryScreen(
                                 ),
                         )
                     }
+                }
                 }
             },
             navigationIcon = {

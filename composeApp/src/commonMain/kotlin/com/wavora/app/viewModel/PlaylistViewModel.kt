@@ -440,14 +440,15 @@ class PlaylistViewModel(
         liked: Boolean,
         id: String,
     ) {
+        val tempLiked = if (liked) 1 else 0
+        // The heart flips at once; the repository call below also syncs with YouTube Music over the network.
+        _playlistEntity.update {
+            it?.copy(
+                liked = tempLiked == 1,
+            )
+        }
         viewModelScope.launch {
-            val tempLiked = if (liked) 1 else 0
             playlistRepository.updatePlaylistLiked(id, tempLiked)
-            _playlistEntity.update {
-                it?.copy(
-                    liked = tempLiked == 1,
-                )
-            }
             getFullTracks { }
         }
     }

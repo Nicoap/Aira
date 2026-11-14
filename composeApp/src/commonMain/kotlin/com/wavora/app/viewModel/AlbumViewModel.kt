@@ -161,13 +161,13 @@ class AlbumViewModel(
     }
 
     fun setAlbumLike() {
+        // The heart flips at once: the repository call also syncs the like to YouTube Music over the
+        // network, and waiting for it left the button looking dead (or stuck) on a slow or blocked connection.
+        val newLiked = !uiState.value.liked
+        val browseId = uiState.value.browseId
+        _uiState.update { it.copy(liked = newLiked) }
         viewModelScope.launch {
-            albumRepository.updateAlbumLiked(uiState.value.browseId, if (!uiState.value.liked) 1 else 0)
-            _uiState.update {
-                it.copy(
-                    liked = !it.liked,
-                )
-            }
+            albumRepository.updateAlbumLiked(browseId, if (newLiked) 1 else 0)
         }
     }
 

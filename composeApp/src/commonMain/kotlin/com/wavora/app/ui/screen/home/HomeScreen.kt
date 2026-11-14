@@ -962,11 +962,12 @@ fun HomeTopAppBar(navController: NavController) {
                     navController.navigate(LocalMixDestination)
                 }
             }
-            // На телефоне левой панели нет, поэтому настройки остаются здесь; на десктопе
-            // они уже есть в рейле, и эта кнопка просто дублирует точку входа.
-            SimpleTooltip(text = stringResource(Res.string.settings)) {
-                RippleIconButton(resId = Res.drawable.baseline_settings_24) {
-                    navController.navigate(SettingsDestination)
+            // Desktop has Settings in the left rail; only phones, which have no rail, need this shortcut.
+            if (getPlatform() != Platform.Desktop) {
+                SimpleTooltip(text = stringResource(Res.string.settings)) {
+                    RippleIconButton(resId = Res.drawable.baseline_settings_24) {
+                        navController.navigate(SettingsDestination)
+                    }
                 }
             }
         },

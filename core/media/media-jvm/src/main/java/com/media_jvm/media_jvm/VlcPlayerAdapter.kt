@@ -66,8 +66,17 @@ private const val TAG = "VlcPlayerAdapter"
 // Тот же трек, запущенный вручную, обычно играет: сбой извлечения ссылки временный
 // (устаревший формат, короткий 403). Даём несколько попыток с нарастающей паузой,
 // прежде чем пропустить трек.
-private const val EXTRACT_RETRY_ATTEMPTS = 2
-private const val EXTRACT_RETRY_DELAY_MS = 400L
+private const val EXTRACT_RETRY_ATTEMPTS = 4
+private const val EXTRACT_RETRY_DELAY_MS = 500L
+
+// Pause (multiplied by the attempt number) before re-opening a track after a playback error.
+private const val RETRY_BACKOFF_MS = 700L
+
+// A track that "ends" far from its real end is a broken stream, not a finished track: re-open it
+// this many times (resuming where it stopped) before treating it as the end.
+private const val MAX_PREMATURE_END_RETRIES = 3
+private const val PREMATURE_END_TOLERANCE_MS = 15_000L
+private const val PREMATURE_END_MIN_DURATION_MS = 15_000L
 
 // PRE-ROLL ERROR GUARD: libVLC puede entregar error() через несколько миллисекунд
 // после opening(), ещё до первого прочитанного байта (currentPos == 0). Подтверждено
@@ -705,7 +714,7 @@ class VlcPlayerAdapter(
     // Retry system - mirrors Android CrossfadeExoPlayerAdapter retry logic
     private var retryCount = 0
     private var retryVideoId: String? = null
-    private val maxRetryCount = 2
+    private val maxRetryCount = 3
 
     // Pre-roll error guard (см. PRE_ROLL_ERROR_GRACE_MS): момент, когда текущий
     // player получил свежий media - по нему отличаем error() "до первого байта" от
@@ -746,6 +755,62 @@ class VlcPlayerAdapter(
     private fun isNearTrackEnd(): Boolean {
         val duration = cachedDuration
         return duration > 0 && cachedPosition >= duration - 10_000L
+    }
+
+    private var prematureEndVideoId: String? = null
+    private var prematureEndCount = 0
+    private var prematureEndAtNanos = 0L
+
+    /**
+     * libVLC reports finished() for any stream that simply stops delivering data (truncated link, dropped
+     * connection, bad HLS segment). Treating that as "track over" skipped tracks that play fine when started
+     * again. A real end is within [PREMATURE_END_TOLERANCE_MS] of the duration; anything earlier is re-opened
+     * from the position it stopped at, with a fresh link, up to [MAX_PREMATURE_END_RETRIES] times.
+     * Returns true when a recovery was started (the caller must not advance to the next track).
+     */
+    private suspend fun recoverFromPrematureEnd(): Boolean {
+        if (!internalPlayWhenReady) return false
+        val duration = cachedDuration
+        val position = cachedPosition
+        val premature =
+            if (duration > PREMATURE_END_MIN_DURATION_MS) {
+                position < duration - PREMATURE_END_TOLERANCE_MS
+            } else {
+                position < 5_000L
+            }
+        if (!premature) return false
+        val videoId = playlist.getOrNull(localCurrentMediaItemIndex)?.mediaId ?: return false
+        val now = System.nanoTime()
+        if (prematureEndVideoId != videoId || now - prematureEndAtNanos > 60_000_000_000L) {
+            prematureEndVideoId = videoId
+            prematureEndCount = 0
+        }
+        if (prematureEndCount >= MAX_PREMATURE_END_RETRIES) {
+            Logger.w(TAG, "Premature end of " + videoId + " persists after " + prematureEndCount + " reopens - giving up")
+            return false
+        }
+        prematureEndCount++
+        prematureEndAtNanos = now
+        lastEndHandledAtNanos = now // keeps the stopped() that follows finished() from starting a second recovery
+        Logger.w(
+            TAG,
+            "Stream ended early for " + videoId + " at " + position + "/" + duration + " ms - reopening (" +
+                prematureEndCount + "/" + MAX_PREMATURE_END_RETRIES + ")",
+        )
+        return try {
+            streamRepository.invalidateFormat(videoId)
+            streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$videoId")
+            precachedPlayers.remove(videoId)?.player?.release()
+            delay(500L * prematureEndCount)
+            // The user may have moved on while we waited.
+            if (playlist.getOrNull(localCurrentMediaItemIndex)?.mediaId != videoId) return true
+            loadAndPlayTrackInternal(localCurrentMediaItemIndex, position.coerceAtLeast(0L), shouldPlay = true)
+            true
+        } catch (e: Exception) {
+            if (e is CancellationException) throw e
+            Logger.e(TAG, "Premature-end recovery failed: ${e.message}", e)
+            false
+        }
     }
 
     private fun skipUnplayableTrack(reason: String): Boolean {
@@ -1905,6 +1970,7 @@ class VlcPlayerAdapter(
                             CrossfadeAudit.log("CB_FINISHED_IGNORED_CROSSFADING", playerId = emittingId)
                             return@launch
                         }
+                        if (recoverFromPrematureEnd()) return@launch
                         transitionToState(InternalState.ENDED)
                         handleTrackEndInternal()
                     }
@@ -1988,6 +2054,9 @@ class VlcPlayerAdapter(
                             if (retryCount < maxRetryCount) {
                                 retryCount++
                                 Logger.w(TAG, "Retrying playback (attempt $retryCount/$maxRetryCount) for $currentVideoId")
+                                delay(RETRY_BACKOFF_MS * retryCount)
+                                // The user may have moved on while we waited.
+                                if (playlist.getOrNull(localCurrentMediaItemIndex)?.mediaId != currentVideoId) return@launch
                                 try {
                                     // Invalidate cached format so fresh URL is fetched
                                     streamRepository.invalidateFormat(currentVideoId)

@@ -167,6 +167,25 @@ fun AppNavigationRail(
             },
         )
     }
+    val onSettings =
+        currentBackStackEntry?.destination?.hierarchy?.any {
+            it.hasRoute(SettingsDestination::class)
+        } == true
+    val onStatistics =
+        currentBackStackEntry?.destination?.hierarchy?.any {
+            it.hasRoute(AnalyticsDestination::class)
+        } == true
+    // Settings and statistics are tabs like Home/Search/Library: they replace the current screen and keep
+    // their own state instead of opening on top of whatever was shown.
+    val openTab: (Any) -> Unit = { destination ->
+        navController.navigate(destination) {
+            popUpTo(navController.graph.startDestinationId) {
+                saveState = true
+            }
+            launchSingleTop = true
+            restoreState = true
+        }
+    }
     NavigationRail(
         // Жёстко фиксируем ширину рейла: любой дочерний элемент с fillMaxWidth
         // иначе растягивает его на всё окно и обнуляет область контента.
@@ -199,36 +218,25 @@ fun AppNavigationRail(
                     Text(
                         stringResource(screen.title),
                         style =
-                            if (selectedIndex == screen.ordinal) {
+                            if (selectedIndex == screen.ordinal && !onSettings && !onStatistics) {
                                 LocalAppTypography.current.bodySmall
                             } else {
                                 LocalAppTypography.current.bodySmall.greyScale()
                             },
                     )
                 },
-                selected = selectedIndex == index,
+                selected = selectedIndex == index && !onSettings && !onStatistics,
                 modifier = Modifier,
                 onClick = {
-                    if (selectedIndex == screen.ordinal) {
-                        if (currentBackStackEntry?.destination?.hierarchy?.any {
-                                it.hasRoute(screen.destination::class)
-                            } == true
-                        ) {
-                            reloadDestinationIfNeeded(
-                                screen.destination::class,
-                            )
-                        } else {
-                            navController.navigate(screen.destination)
-                        }
+                    val isOnScreen =
+                        currentBackStackEntry?.destination?.hierarchy?.any {
+                            it.hasRoute(screen.destination::class)
+                        } == true
+                    if (isOnScreen) {
+                        reloadDestinationIfNeeded(screen.destination::class)
                     } else {
                         selectedIndex = screen.ordinal
-                        navController.navigate(screen.destination) {
-                            popUpTo(navController.graph.startDestinationId) {
-                                saveState = true
-                            }
-                            launchSingleTop = true
-                            restoreState = true
-                        }
+                        openTab(screen.destination)
                     }
                 },
             )
@@ -244,25 +252,17 @@ fun AppNavigationRail(
             color = MaterialTheme.colorScheme.outlineVariant,
         )
         Spacer(Modifier.height(8.dp))
-        val onSettings =
-            currentBackStackEntry?.destination?.hierarchy?.any {
-                it.hasRoute(SettingsDestination::class)
-            } == true
-        val onStatistics =
-            currentBackStackEntry?.destination?.hierarchy?.any {
-                it.hasRoute(AnalyticsDestination::class)
-            } == true
         NavigationRailItem(
             icon = { Icon(Icons.Rounded.Settings, contentDescription = null) },
             label = { Text(stringResource(Res.string.settings), style = LocalAppTypography.current.bodySmall) },
             selected = onSettings,
-            onClick = { navController.navigate(SettingsDestination) { launchSingleTop = true } },
+            onClick = { openTab(SettingsDestination) },
         )
         NavigationRailItem(
             icon = { Icon(Icons.Rounded.Insights, contentDescription = null) },
             label = { Text(stringResource(Res.string.statistics), style = LocalAppTypography.current.bodySmall) },
             selected = onStatistics,
-            onClick = { navController.navigate(AnalyticsDestination) { launchSingleTop = true } },
+            onClick = { openTab(AnalyticsDestination) },
         )
         Spacer(Modifier.height(32.dp))
     }
