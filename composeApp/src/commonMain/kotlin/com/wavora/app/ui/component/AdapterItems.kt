@@ -4,7 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.focusable
@@ -507,7 +507,7 @@ fun HomeItemContentPlaylist(
                     Modifier
                         .width(thumbSize)
                         .wrapContentHeight(align = Alignment.CenterVertically)
-                        .basicMarquee(
+                        .hoverMarquee(
                             initialDelayMillis = 2000,
                             repeatDelayMillis = 2000,
                             velocity = 25.dp,
@@ -605,7 +605,7 @@ fun QuickPicksItem(
                                 Modifier
                                     .fillMaxWidth()
                                     .wrapContentHeight(align = Alignment.CenterVertically)
-                                    .basicMarquee(
+                                    .hoverMarquee(
                                         initialDelayMillis = 2000,
                                         repeatDelayMillis = 2000,
                                         velocity = 25.dp,
@@ -711,7 +711,7 @@ fun HomeItemSong(
                         Modifier
                             .width(160.dp)
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 initialDelayMillis = 2000,
                                 repeatDelayMillis = 2000,
                                 velocity = 25.dp,
@@ -799,7 +799,7 @@ fun HomeItemVideo(
                     Modifier
                         .width(284.5.dp)
                         .wrapContentHeight(align = Alignment.CenterVertically)
-                        .basicMarquee(
+                        .hoverMarquee(
                             initialDelayMillis = 2000,
                             repeatDelayMillis = 2000,
                             velocity = 25.dp,
@@ -878,7 +878,7 @@ fun HomeItemArtist(
                     Modifier
                         .width(160.dp)
                         .wrapContentHeight(align = Alignment.CenterVertically)
-                        .basicMarquee(
+                        .hoverMarquee(
                             initialDelayMillis = 2000,
                             repeatDelayMillis = 2000,
                             velocity = 25.dp,
@@ -1010,7 +1010,7 @@ fun ItemVideoChart(
                             Modifier
                                 .width(210.dp)
                                 .wrapContentHeight(align = Alignment.CenterVertically)
-                                .basicMarquee(
+                                .hoverMarquee(
                                     initialDelayMillis = 2000,
                                     repeatDelayMillis = 2000,
                                     velocity = 25.dp,
@@ -1114,7 +1114,7 @@ fun ItemArtistChart(
                     modifier =
                         Modifier
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 initialDelayMillis = 2000,
                                 repeatDelayMillis = 2000,
                                 velocity = 25.dp,
@@ -1222,7 +1222,7 @@ fun ItemTrackChart(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 initialDelayMillis = 2000,
                                 repeatDelayMillis = 2000,
                                 velocity = 25.dp,

@@ -2,7 +2,7 @@ package com.wavora.app.ui.component
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.MarqueeAnimationMode
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Arrangement
@@ -182,7 +182,7 @@ internal inline fun <reified T> GridLibraryPlaylist(
                                                 .width(132.dp)
                                                 .wrapContentHeight(align = Alignment.CenterVertically)
                                                 .padding(top = 8.dp)
-                                                .basicMarquee(
+                                                .hoverMarquee(
                                                     iterations = Int.MAX_VALUE,
                                                     animationMode = MarqueeAnimationMode.Immediately,
                                                 ).focusable(),

@@ -18,7 +18,7 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.MarqueeAnimationMode
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -881,7 +881,7 @@ fun FullscreenLyricsSheet(
                             maxLines = 1,
                             modifier =
                                 Modifier
-                                    .basicMarquee(
+                                    .hoverMarquee(
                                         iterations = Int.MAX_VALUE,
                                         animationMode = MarqueeAnimationMode.Immediately,
                                     ).focusable(),
@@ -926,7 +926,7 @@ fun FullscreenLyricsSheet(
                                 maxLines = 1,
                                 modifier =
                                     Modifier
-                                        .basicMarquee(
+                                        .hoverMarquee(
                                             iterations = Int.MAX_VALUE,
                                             animationMode = MarqueeAnimationMode.Immediately,
                                         ).focusable(),

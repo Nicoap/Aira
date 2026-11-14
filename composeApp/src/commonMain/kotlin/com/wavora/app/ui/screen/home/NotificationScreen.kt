@@ -2,7 +2,7 @@ package com.wavora.app.ui.screen.home
 
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.MarqueeAnimationMode
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.focusable
 import androidx.compose.foundation.layout.Box
@@ -262,7 +262,7 @@ fun ItemAlbumNotification(
                         .width(150.dp)
                         .wrapContentHeight(align = Alignment.CenterVertically)
                         .padding(top = 10.dp)
-                        .basicMarquee(
+                        .hoverMarquee(
                             iterations = Int.MAX_VALUE,
                             animationMode = MarqueeAnimationMode.Immediately,
                         ).focusable(),
@@ -276,7 +276,7 @@ fun ItemAlbumNotification(
                         .width(150.dp)
                         .wrapContentHeight(align = Alignment.CenterVertically)
                         .padding(top = 10.dp)
-                        .basicMarquee(
+                        .hoverMarquee(
                             iterations = Int.MAX_VALUE,
                             animationMode = MarqueeAnimationMode.Immediately,
                         ).focusable(),

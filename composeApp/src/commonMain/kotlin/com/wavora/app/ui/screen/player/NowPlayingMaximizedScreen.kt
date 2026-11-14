@@ -3,7 +3,7 @@ package com.wavora.app.ui.screen.player
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
@@ -592,7 +592,7 @@ private fun PlayerBlock(
                     text = title,
                     style = LocalAppTypography.current.titleLarge.copy(color = WavoraTone.ink, fontWeight = FontWeight.SemiBold, fontSize = if (compact) 22.sp else 26.sp),
                     maxLines = 1,
-                    modifier = Modifier.basicMarquee(),
+                    modifier = Modifier.hoverMarquee(),
                 )
                 Spacer(Modifier.height(4.dp))
                 FlowRow(verticalArrangement = Arrangement.Center) {

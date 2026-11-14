@@ -10,7 +10,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkHorizontally
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.MarqueeAnimationMode
-import androidx.compose.foundation.basicMarquee
+import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.background
 import androidx.compose.material.icons.rounded.PlayArrow
@@ -281,7 +281,7 @@ fun SongFullWidthItems(
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(align = Alignment.CenterVertically)
-                                .basicMarquee(
+                                .hoverMarquee(
                                     iterations = Int.MAX_VALUE,
                                     animationMode = MarqueeAnimationMode.Immediately,
                                 ).focusable(),
@@ -351,7 +351,7 @@ fun SongFullWidthItems(
                                     Modifier
                                         .fillMaxWidth()
                                         .wrapContentHeight(align = Alignment.CenterVertically)
-                                        .basicMarquee(
+                                        .hoverMarquee(
                                             iterations = Int.MAX_VALUE,
                                             animationMode = MarqueeAnimationMode.Immediately,
                                         ).focusable(),
@@ -464,7 +464,7 @@ fun SuggestItems(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 iterations = Int.MAX_VALUE,
                                 animationMode = MarqueeAnimationMode.Immediately,
                             ).focusable(),
@@ -481,7 +481,7 @@ fun SuggestItems(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 iterations = Int.MAX_VALUE,
                                 animationMode = MarqueeAnimationMode.Immediately,
                             ).focusable(),
@@ -613,7 +613,7 @@ fun PlaylistFullWidthItems(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 iterations = Int.MAX_VALUE,
                                 animationMode = MarqueeAnimationMode.Immediately,
                             ).focusable(),
@@ -640,7 +640,7 @@ fun PlaylistFullWidthItems(
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(align = Alignment.CenterVertically)
-                                .basicMarquee(
+                                .hoverMarquee(
                                     iterations = Int.MAX_VALUE,
                                     animationMode = MarqueeAnimationMode.Immediately,
                                 ).focusable(),
@@ -657,7 +657,7 @@ fun PlaylistFullWidthItems(
                             Modifier
                                 .fillMaxWidth()
                                 .wrapContentHeight(align = Alignment.CenterVertically)
-                                .basicMarquee(
+                                .hoverMarquee(
                                     iterations = Int.MAX_VALUE,
                                     animationMode = MarqueeAnimationMode.Immediately,
                                 ).focusable(),
@@ -732,7 +732,7 @@ fun ArtistFullWidthItems(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 iterations = Int.MAX_VALUE,
                                 animationMode = MarqueeAnimationMode.Immediately,
                             ).focusable(),
@@ -747,7 +747,7 @@ fun ArtistFullWidthItems(
                         Modifier
                             .fillMaxWidth()
                             .wrapContentHeight(align = Alignment.CenterVertically)
-                            .basicMarquee(
+                            .hoverMarquee(
                                 iterations = Int.MAX_VALUE,
                                 animationMode = MarqueeAnimationMode.Immediately,
                             ).focusable(),
