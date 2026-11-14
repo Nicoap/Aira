@@ -117,7 +117,9 @@ import com.wavora.app.extension.isValidProxyHost
 import com.wavora.app.getPlatform
 import com.wavora.app.ui.component.ActionButton
 import com.wavora.app.ui.component.CenterLoadingBox
+import com.wavora.app.ui.component.ColorPickerDialog
 import com.wavora.app.ui.component.EndOfPage
+import com.wavora.app.ui.component.toHexString
 import com.wavora.app.ui.component.RippleIconButton
 import com.wavora.app.ui.component.SettingItem
 import com.wavora.app.ui.navigation.destination.home.CreditDestination
@@ -127,6 +129,9 @@ import com.wavora.app.ui.navigation.destination.login.DiscordLoginDestination
 import com.wavora.app.ui.navigation.destination.login.LoginDestination
 import com.wavora.app.ui.navigation.destination.login.SpotifyLoginDestination
 import com.wavora.app.ui.theme.md_theme_dark_primary
+import com.wavora.app.ui.theme.WAVORA_CUSTOM_THEME_LABEL
+import com.wavora.app.ui.theme.WavoraThemePresets
+import com.wavora.app.ui.theme.findThemePreset
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraBorder
 import com.wavora.app.ui.theme.wavoraGradientMid
@@ -437,6 +442,7 @@ fun SettingScreen(
     val mediaPreloadCountDescription = stringResource(Res.string.media_preload_count_description)
     val themeModeLabel = stringResource(Res.string.theme_mode)
     val themeModeDescription = stringResource(Res.string.theme_mode_description)
+    val themePresetLabel = "Тема"
     val themeDark = stringResource(Res.string.theme_dark)
     val themeLight = stringResource(Res.string.theme_light)
     val themeSystem = stringResource(Res.string.theme_system)
@@ -624,6 +630,16 @@ fun SettingScreen(
     val displayedThemeSurfaceColor =
         themeSurfaceColor.takeUnless { it == "auto" }
             ?: if (isDarkTheme) "#12121A" else "#FFFFFF"
+    // Действующий пресет вычисляется по сохранённым цветам: отдельной настройки нет, поэтому
+    // подпись не может разойтись с реальной палитрой. Совпал со всеми четырьмя — это он,
+    // иначе «Своя».
+    val currentThemePreset =
+        findThemePreset(
+            background = displayedThemeBackgroundColor,
+            surface = displayedThemeSurfaceColor,
+            text = themeTextColor,
+            primary = themePrimaryColor,
+        )
     val keepServiceAlive by viewModel.keepServiceAlive.collectAsStateWithLifecycle()
 
     val crossfadeEnabled by viewModel.crossfadeEnabled.collectAsStateWithLifecycle()
@@ -669,7 +685,30 @@ fun SettingScreen(
     }
 
     val settingsListState = rememberLazyListState()
+    // Состояние открытого пикера цвета: заголовок, стартовое значение и куда сохранить.
+    // Один диалог на все пять слотов — вместо пяти копий одного и того же окна ввода HEX.
+    var colorPickerTitle by remember { mutableStateOf<String?>(null) }
+    var colorPickerValue by remember { mutableStateOf("#FFFFFF") }
+    var colorPickerSave by remember { mutableStateOf<((String) -> Unit)?>(null) }
     Box(Modifier.fillMaxSize()) {
+        val pickerTitle = colorPickerTitle
+        val pickerSave = colorPickerSave
+        if (pickerTitle != null && pickerSave != null) {
+            ColorPickerDialog(
+                title = pickerTitle,
+                initialHex = colorPickerValue,
+                showEyedropper = getPlatform() == Platform.Desktop,
+                onDismiss = {
+                    colorPickerTitle = null
+                    colorPickerSave = null
+                },
+                onConfirm = { hex ->
+                    pickerSave(hex)
+                    colorPickerTitle = null
+                    colorPickerSave = null
+                },
+            )
+        }
         LazyColumn(
             state = settingsListState,
             contentPadding = innerPadding,
@@ -686,34 +725,31 @@ fun SettingScreen(
                 Spacer(Modifier.height(16.dp))
                 Text(text = stringResource(Res.string.user_interface), style = LocalAppTypography.current.labelMedium, color = MaterialTheme.colorScheme.onSurface)
                 SettingItem(
-                    title = themeModeLabel,
-                    subtitle = "$themeModeDescription (${when (themeMode) {
-                        DataStoreManager.THEME_MODE_LIGHT -> themeLight
-                        DataStoreManager.THEME_MODE_SYSTEM -> themeSystem
-                        else -> themeDark
-                    }})",
+                    title = themePresetLabel,
+                    subtitle = currentThemePreset?.label ?: WAVORA_CUSTOM_THEME_LABEL,
                     onClick = {
+                        val presets = WavoraThemePresets
                         viewModel.setAlertData(
                             SettingAlertState(
-                                title = themeModeLabel,
+                                title = themePresetLabel,
                                 selectOne =
                                     SettingAlertState.SelectData(
                                         listSelect =
-                                            listOf(
-                                                (themeMode == DataStoreManager.THEME_MODE_SYSTEM) to themeSystem,
-                                                (themeMode == DataStoreManager.THEME_MODE_DARK) to themeDark,
-                                                (themeMode == DataStoreManager.THEME_MODE_LIGHT) to themeLight,
-                                            ),
+                                            presets.map { preset ->
+                                                (preset.id == currentThemePreset?.id) to preset.label
+                                            } + ((currentThemePreset == null) to WAVORA_CUSTOM_THEME_LABEL),
                                     ),
                                 confirm =
                                     change to { state ->
-                                        viewModel.setThemeMode(
-                                            when (state.selectOne?.getSelected()) {
-                                                themeSystem -> DataStoreManager.THEME_MODE_SYSTEM
-                                                themeLight -> DataStoreManager.THEME_MODE_LIGHT
-                                                else -> DataStoreManager.THEME_MODE_DARK
-                                            },
-                                        )
+                                        val chosenLabel = state.selectOne?.getSelected()
+                                        // «Своя» — это состояние, а не действие: цвета не трогаем,
+                                        // пользователь выставит их пикером ниже.
+                                        presets.firstOrNull { it.label == chosenLabel }?.let { preset ->
+                                            viewModel.setThemeBackgroundColor(preset.background)
+                                            viewModel.setThemeSurfaceColor(preset.surface)
+                                            viewModel.setThemeTextColor(preset.text)
+                                            viewModel.setThemePrimaryColor(preset.primary)
+                                        }
                                     },
                                 dismiss = cancel,
                             ),
@@ -737,35 +773,11 @@ fun SettingScreen(
                         title = label,
                         subtitle = "",
                         onClick = {
-                            viewModel.setAlertData(
-                                SettingAlertState(
-                                    title = label,
-                                    message = themeColorDescription,
-                                    textField =
-                                        SettingAlertState.TextFieldData(
-                                            label = label,
-                                            value = value,
-                                            verifyCodeBlock = { input ->
-                                                (input.trim().equals("auto", ignoreCase = true) ||
-                                                    Regex("^#?[0-9a-fA-F]{6}$").matches(input.trim())) to invalid
-                                            },
-                                        ),
-                                    confirm =
-                                        set to { state ->
-                                            val color = state.textField?.value.orEmpty().trim()
-                                            saveColor(
-                                                if (color.equals("auto", ignoreCase = true)) {
-                                                    "auto"
-                                                } else if (color.startsWith("#")) {
-                                                    color.uppercase()
-                                                } else {
-                                                    "#${color.uppercase()}"
-                                                },
-                                            )
-                                        },
-                                    dismiss = cancel,
-                                ),
-                            )
+                            // Открываем пикер вместо окна с голым HEX-полем: ползунки,
+                            // живой предпросмотр и пипетка; точное значение — там же.
+                            colorPickerTitle = label
+                            colorPickerValue = colorPreview.toHexString()
+                            colorPickerSave = saveColor
                         },
                         otherView = {
                             Row(
@@ -802,33 +814,10 @@ fun SettingScreen(
                         )
                     },
                 )
-                SettingItem(
-                    title = stringResource(Res.string.translucent_bottom_navigation_bar),
-                    subtitle = stringResource(Res.string.you_can_see_the_content_below_the_bottom_bar),
-                    smallSubtitle = true,
-                    switch = (enableTranslucentNavBar to { viewModel.setTranslucentBottomBar(it) }),
-                )
-                SettingItem(
-                    title = stringResource(Res.string.blur_fullscreen_lyrics),
-                    subtitle = stringResource(Res.string.blur_fullscreen_lyrics_description),
-                    smallSubtitle = true,
-                    switch = (blurFullscreenLyrics to { viewModel.setBlurFullscreenLyrics(it) }),
-                )
-                SettingItem(
-                    title = stringResource(Res.string.blur_player_background),
-                    subtitle = stringResource(Res.string.blur_player_background_description),
-                    smallSubtitle = true,
-                    switch = (blurPlayerBackground to { viewModel.setBlurPlayerBackground(it) }),
-                )
-                if (getPlatform() == Platform.Android) {
-                    SettingItem(
-                        title = stringResource(Res.string.enable_liquid_glass_effect),
-                        subtitle = stringResource(Res.string.enable_liquid_glass_effect_description),
-                        smallSubtitle = true,
-                        switch = (enableLiquidGlass to { viewModel.setEnableLiquidGlass(it) }),
-                        isEnable = getPlatform() == Platform.Android,
-                    )
-                }
+                // Переключатели «полупрозрачная панель», «размытие текста песен»,
+                // «размытие фона плеера» и «liquid glass» убраны: на десктопе первые три
+                // всё равно рисовали непрозрачные панели, а последний — no-op. Настройки
+                // обещали эффект, которого не было, и только путали.
             }
         }
         item(key = "content") {

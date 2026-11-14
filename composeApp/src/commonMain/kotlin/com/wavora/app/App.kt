@@ -528,9 +528,18 @@ fun App(
                             },
                         ),
                 ) {
-                    Row(
+                    // Панель плеера вынесена из сжимаемой области: раньше она лежала внутри
+                    // Box(weight(1f)), поэтому открытая боковая панель (35 %) отжимала её,
+                    // и кнопки наезжали друг на друга. Теперь бар занимает всю ширину окна,
+                    // а контент просто становится на 84 dp ниже.
+                    Column(
                         Modifier.fillMaxSize(),
                     ) {
+                        Row(
+                            Modifier
+                                .fillMaxWidth()
+                                .weight(1f),
+                        ) {
                         if (isTablet && !isInFullscreen) {
                             AppNavigationRail(
                                 navController = navController,
@@ -571,51 +580,7 @@ fun App(
                                     },
                                 )
                             }
-                            this@Row.AnimatedVisibility(
-                                modifier =
-                                    Modifier
-                                        .padding(innerPadding)
-                                        .align(Alignment.BottomCenter),
-                                visible = isShowMiniPlayer && isTablet && !isInFullscreen,
-                                enter = fadeIn() + slideInHorizontally(),
-                                exit = fadeOut(),
-                            ) {
-                                MiniPlayer(
-                                    if (getPlatform() == Platform.Android) {
-                                        Modifier
-                                            .height(56.dp)
-                                            .fillMaxWidth(0.8f)
-                                            .padding(
-                                                horizontal = 12.dp,
-                                            ).padding(
-                                                bottom = 4.dp,
-                                            )
-                                    } else {
-                                        // Reverted to hazeEffect (real blur) at user's request,
-                                        // testing whether it behaves acceptably in practice on
-                                        // this hardware despite skiko.renderApi=SOFTWARE. If the
-                                        // washed-out/violet-bleed artifact returns, the solid
-                                        // md_theme_dark_background fallback from the previous
-                                        // fix is the known-good alternative.
-                                        Modifier
-                                            .fillMaxWidth()
-                                            .height(84.dp)
-                                            .background(Color.Transparent)
-                                            .hazeEffect(hazeState, style = HazeMaterials.ultraThin()) {
-                                                blurEnabled = true
-                                            }
-                                    },
-                                    backdrop = backdrop,
-                                    onClick = {
-                                        isShowNowPlaylistScreen = true
-                                    },
-                                    onClose = {
-                                        viewModel.stopPlayer()
-                                        viewModel.isServiceRunning = false
-                                    },
-                                    onArtist = { id -> navController.navigate(ArtistDestination(channelId = id)) },
-                                )
-                            }
+                            // Панель плеера перенесена ниже, под Row — см. Column-обёртку.
                         }
                         if (isTablet && isTabletLandscape && !isInFullscreen) {
                             AnimatedVisibility(
@@ -654,6 +619,46 @@ fun App(
                         }
                     }
                 
+                        // Панель плеера на всю ширину окна — сплошная поверхность без blur.
+                        // hazeEffect пересчитывался каждый кадр (главная нагрузка на
+                        // skiko-dispatcher) и всё равно давал грязный цвет поверх обложек.
+                        this@Column.AnimatedVisibility(
+                            modifier =
+                                Modifier
+                                    .fillMaxWidth()
+                                    .padding(innerPadding),
+                            visible = isShowMiniPlayer && isTablet && !isInFullscreen,
+                            enter = fadeIn() + slideInHorizontally(),
+                            exit = fadeOut(),
+                        ) {
+                            MiniPlayer(
+                                if (getPlatform() == Platform.Android) {
+                                    Modifier
+                                        .height(56.dp)
+                                        .fillMaxWidth(0.8f)
+                                        .padding(
+                                            horizontal = 12.dp,
+                                        ).padding(
+                                            bottom = 4.dp,
+                                        )
+                                } else {
+                                    Modifier
+                                        .fillMaxWidth()
+                                        .height(84.dp)
+                                },
+                                backdrop = backdrop,
+                                onClick = {
+                                    isShowNowPlaylistScreen = true
+                                },
+                                onClose = {
+                                    viewModel.stopPlayer()
+                                    viewModel.isServiceRunning = false
+                                },
+                                onArtist = { id -> navController.navigate(ArtistDestination(channelId = id)) },
+                            )
+                        }
+                    }
+
                     androidx.compose.runtime.SideEffect {
                         com.wavora.app.ui.component.RowNavigation.openArtist = { id ->
                             navController.navigate(com.wavora.app.ui.navigation.destination.list.ArtistDestination(channelId = id))

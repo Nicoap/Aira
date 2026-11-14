@@ -16,6 +16,7 @@ import androidx.compose.ui.graphics.lerp
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.remember
 import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -92,18 +93,21 @@ fun AppTheme(
         @Composable()
         () -> Unit,
 ) {
-    val darkTheme =
-        when (mode) {
-            DataStoreManager.THEME_MODE_LIGHT -> false
-            DataStoreManager.THEME_MODE_SYSTEM -> isSystemInDarkTheme()
-            else -> true
-        }
-    val primary = parseThemeColor(primaryColorHex, wavoraPrimary)
+    // Тема больше не «светлая / тёмная»: её задаёт пресет или свои цвета, а оттенок схемы
+    // выводится из яркости фона. «Бумага» и «Сепия» автоматически получают светлую схему,
+    // «Графит» и «Полночь» — тёмную, отдельный переключатель не нужен.
     val background =
         parseThemeColor(
             backgroundColorHex,
-            if (darkTheme) md_theme_dark_background else LightColors.background,
+            when (mode) {
+                DataStoreManager.THEME_MODE_LIGHT -> LightColors.background
+                DataStoreManager.THEME_MODE_SYSTEM ->
+                    if (isSystemInDarkTheme()) md_theme_dark_background else LightColors.background
+                else -> md_theme_dark_background
+            },
         )
+    val darkTheme = background.luminance() < 0.5f
+    val primary = parseThemeColor(primaryColorHex, wavoraPrimary)
     val surface =
         parseThemeColor(
             surfaceColorHex,
@@ -166,6 +170,14 @@ fun AppTheme(
             )
         }
     val typography = typo()
+    // Нейтральная рампа интерфейса считается из темы и обновляется на каждой её смене:
+    // панель плеера, очередь и все прочие потребители WavoraTone больше не зашиты в тёмные
+    // константы и следуют выбранным цветам.
+    val palette =
+        remember(background, surface, textColor) {
+            wavoraPalette(background = background, surface = surface, text = textColor)
+        }
+    SideEffect { WavoraTone.apply(palette) }
     MaterialExpressiveTheme(
         colorScheme = colorScheme,
         content = {
