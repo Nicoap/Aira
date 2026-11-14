@@ -853,6 +853,9 @@ fun MiniPlayer(
                     // второстепенные элементы — иначе их фиксированные размеры наезжают друг
                     // на друга и перекрывают соседей.
                     val narrow = maxWidth < 320.dp
+                    // Уровень, который был до мьюта: кнопка звука возвращает именно его,
+                    // а не максимум — иначе размьют «прыгает» на 100 %.
+                    var lastAudibleVolume by rememberSaveable { mutableStateOf(1f) }
                     Row(
                         Modifier
                             .fillMaxHeight()
@@ -885,8 +888,14 @@ fun MiniPlayer(
                         }
                         IconButton(
                             onClick = {
-                                // Toggle mute/unmute
-                                val newVolume = if (controllerState.volume > 0f) 0f else 1f
+                                // Mute/unmute: возвращаем ровно тот уровень, что был до мьюта.
+                                val newVolume =
+                                    if (controllerState.volume > 0f) {
+                                        lastAudibleVolume = controllerState.volume
+                                        0f
+                                    } else {
+                                        lastAudibleVolume
+                                    }
                                 sharedViewModel.onUIEvent(UIEvent.UpdateVolume(newVolume))
                             },
                         ) {

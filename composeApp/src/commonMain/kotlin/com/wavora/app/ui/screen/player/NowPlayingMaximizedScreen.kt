@@ -88,7 +88,9 @@ import coil3.request.CachePolicy
 import coil3.request.ImageRequest
 import coil3.request.crossfade
 import com.wavora.app.ui.component.DraggableItem
+import androidx.compose.runtime.collectAsState
 import com.wavora.app.ui.component.HeartCheckBox
+import com.wavora.domain.repository.SongRepository
 import com.wavora.app.ui.component.LyricsView
 import com.wavora.app.ui.component.onSecondaryClick
 import com.wavora.domain.utils.toSongEntity
@@ -1299,6 +1301,7 @@ private fun MaximizedQueue(
                 itemsIndexed(queue, key = { i, t -> i.toString() + t.videoId }) { index, track ->
                     DraggableItem(dragDropState = dragDropState, index = index, modifier = Modifier) { _ ->
                         QueueRow(
+                            videoId = track.videoId,
                             title = track.title,
                             artist = track.artists?.joinToString(", ") { it.name }.orEmpty(),
                             artistId = track.artists?.firstOrNull()?.id,
@@ -1326,6 +1329,7 @@ private fun MaximizedQueue(
 
 @Composable
 private fun QueueRow(
+    videoId: String,
     title: String,
     artist: String,
     artistId: String?,
@@ -1339,6 +1343,11 @@ private fun QueueRow(
 ) {
     val source = remember { MutableInteractionSource() }
     val hovered by source.collectIsHoveredAsState()
+    // Лайк прямо в очереди: раньше сердечко было только в списках треков.
+    val songRepository: SongRepository = koinInject()
+    val likeScope = rememberCoroutineScope()
+    val likedSong by remember(videoId) { songRepository.getSongAsFlow(videoId) }.collectAsState(initial = null)
+    val isLiked = likedSong?.liked == true
     Row(
         modifier =
             Modifier
@@ -1388,6 +1397,12 @@ private fun QueueRow(
             text = duration,
             style = LocalAppTypography.current.bodySmall.merge(Numeric).copy(color = WavoraTone.muted),
         )
+        HeartCheckBox(size = 26, checked = isLiked) {
+            likeScope.launch {
+                songRepository.updateLikeStatus(videoId, if (isLiked) 0 else 1)
+            }
+        }
+        Spacer(Modifier.width(4.dp))
         IconButton(onClick = onMore, modifier = Modifier.size(36.dp)) {
             Icon(
                 Icons.Rounded.MoreVert,

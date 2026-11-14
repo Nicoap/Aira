@@ -3760,8 +3760,18 @@ class VlcPlayerAdapter(
             )
         }
 
-        // Прогрессивный поток — запасной путь, если манифеста для трека нет.
+        // Прогрессивный поток — запасной путь, если манифеста для трека нет. Отдаём его
+        // только когда сервер отдаёт файл целиком: на «грязном» exit-IP ссылка обрывается
+        // на ~1 МиБ, и VLC вместо перехода к следующему треку зацикливает последнюю секунду.
         var cachedFormat = streamRepository.getNewFormat(videoId).lastOrNull()
+        val fallbackUsable =
+            cachedFormat?.let { format ->
+                val url = if (shouldFindVideo) format.videoUrl else format.audioUrl
+                !url.isNullOrEmpty() && !url.isHlsLink() && isProgressiveUsable(url)
+            } == true
+        if (!fallbackUsable) {
+            cachedFormat = null
+        }
         val cachedVideoIsHls =
             cachedFormat?.videoUrl?.let { url -> url.contains("manifest") || url.contains(".m3u8") } == true
         if (shouldFindVideo && cachedVideoIsHls) {
