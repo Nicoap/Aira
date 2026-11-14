@@ -3851,6 +3851,28 @@ class VlcPlayerAdapter(
                         isVideo = false,
                     ).lastOrNull()
             if (audioUrl != null) {
+                // Прогрессивная ссылка на этом IP живёт только ~1 МиБ. Если манифеста нет,
+                // просим muxed-ответ (он отдаёт HLS-манифест) и играем его; иначе VLC
+                // зацикливает последнюю секунду вместо перехода к следующему треку.
+                if (!audioUrl.isHlsLink() && !isProgressiveUsable(audioUrl)) {
+                    val muxedUrl =
+                        streamRepository
+                            .getStream(
+                                dataStoreManager,
+                                videoId,
+                                isDownloading = false,
+                                isVideo = true,
+                                muxed = true,
+                            ).lastOrNull()
+                    if (!muxedUrl.isNullOrEmpty() && muxedUrl.isHlsLink()) {
+                        Logger.w("Stream", "Audio from muxed manifest (progressive is throttled)")
+                        return PlayableSource(isVideo = false, url = muxedUrl)
+                    }
+                    // Ни манифеста, ни полного прогрессивного потока: лучше ошибка, чем
+                    // бесконечный повтор последней секунды.
+                    Logger.w("Stream", "No playable stream for $videoId: throttled progressive and no HLS")
+                    return null
+                }
                 Logger.d(TAG, "Stream Audio $audioUrl")
                 return PlayableSource(isVideo = false, url = audioUrl)
             }

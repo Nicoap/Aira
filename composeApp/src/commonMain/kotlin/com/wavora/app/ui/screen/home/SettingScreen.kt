@@ -640,25 +640,9 @@ fun SettingScreen(
             text = themeTextColor,
             primary = themePrimaryColor,
         )
-    // Пока выбрана не заготовка, запоминаем палитру как «свою»: пресеты пишут в те же
-    // ключи, поэтому без этой копии свои цвета терялись бы после первого переключения.
-    LaunchedEffect(
-        displayedThemeBackgroundColor,
-        displayedThemeSurfaceColor,
-        themeTextColor,
-        themePrimaryColor,
-        themeSecondaryTextColor,
-    ) {
-        if (currentThemePreset == null) {
-            viewModel.rememberCustomTheme(
-                background = displayedThemeBackgroundColor,
-                surface = displayedThemeSurfaceColor,
-                text = themeTextColor,
-                primary = themePrimaryColor,
-                secondary = themeSecondaryTextColor,
-            )
-        }
-    }
+    // Палитру «Своя» записываем только в момент явного выбора цвета в пикере. Раньше это
+    // делал LaunchedEffect на каждое изменение цветов, и при возврате на «Свою» он успевал
+    // перезаписать сохранённое промежуточным состоянием — в итоге восстанавливался только акцент.
     val keepServiceAlive by viewModel.keepServiceAlive.collectAsStateWithLifecycle()
 
     val crossfadeEnabled by viewModel.crossfadeEnabled.collectAsStateWithLifecycle()
@@ -722,6 +706,16 @@ fun SettingScreen(
                     colorPickerSave = null
                 },
                 onConfirm = { hex ->
+                    // Запоминаем палитру как «свою» вместе с только что выбранным слотом,
+                    // чтобы возврат с пресета восстанавливал все цвета, а не один акцент.
+                    val editedLabel = pickerTitle
+                    viewModel.rememberCustomTheme(
+                        background = if (editedLabel == themeBackgroundColorLabel) hex else displayedThemeBackgroundColor,
+                        surface = if (editedLabel == themeSurfaceColorLabel) hex else displayedThemeSurfaceColor,
+                        text = if (editedLabel == themeTextColorLabel) hex else themeTextColor,
+                        primary = if (editedLabel == themePrimaryColorLabel) hex else themePrimaryColor,
+                        secondary = if (editedLabel == themeSecondaryTextColorLabel) hex else themeSecondaryTextColor,
+                    )
                     pickerSave(hex)
                     colorPickerTitle = null
                     colorPickerSave = null

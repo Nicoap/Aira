@@ -1918,20 +1918,16 @@ fun HeartCheckBox(
                 },
     ) {
         Crossfade(targetState = checked, modifier = Modifier.fillMaxSize()) {
-            if (it) {
-                Image(
-                    painter = painterResource(Res.drawable.baseline_favorite_24),
-                    contentDescription = "Favorite checked",
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
-                )
-            } else {
-                Image(
-                    painter = painterResource(Res.drawable.baseline_favorite_border_24),
-                    contentDescription = "Favorite unchecked",
-                    modifier = Modifier.fillMaxSize().padding(4.dp),
-                    colorFilter = ColorFilter.tint(Color.White),
-                )
-            }
+            val tint = if (it) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
+            Image(
+                painter =
+                    painterResource(
+                        if (it) Res.drawable.baseline_favorite_24 else Res.drawable.baseline_favorite_border_24,
+                    ),
+                contentDescription = if (it) "Favorite checked" else "Favorite unchecked",
+                modifier = Modifier.fillMaxSize().padding(4.dp),
+                colorFilter = ColorFilter.tint(tint),
+            )
         }
     }
 }

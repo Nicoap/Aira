@@ -163,11 +163,10 @@ fun MiniPlayer(
     val layer = rememberGraphicsLayer()
     val luminanceAnimation = remember { Animatable(0f) }
 
-    val textColor by animateColorAsState(
-        targetValue = if (luminanceAnimation.value > 0.6f) Color.Black else Color.White,
-        label = "MiniPlayerTextColor",
-        animationSpec = tween(500),
-    )
+    // Панель теперь непрозрачная и живёт на surface темы, а не поверх обложки, поэтому
+    // текст берётся из темы. Прежняя схема «чёрный/белый по яркости обложки» игнорировала
+    // выбранные цвета — на светлой теме текст оставался светлым.
+    val textColor = MaterialTheme.colorScheme.onSurface
 
     LaunchedEffect(layer, isLiquidGlassEnabled) {
         val buffer = IntArray(25)
