@@ -167,7 +167,11 @@ fun AppNavigationRail(
             },
         )
     }
-    NavigationRail {
+    NavigationRail(
+        // Жёстко фиксируем ширину рейла: любой дочерний элемент с fillMaxWidth
+        // иначе растягивает его на всё окно и обнуляет область контента.
+        modifier = Modifier.fillMaxHeight().width(80.dp),
+    ) {
         Spacer(Modifier.height(16.dp))
         Box(Modifier.padding(horizontal = 16.dp)) {
             Box(
@@ -233,7 +237,9 @@ fun AppNavigationRail(
         // приходилось искать в шапке главного экрана.
         Spacer(Modifier.height(8.dp))
         HorizontalDivider(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            // Ширину задаём явно: по умолчанию HorizontalDivider тянется на всю
+            // доступную ширину, из-за чего рейл распирало на всё окно.
+            modifier = Modifier.width(48.dp),
             thickness = 1.dp,
             color = MaterialTheme.colorScheme.outlineVariant,
         )
