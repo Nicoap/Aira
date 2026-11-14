@@ -274,10 +274,14 @@ compose.desktop {
     application {
         mainClass = "com.wavora.app.MainKt"
         jvmArgs += "--add-opens=java.base/java.nio=ALL-UNNAMED"
-        jvmArgs += "-Xmx1024m"
+        // Куча маленькая (десятки мегабайт живых объектов), поэтому G1 с его служебными
+        // структурами и десятком потоков здесь лишний: Serial GC экономит ~50 МБ и потоки,
+        // а плавность интерфейса при такой куче не страдает.
+        jvmArgs += "-Xmx512m"
+        jvmArgs += "-XX:+UseSerialGC"
+        jvmArgs += "-XX:CICompilerCount=3"
         jvmArgs += "-XX:MinHeapFreeRatio=10"
         jvmArgs += "-XX:MaxHeapFreeRatio=30"
-        jvmArgs += "-XX:G1PeriodicGCInterval=20000"
 
         nativeDistributions {
             appResourcesRootDir = rootDir.resolve("vlc-natives/")

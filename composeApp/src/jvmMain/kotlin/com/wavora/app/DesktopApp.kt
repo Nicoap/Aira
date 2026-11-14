@@ -867,10 +867,11 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
                         )
                     }.memoryCache {
                         // Coil defaults to 25% of the max heap (hundreds of MB). Covers are
-                        // small, 96 MB is plenty and keeps RAM low.
+                        // small (160 dp ≈ 320 px ≈ 400 KB), так что 48 МБ держат сотню
+                        // обложек — остальное приходит с дискового кэша.
                         coil3.memory.MemoryCache
                             .Builder()
-                            .maxSizeBytes(96L * 1024 * 1024)
+                            .maxSizeBytes(48L * 1024 * 1024)
                             .build()
                     }.diskCachePolicy(CachePolicy.ENABLED)
                     .networkCachePolicy(CachePolicy.ENABLED)
