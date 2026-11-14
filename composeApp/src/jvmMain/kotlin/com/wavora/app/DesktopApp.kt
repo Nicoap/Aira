@@ -12,6 +12,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
@@ -469,6 +470,12 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
  */
 private val SPLASH_WINDOW_SIZE = 528.dp
 
+// Минимальный размер главного окна. 1191×779 — предел, до которого окно остаётся
+// рабочим: ниже этого нижняя панель игрока и боковая панель плеера начинают
+// перекрывать друг друга. Значения в dp, при 100 % масштабе равны пикселям.
+private val MAIN_WINDOW_MIN_WIDTH = 1191.dp
+private val MAIN_WINDOW_MIN_HEIGHT = 779.dp
+
 // FIX (Problema 1). 30s es generoso frente a lo que tarda un arranque normal
 // (segundos, según los propios StartupTiming agregados arriba) — solo se
 // activa si algo realmente se colgó.
@@ -714,7 +721,19 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
         visible = isVisible,
         onKeyEvent = { handleAppShortcut(it, sharedViewModel) },
     ) {
-        androidx.compose.runtime.SideEffect { TextInputProbe.window = window; mainWindow = window }
+        val windowDensity = LocalDensity.current
+        androidx.compose.runtime.SideEffect {
+            TextInputProbe.window = window
+            mainWindow = window
+            // Минимальный размер окна — тот, до которого пользователь реально сжал окно
+            // (1191×779 при 100 %): ниже нижняя панель и боковая панель плеера начинают
+            // наезжать друг на друга. Пересчитываем в пиксели через плотность экрана.
+            window.minimumSize =
+                java.awt.Dimension(
+                    with(windowDensity) { MAIN_WINDOW_MIN_WIDTH.roundToPx() },
+                    with(windowDensity) { MAIN_WINDOW_MIN_HEIGHT.roundToPx() },
+                )
+        }
         LaunchedEffect(Unit) {
             // Wait for a few real frames, then mark this launch as healthy.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }

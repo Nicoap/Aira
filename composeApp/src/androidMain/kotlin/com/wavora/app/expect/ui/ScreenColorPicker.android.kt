@@ -2,5 +2,10 @@ package com.wavora.app.expect.ui
 
 import androidx.compose.ui.graphics.Color
 
-/** На Android пипетка требует MediaProjection — не поддерживается, кнопка скрыта. */
-actual fun sampleScreenPixel(): Color? = null
+/**
+ * На Android захват экрана требует разрешения MediaProjection, поэтому пипетки нет:
+ * сразу сообщаем, что цвет не выбран (кнопка пипетки в UI не показывается).
+ */
+actual fun startScreenColorPicker(onPicked: (Color?) -> Unit) {
+    onPicked(null)
+}

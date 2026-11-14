@@ -639,6 +639,36 @@ class SettingsViewModel(
         viewModelScope.launch { dataStoreManager.resetThemeToDefaults() }
     }
 
+    /**
+     * Запоминает текущую палитру как «свою», чтобы она вернулась после выбора пресета.
+     *
+     * WHY: пресеты перезаписывают те же самые ключи цветов, поэтому без отдельной копии
+     * «своя тема» терялась бы навсегда после первого же переключения.
+     */
+    fun rememberCustomTheme(
+        background: String,
+        surface: String,
+        text: String,
+        primary: String,
+        secondary: String,
+    ) {
+        val packed = listOf(background, surface, text, primary, secondary).joinToString("|")
+        viewModelScope.launch { dataStoreManager.setThemeCustomPalette(packed) }
+    }
+
+    /** Возвращает последнюю сохранённую «свою» палитру. */
+    fun applyCustomTheme() {
+        viewModelScope.launch {
+            val parts = dataStoreManager.themeCustomPalette.first().split("|")
+            if (parts.size != 5) return@launch
+            dataStoreManager.setThemeBackgroundColor(parts[0])
+            dataStoreManager.setThemeSurfaceColor(parts[1])
+            dataStoreManager.setThemeTextColor(parts[2])
+            dataStoreManager.setThemePrimaryColor(parts[3])
+            dataStoreManager.setThemeSecondaryTextColor(parts[4])
+        }
+    }
+
     private fun getExplicitContentEnabled() {
         viewModelScope.launch {
             dataStoreManager.explicitContentEnabled.collect { enabled ->

@@ -493,6 +493,15 @@ interface DataStoreManager {
 
     suspend fun setThemeSecondaryTextColor(color: String)
 
+    /**
+     * Последняя «своя» палитра — чтобы она возвращалась после переключения на пресет.
+     *
+     * Формат: `фон|поверхность|текст|акцент|вторичныйТекст`.
+     */
+    val themeCustomPalette: Flow<String>
+
+    suspend fun setThemeCustomPalette(palette: String)
+
     suspend fun resetThemeToDefaults()
 
     val localTrackingEnabled: Flow<String>

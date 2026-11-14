@@ -1663,6 +1663,17 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    // Последняя «своя» палитра: переключение на пресет её не стирает, поэтому вернуться
+    // к своим цветам можно одним пунктом «Своя».
+    override val themeCustomPalette: Flow<String> =
+        settingsDataStore.data.map { it[THEME_CUSTOM_PALETTE] ?: "" }
+
+    override suspend fun setThemeCustomPalette(palette: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[THEME_CUSTOM_PALETTE] = palette }
+        }
+    }
+
     override suspend fun resetThemeToDefaults() {
         withContext(Dispatchers.IO) {
             settingsDataStore.edit {
@@ -1672,6 +1683,7 @@ internal class DataStoreManagerImpl(
                 it.remove(THEME_SURFACE_COLOR)
                 it.remove(THEME_TEXT_COLOR)
                 it.remove(THEME_SECONDARY_TEXT_COLOR)
+                it.remove(THEME_CUSTOM_PALETTE)
             }
         }
     }
@@ -1865,6 +1877,7 @@ internal class DataStoreManagerImpl(
         val THEME_SURFACE_COLOR = stringPreferencesKey("theme_surface_color")
         val THEME_TEXT_COLOR = stringPreferencesKey("theme_text_color")
         val THEME_SECONDARY_TEXT_COLOR = stringPreferencesKey("theme_secondary_text_color")
+    val THEME_CUSTOM_PALETTE = stringPreferencesKey("theme_custom_palette")
 
         val LOCAL_TRACKING_ENABLED = stringPreferencesKey("local_tracking_enabled")
 

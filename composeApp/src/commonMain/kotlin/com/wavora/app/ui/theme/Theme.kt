@@ -140,6 +140,10 @@ fun AppTheme(
                 onSurfaceVariant = secondaryTextColor,
                 outline = contentColorFor(surface).copy(alpha = 0.4f),
                 outlineVariant = contentColorFor(surface).copy(alpha = 0.2f),
+                // Подсказки и снекбары рисуются на inverseSurface: раньше это оставалось
+                // дефолтным цветом Material, поэтому они не следовали выбранной теме.
+                inverseSurface = lerp(surface, textColor, 0.14f),
+                inverseOnSurface = textColor,
                 surfaceTint = primary,
                 inversePrimary = primary,
             )
@@ -165,6 +169,10 @@ fun AppTheme(
                 onSurfaceVariant = secondaryTextColor,
                 outline = contentColorFor(surface).copy(alpha = 0.4f),
                 outlineVariant = contentColorFor(surface).copy(alpha = 0.2f),
+                // Подсказки и снекбары рисуются на inverseSurface: раньше это оставалось
+                // дефолтным цветом Material, поэтому они не следовали выбранной теме.
+                inverseSurface = lerp(surface, textColor, 0.14f),
+                inverseOnSurface = textColor,
                 surfaceTint = primary,
                 inversePrimary = primary,
             )

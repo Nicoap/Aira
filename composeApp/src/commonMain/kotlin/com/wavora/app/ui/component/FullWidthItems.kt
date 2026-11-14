@@ -37,6 +37,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.QueueMusic
 import androidx.compose.material.icons.filled.PushPin
 import androidx.compose.material.icons.rounded.DragHandle
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -279,7 +280,7 @@ fun SongFullWidthItems(
                         text = track?.title ?: songEntity?.title ?: "",
                         style = LocalAppTypography.current.titleSmall,
                         maxLines = 1,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -473,7 +474,7 @@ fun SuggestItems(
                     text = track.title,
                     style = LocalAppTypography.current.titleSmall,
                     maxLines = 1,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -622,7 +623,7 @@ fun PlaylistFullWidthItems(
                     text = title,
                     style = LocalAppTypography.current.titleSmall,
                     maxLines = 1,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -741,7 +742,7 @@ fun ArtistFullWidthItems(
                     text = name,
                     style = LocalAppTypography.current.titleSmall,
                     maxLines = 1,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -786,7 +787,7 @@ private fun ArtistLinkText(
         text = name,
         style = LocalAppTypography.current.bodySmall,
         maxLines = 1,
-        color = if (hovered) Color.White else Color(0xC4FFFFFF),
+        color = if (hovered) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.77f),
         textDecoration = if (hovered) androidx.compose.ui.text.style.TextDecoration.Underline else androidx.compose.ui.text.style.TextDecoration.None,
         modifier =
             Modifier

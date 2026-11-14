@@ -640,6 +640,25 @@ fun SettingScreen(
             text = themeTextColor,
             primary = themePrimaryColor,
         )
+    // Пока выбрана не заготовка, запоминаем палитру как «свою»: пресеты пишут в те же
+    // ключи, поэтому без этой копии свои цвета терялись бы после первого переключения.
+    LaunchedEffect(
+        displayedThemeBackgroundColor,
+        displayedThemeSurfaceColor,
+        themeTextColor,
+        themePrimaryColor,
+        themeSecondaryTextColor,
+    ) {
+        if (currentThemePreset == null) {
+            viewModel.rememberCustomTheme(
+                background = displayedThemeBackgroundColor,
+                surface = displayedThemeSurfaceColor,
+                text = themeTextColor,
+                primary = themePrimaryColor,
+                secondary = themeSecondaryTextColor,
+            )
+        }
+    }
     val keepServiceAlive by viewModel.keepServiceAlive.collectAsStateWithLifecycle()
 
     val crossfadeEnabled by viewModel.crossfadeEnabled.collectAsStateWithLifecycle()
@@ -742,13 +761,18 @@ fun SettingScreen(
                                 confirm =
                                     change to { state ->
                                         val chosenLabel = state.selectOne?.getSelected()
-                                        // «Своя» — это состояние, а не действие: цвета не трогаем,
-                                        // пользователь выставит их пикером ниже.
-                                        presets.firstOrNull { it.label == chosenLabel }?.let { preset ->
+                                        val preset = presets.firstOrNull { it.label == chosenLabel }
+                                        if (preset != null) {
                                             viewModel.setThemeBackgroundColor(preset.background)
                                             viewModel.setThemeSurfaceColor(preset.surface)
                                             viewModel.setThemeTextColor(preset.text)
                                             viewModel.setThemePrimaryColor(preset.primary)
+                                            // Вторичный текст возвращаем к «auto»: иначе светлый
+                                            // оттенок прошлой темы остаётся на светлом фоне и не читается.
+                                            viewModel.setThemeSecondaryTextColor("auto")
+                                        } else {
+                                            // «Своя» — возвращаем последнюю сохранённую палитру.
+                                            viewModel.applyCustomTheme()
                                         }
                                     },
                                 dismiss = cancel,

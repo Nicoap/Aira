@@ -30,6 +30,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.Text
@@ -186,7 +187,7 @@ fun HomeItem(
                 Text(
                     text = data.title,
                     style = LocalAppTypography.current.headlineMedium,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     maxLines = 1,
                     modifier = Modifier.fillMaxWidth(),
                 )
@@ -453,7 +454,7 @@ fun HomeItemContentPlaylist(
                         else -> ""
                     },
                 style = LocalAppTypography.current.titleSmall,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -608,7 +609,7 @@ fun QuickPicksItem(
                     style = LocalAppTypography.current.titleSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -713,7 +714,7 @@ fun HomeItemSong(
             Text(
                 text = data.title,
                 style = LocalAppTypography.current.titleSmall,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -811,7 +812,7 @@ fun HomeItemVideo(
             Text(
                 text = data.title,
                 style = LocalAppTypography.current.titleSmall,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 modifier =
@@ -892,7 +893,7 @@ fun HomeItemArtist(
             Text(
                 text = data.title,
                 style = LocalAppTypography.current.titleSmall,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 maxLines = 2,
                 overflow = TextOverflow.Ellipsis,
                 textAlign = TextAlign.Center,
@@ -952,7 +953,7 @@ fun MoodMomentAndGenreHomeItem(
                 text = title,
                 style = LocalAppTypography.current.titleSmall,
                 textAlign = TextAlign.Center,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
                 modifier =
                     Modifier
                         .fillMaxWidth()
@@ -1024,7 +1025,7 @@ fun ItemVideoChart(
                         style = LocalAppTypography.current.titleMedium,
                         maxLines = 2,
                         overflow = TextOverflow.Ellipsis,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         modifier =
                             Modifier
                                 .width(210.dp)
@@ -1237,7 +1238,7 @@ fun ItemTrackChart(
                     style = LocalAppTypography.current.titleSmall,
                     maxLines = 2,
                     overflow = TextOverflow.Ellipsis,
-                    color = Color.White,
+                    color = MaterialTheme.colorScheme.onBackground,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -1284,7 +1285,7 @@ fun MoodAndGenresContentItem(
                     else -> ""
                 },
             style = LocalAppTypography.current.titleMedium,
-            color = Color.White,
+            color = MaterialTheme.colorScheme.onBackground,
             modifier =
                 Modifier
                     .padding(top = 8.dp)

@@ -19,12 +19,11 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -33,9 +32,9 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
-import com.wavora.app.expect.ui.sampleScreenPixel
+import com.wavora.app.expect.ui.startScreenColorPicker
 import com.wavora.app.ui.theme.LocalAppTypography
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -61,27 +60,17 @@ fun ColorPickerDialog(
     var saturation by remember { mutableFloatStateOf(startHsv[1]) }
     var brightness by remember { mutableFloatStateOf(startHsv[2]) }
     var hexText by remember { mutableStateOf(startColor.toHexString()) }
-    var pickCountdown by remember { mutableIntStateOf(0) }
+    val scope = rememberCoroutineScope()
 
     val currentColor = hsvToColor(hue, saturation, brightness)
 
-    // Пипетка: даём три секунды, чтобы увести курсор с диалога на нужный цвет, затем читаем пиксель.
-    LaunchedEffect(pickCountdown) {
-        if (pickCountdown > 0) {
-            delay(1_000)
-            if (pickCountdown == 1) {
-                sampleScreenPixel()?.let { picked ->
-                    val hsv = picked.toHsv()
-                    hue = hsv[0]
-                    saturation = hsv[1]
-                    brightness = hsv[2]
-                    hexText = picked.toHexString()
-                }
-                pickCountdown = 0
-            } else {
-                pickCountdown -= 1
-            }
-        }
+    /** Применяет цвет, взятый пипеткой, к ползункам и HEX-полю. */
+    fun applyPicked(picked: Color) {
+        val hsv = picked.toHsv()
+        hue = hsv[0]
+        saturation = hsv[1]
+        brightness = hsv[2]
+        hexText = picked.toHexString()
     }
 
     AlertDialog(
@@ -176,15 +165,15 @@ fun ColorPickerDialog(
                     },
                 )
                 if (showEyedropper) {
-                    OutlinedButton(onClick = { if (pickCountdown == 0) pickCountdown = 3 }) {
-                        Text(
-                            text =
-                                if (pickCountdown > 0) {
-                                    "Наведите курсор на цвет: $pickCountdown"
-                                } else {
-                                    "Пипетка"
-                                },
-                        )
+                    OutlinedButton(
+                        onClick = {
+                            // Пипетка-оверлей: следующий клик по экрану забирает цвет под курсором.
+                            startScreenColorPicker { picked ->
+                                if (picked != null) scope.launch { applyPicked(picked) }
+                            }
+                        },
+                    ) {
+                        Text("Пипетка")
                     }
                 }
             }
