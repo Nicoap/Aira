@@ -186,10 +186,19 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          SRC="androidApp/build/outputs/apk/release"
+          # У проекта есть флейворы (mobile/tv), поэтому APK лежат не в apk/release,
+          # а глубже: apk/<flavor>/release/... — ищем по всему дереву вывода.
+          SRC="androidApp/build/outputs/apk"
           OUT="release-apks"
           mkdir -p "$OUT"
-          BUILD_TOOLS="$ANDROID_HOME/build-tools/37.0.0"
+          BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* 2>/dev/null | sort -V | tail -n1)
+          if [ -z "$BUILD_TOOLS" ]; then
+            echo "::error::Не найден каталог build-tools в $ANDROID_HOME"
+            exit 1
+          fi
+          echo "build-tools: $BUILD_TOOLS"
+          echo "--- Собранные APK ---"
+          find "$SRC" -name "*.apk" -print || true
 
           declare -A NAME_MAP=(
             ["arm64-v8a"]="Aira-arm64.apk"
@@ -198,8 +207,9 @@ jobs:
             ["universal"]="Aira-universal.apk"
           )
 
+          FOUND=0
           for abi in arm64-v8a armeabi-v7a x86_64 universal; do
-            apk=$(find "$SRC" -iname "*${abi}*release.apk" ! -iname "*unsigned*" | head -n1)
+            apk=$(find "$SRC" -iname "*${abi}*release*.apk" ! -iname "*unsigned*" | sort | head -n1)
             if [ -z "$apk" ]; then
               echo "::warning::APK для $abi не найден, пропускаю."
               continue
@@ -207,7 +217,13 @@ jobs:
             "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
             cp "$apk" "$OUT/${NAME_MAP[$abi]}"
             echo "OK: ${NAME_MAP[$abi]}"
+            FOUND=$((FOUND + 1))
           done
+
+          if [ "$FOUND" -eq 0 ]; then
+            echo "::error::Не найдено ни одного собранного APK — проверьте имена выходных файлов."
+            exit 1
+          fi
 
           ls -la "$OUT"
 
