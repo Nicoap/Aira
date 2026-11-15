@@ -283,6 +283,21 @@ class JvmMediaPlayerHandlerImpl(
     // Сколько ждём готовности потока при восстановлении очереди, прежде чем делать seek.
     private val RESTORE_READY_TIMEOUT_MS = 20_000L
 
+    // --- Накопитель реально проигранного времени для статистики ---
+    // Считаем по выборкам позиции из цикла обновления прогресса, а не по проценту
+    // в момент перехода: короткие треки и последний трек сессии раньше терялись.
+    private var listenSong: SongEntity? = null
+    private var listenMillis = 0L
+    private var listenReachedEnd = false
+    private var lastSamplePosition = -1L
+    private var lastSampleAtMs = 0L
+
+    /** Минимум прослушивания, ниже которого событие не пишется (как у скробблеров). */
+    private val LISTEN_MIN_MS = 15_000L
+
+    /** Считаем трек дослушанным, если дошли до этой доли длительности. */
+    private val LISTEN_END_RATIO = 0.85f
+
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -858,7 +873,9 @@ class JvmMediaPlayerHandlerImpl(
                     // 10 обновлений в секунду заставляли Compose перерисовывать всё окно
                     // десять раз в секунду даже без анимаций. Для ползунка хватает 4 Гц.
                     delay(250)
-                    _simpleMediaState.value = SimpleMediaState.Progress(player.currentPosition)
+                    val position = player.currentPosition
+                    _simpleMediaState.value = SimpleMediaState.Progress(position)
+                    sampleListening(position)
                     updateMacOSElapsedTime()
                     // Only update Discord RPC every 15 s and only when it's enabled.
                     if (discordRPC != null) {
@@ -2328,6 +2345,9 @@ class JvmMediaPlayerHandlerImpl(
                 discordRPC?.closeRPC()
             }
             discordRPC = null
+            // Сбрасываем недописанную сессию прослушивания: иначе последний трек перед
+            // выходом не попадёт в статистику вообще.
+            flushListening()
             // Save state first
             mayBeSaveRecentSong(true)
             mayBeSavePlaybackState()
@@ -2482,7 +2502,9 @@ class JvmMediaPlayerHandlerImpl(
         val lastPlayed = nowPlayingState.value.songEntity
         val currentState = simpleMediaState.value
         if (currentState is SimpleMediaState.Progress && lastPlayed != null && lastPlayed.durationSeconds > 0) {
-            mayBeTrackingListeningLocal(lastPlayed, currentState.progress)
+            // Статистику пишем по накопленному времени прослушивания, а не по проценту
+            // в момент перехода — иначе короткие треки и последний трек сессии терялись.
+            flushListening()
             maybeScrobbleToExternalServices(lastPlayed, currentState.progress)
         }
         Logger.w(TAG, "Smooth Switching Transition Current Position: ${player.currentPosition}")
@@ -2626,34 +2648,71 @@ class JvmMediaPlayerHandlerImpl(
     /** HLS-манифест (m3u8) отдаётся кусками по ~6 секунд и заставляет VLC перезапускать видеовыход. */
     private fun String.isHlsManifest(): Boolean = contains("manifest") || contains(".m3u8")
 
-    private fun mayBeTrackingListeningLocal(
-        song: SongEntity,
-        currentPositionMillis: Long,
-    ) {
+    /**
+     * Копит реально проигранное время текущего трека.
+     *
+     * WHY: раньше событие писалось только в момент перехода трека и только при ≥20 %
+     * прослушивания, поэтому статистика почти не пополнялась. Здесь дельта позиции
+     * прибавляется только когда она правдоподобна (не больше реально прошедшего
+     * времени + запас), чтобы перемотка и паузы не накручивали счётчик.
+     */
+    private fun sampleListening(position: Long) {
+        val song = nowPlayingState.value.songEntity
+        if (song == null || song.durationSeconds <= 0) {
+            return
+        }
+        if (song.videoId != listenSong?.videoId) {
+            // Новый трек: закрываем прошлую сессию и начинаем счёт заново.
+            flushListening()
+            listenSong = song
+            listenMillis = 0L
+            listenReachedEnd = false
+            lastSamplePosition = -1L
+            lastSampleAtMs = 0L
+        }
+        val nowMs = System.currentTimeMillis()
+        val previous = lastSamplePosition
+        val elapsed = if (lastSampleAtMs > 0L) nowMs - lastSampleAtMs else Long.MAX_VALUE
+        lastSamplePosition = position
+        lastSampleAtMs = nowMs
+        if (previous >= 0L) {
+            val delta = position - previous
+            if (delta in 0..(elapsed + 400L)) {
+                listenMillis += delta
+            }
+        }
+        if (position >= (song.durationSeconds * 1000L * LISTEN_END_RATIO).toLong()) {
+            listenReachedEnd = true
+        }
+    }
+
+    /** Записывает одно событие статистики за прошедшую сессию трека, если накопилось достаточно. */
+    private fun flushListening() {
+        val song = listenSong
+        val listened = listenMillis
+        val reachedEnd = listenReachedEnd
+        listenSong = null
+        listenMillis = 0L
+        listenReachedEnd = false
+        lastSamplePosition = -1L
+        lastSampleAtMs = 0L
+        if (song == null || song.durationSeconds <= 0 || listened < LISTEN_MIN_MS) {
+            return
+        }
+        val listenedSeconds = (listened / 1000).coerceAtMost(song.durationSeconds.toLong())
         coroutineScope.launch {
             val trackingEnabled = dataStoreManager.localTrackingEnabled.first() == TRUE
             if (!trackingEnabled) {
                 return@launch
             }
-            val percent = (currentPositionMillis / (song.durationSeconds * 1000f))
-            Logger.w(TAG, "${song.title} - $currentPositionMillis ms listened, duration: ${song.durationSeconds * 1000} ms, percent: $percent")
-            if (percent < 0.2f) {
-                Logger.d(TAG, "Not enough listening time for ${song.title}, skipping tracking")
-                return@launch
-            }
-            Logger.d(TAG, "Tracking listening for ${song.title} at position $currentPositionMillis ms")
+            Logger.d(TAG, "Tracking listening for ${song.title}: ${listenedSeconds}s of ${song.durationSeconds}s (reachedEnd=$reachedEnd)")
             analyticsRepository
                 .insertPlaybackEvent(
                     videoId = song.videoId,
                     channelIds = song.artistId ?: emptyList(),
                     albumBrowseId = song.albumId,
                     durationSecond = song.durationSeconds.toLong(),
-                    listenedSecond =
-                        if (percent >= 0.8f) {
-                            song.durationSeconds.toLong()
-                        } else {
-                            (currentPositionMillis / 1000)
-                        },
+                    listenedSecond = if (reachedEnd) song.durationSeconds.toLong() else listenedSeconds,
                 ).collect {
                     Logger.d(TAG, "Inserted playback event for ${song.title}: $it")
                 }

@@ -50,6 +50,7 @@ class AnalyticsViewModel(
         getArtistCount()
         getTotalListenTime()
         getRecentlyRecord()
+        getDailyActivity()
         viewModelScope.launch {
             val saved = dataStoreManager.getString(ANALYTICS_DAY_RANGE_KEY).firstOrNull()
             val dayRange = saved?.let {
@@ -62,6 +63,51 @@ class AnalyticsViewModel(
 
     companion object {
         private const val ANALYTICS_DAY_RANGE_KEY = "analytics_day_range"
+
+        /** Окно тепловой карты: 53 недели, как на GitHub. */
+        private const val HEATMAP_DAYS = 371
+    }
+
+    /**
+     * Активность по дням за последний год для тепловой карты.
+     *
+     * WHY: раньше статистика считалась только в момент перехода трека и только если
+     * успело проиграть 20 %, поэтому почти ничего не попадало в базу. Теперь события
+     * пишутся накопленным временем, а здесь они один раз группируются по дням —
+     * один запрос в БД на весь диапазон вместо запроса на каждый день.
+     */
+    private fun getDailyActivity() {
+        viewModelScope.launch {
+            val zone = TimeZone.currentSystemDefault()
+            val today = now().date
+            val from = today.minus(DatePeriod(days = HEATMAP_DAYS - 1))
+            val result =
+                runCatching {
+                    analyticsRepository
+                        .getPlaybackEventsSince(from.atStartOfDayIn(zone).toLocalDateTime(zone))
+                        .lastOrNull()
+                        .orEmpty()
+                }
+            result
+                .onSuccess { events ->
+                    val byDay = events.groupBy { it.timestamp.date }
+                    val days =
+                        (0 until HEATMAP_DAYS).map { offset ->
+                            val date = from.plus(DatePeriod(days = offset))
+                            val dayEvents = byDay[date].orEmpty()
+                            AnalyticsUiState.DailyActivity(
+                                date = date,
+                                plays = dayEvents.size,
+                                seconds = dayEvents.sumOf { it.listenedSecond.toLong() },
+                            )
+                        }
+                    _analyticsUIState.update { it.copy(dailyActivity = LocalResource.Success(days)) }
+                }.onFailure {
+                    _analyticsUIState.update {
+                        it.copy(dailyActivity = LocalResource.Error(it.toString()))
+                    }
+                }
+        }
     }
 
     private fun getDataForDayRange(dayRange: AnalyticsUiState.DayRange) {
@@ -450,7 +496,15 @@ data class AnalyticsUiState(
     val topArtists: LocalResource<List<Pair<TopPlayedArtist, ArtistEntity>>> = LocalResource.Loading(),
     val topAlbums: LocalResource<List<Pair<TopPlayedAlbum, AlbumEntity>>> = LocalResource.Loading(),
     val scrobblesLineChart: LocalResource<List<Pair<ChartType, Long>>> = LocalResource.Loading(),
+    /** Активность по дням за последний год — источник тепловой карты. */
+    val dailyActivity: LocalResource<List<DailyActivity>> = LocalResource.Loading(),
 ) {
+    data class DailyActivity(
+        val date: LocalDate,
+        val plays: Int,
+        val seconds: Long,
+    )
+
     enum class DayRange {
         LAST_7_DAYS,
         LAST_30_DAYS,

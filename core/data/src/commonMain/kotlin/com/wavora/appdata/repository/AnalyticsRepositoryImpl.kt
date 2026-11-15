@@ -143,4 +143,9 @@ internal class AnalyticsRepositoryImpl(
                 ),
             )
         }.flowOn(Dispatchers.IO)
+
+    override suspend fun getPlaybackEventsSince(fromTimestamp: LocalDateTime): Flow<List<PlaybackEventEntity>> =
+        flow {
+            emit(analyticsDatasource.getPlaybackEventsSince(fromTimestamp))
+        }.flowOn(Dispatchers.IO)
 }

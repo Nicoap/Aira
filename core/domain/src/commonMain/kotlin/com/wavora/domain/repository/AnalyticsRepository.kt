@@ -61,4 +61,7 @@ interface AnalyticsRepository {
         startTimestamp: LocalDateTime,
         endTimestamp: LocalDateTime,
     ): Flow<Long>
+
+    /** Все события после [fromTimestamp] — источник тепловой карты активности. */
+    suspend fun getPlaybackEventsSince(fromTimestamp: LocalDateTime): Flow<List<PlaybackEventEntity>>
 }

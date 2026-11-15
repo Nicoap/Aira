@@ -563,7 +563,9 @@ LazyColumn(
                                     // «Quick picks» не было вовсе, и рисовался обычный заголовок из ответа.
                                     val quickPicksTitle = stringResource(Res.string.quick_picks)
                                     val quickPicksItem = homeData.firstOrNull { it.title.isQuickPicksTitle(quickPicksTitle) }
-                                    if (quickPicksItem != null) {
+                                    // Сверяем именно текущий элемент: иначе раздел рисовался на каждом
+                                    // элементе списка и Quick picks появлялись дважды подряд.
+                                    if (item === quickPicksItem) {
                                         QuickPicks(
                                             homeItem =
                                                 quickPicksItem.let { content ->

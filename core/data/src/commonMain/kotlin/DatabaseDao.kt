@@ -874,6 +874,11 @@ interface DatabaseDao {
         cutoffTimestamp: LocalDateTime,
     ): List<PlaybackEventEntity>
 
+    // Тепловая карта активности: один запрос за весь диапазон, группировка по дням
+    // делается в ViewModel. Так на 371 день уходит ровно один заход в БД вместо 371.
+    @Query("SELECT * FROM playback_event WHERE timestamp > :fromTimestamp ORDER BY timestamp ASC")
+    suspend fun getPlaybackEventsSince(fromTimestamp: LocalDateTime): List<PlaybackEventEntity>
+
     @Query("DELETE FROM playback_event WHERE timestamp < :cutoffTimestamp")
     suspend fun deleteOldPlaybackEvents(cutoffTimestamp: LocalDateTime)
 

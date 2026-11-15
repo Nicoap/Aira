@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,8 +42,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
@@ -87,20 +94,31 @@ import com.wavora.app.viewModel.AnalyticsViewModel
 import com.wavora.app.viewModel.SharedViewModel
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
 import kotlinx.coroutines.flow.map
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.format
 import kotlinx.datetime.format.MonthNames
 import kotlinx.datetime.format.char
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
 import org.koin.compose.viewmodel.koinViewModel
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.artists
 import wavora.composeapp.generated.resources.date_range
+import wavora.composeapp.generated.resources.heatmap_less
+import wavora.composeapp.generated.resources.heatmap_minutes
+import wavora.composeapp.generated.resources.heatmap_more
+import wavora.composeapp.generated.resources.heatmap_no_plays
+import wavora.composeapp.generated.resources.heatmap_play
+import wavora.composeapp.generated.resources.heatmap_summary_day
 import wavora.composeapp.generated.resources.last_30_days
 import wavora.composeapp.generated.resources.last_7_days
 import wavora.composeapp.generated.resources.last_90_days
+import wavora.composeapp.generated.resources.listening_activity
 import wavora.composeapp.generated.resources.lower_plays
 import wavora.composeapp.generated.resources.more
 import wavora.composeapp.generated.resources.no_data_analytics
@@ -744,102 +762,11 @@ LazyColumn(state = autoScrollbarState,
             }
 
             item {
-                when (uiState.scrobblesLineChart) {
-                    is LocalResource.Success if (!uiState.scrobblesLineChart.data.isNullOrEmpty()) -> {
-                        val data = uiState.scrobblesLineChart.data ?: return@item
-                        val maxPlays = data.maxOf { it.second }
-                        Column(
-                            modifier =
-                                Modifier
-                                    .padding(horizontal = 24.dp)
-                                    .padding(top = 12.dp),
-                        ) {
-                            Text(
-                                text = stringResource(Res.string.date_range),
-                                style = LocalAppTypography.current.labelMedium,
-                                color = MaterialTheme.colorScheme.onSurface,
-                            )
-                            Row(
-                                modifier = Modifier.padding(top = 12.dp),
-                            ) {
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    data.map { it.first }.forEach { chartType ->
-                                        Box(
-                                            modifier = Modifier.height(32.dp),
-                                            contentAlignment = Alignment.CenterStart,
-                                        ) {
-                                            when (chartType) {
-                                                is AnalyticsUiState.ChartType.Day -> {
-                                                    Text(
-                                                        text =
-                                                            chartType.day.format(
-                                                                LocalDate.Format {
-                                                                    day()
-                                                                    char(' ')
-                                                                    monthName(MonthNames.ENGLISH_ABBREVIATED)
-                                                                    char(' ')
-                                                                    year()
-                                                                },
-                                                            ),
-                                                        style = LocalAppTypography.current.bodyMedium,
-                                                        modifier = Modifier.padding(horizontal = 8.dp),
-                                                    )
-                                                }
-
-                                                is AnalyticsUiState.ChartType.Month -> {
-                                                    Text(
-                                                        text = "${chartType.month} - ${chartType.year}",
-                                                        style = LocalAppTypography.current.bodySmall,
-                                                        modifier = Modifier.padding(horizontal = 8.dp),
-                                                    )
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                ) {
-                                    data.map { it.second }.forEach { playCount ->
-                                        Box(
-                                            modifier = Modifier.height(32.dp),
-                                        ) {
-                                            Box(Modifier.fillMaxWidth()) {
-                                                Box(
-                                                    modifier =
-                                                        Modifier
-                                                            .fillMaxHeight()
-                                                            .fillMaxWidth(playCount.toFloat() / maxPlays)
-                                                            .padding(vertical = 4.dp)
-                                                            .clip(CircleShape)
-                                                            .background(wavoraBorder),
-                                                ) {
-                                                    Text(
-                                                        text = "",
-                                                        style = LocalAppTypography.current.bodySmall,
-                                                        modifier =
-                                                            Modifier
-                                                                .align(Alignment.CenterStart)
-                                                                .padding(horizontal = 4.dp),
-                                                    )
-                                                }
-                                                Text(
-                                                    text = "$playCount ${stringResource(Res.string.lower_plays)}",
-                                                    style = LocalAppTypography.current.bodySmall,
-                                                    modifier =
-                                                        Modifier
-                                                            .align(Alignment.CenterStart)
-                                                            .padding(horizontal = 8.dp),
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                // Вместо «Data range» с длинными барами — тепловая карта активности,
+                // как на GitHub: один квадрат = один день, наведение показывает дату.
+                when (uiState.dailyActivity) {
+                    is LocalResource.Success if (!uiState.dailyActivity.data.isNullOrEmpty()) -> {
+                        ListeningActivityHeatmap(days = uiState.dailyActivity.data ?: return@item)
                     }
 
                     else -> {}
@@ -974,5 +901,152 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                     containerColor = Color.Transparent,
                 ),
         )
+    }
+}
+
+/**
+ * Тепловая карта активности прослушивания в стиле GitHub: 53 недели по 7 дней.
+ *
+ * WHY: прежний «Data range» рисовал список баров и считал только переходы треков,
+ * из-за чего график почти всегда был пустым. Здесь же одна ячейка = один день,
+ * а наведение показывает, сколько было прослушиваний и сколько минут.
+ */
+@OptIn(ExperimentalComposeUiApi::class)
+@Composable
+private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>) {
+    val cell = 12.dp
+    val gap = 3.dp
+    val columns = 53
+    val rows = 7
+
+    val activityByDate = remember(days) { days.associateBy { it.date } }
+    val firstDate = days.first().date
+    // Сетка начинается с понедельника той недели, в которую попадает первый день.
+    val gridStart = firstDate.minus(DatePeriod(days = firstDate.dayOfWeek.isoDayNumber - 1))
+    val maxPlays = (days.maxOfOrNull { it.plays } ?: 0).coerceAtLeast(1)
+
+    var hovered by remember { mutableStateOf<AnalyticsUiState.DailyActivity?>(null) }
+
+    val emptyColor = MaterialTheme.colorScheme.surfaceVariant
+    val accent = MaterialTheme.colorScheme.primary
+    val density = LocalDensity.current
+    val stepPx = with(density) { (cell + gap).toPx() }
+    val cellPx = with(density) { cell.toPx() }
+    val gapPx = with(density) { gap.toPx() }
+    val gridWidth = cell * columns + gap * (columns - 1)
+    val gridHeight = cell * rows + gap * (rows - 1)
+
+    Column(
+        modifier =
+            Modifier
+                .padding(horizontal = 24.dp)
+                .padding(top = 12.dp)
+                .fillMaxWidth(),
+    ) {
+        Text(
+            text = stringResource(Res.string.listening_activity),
+            style = LocalAppTypography.current.labelMedium,
+            color = MaterialTheme.colorScheme.onSurface,
+        )
+        val hoveredDay = hovered
+        Text(
+            text =
+                if (hoveredDay == null) {
+                    stringResource(Res.string.heatmap_play, days.sumOf { it.plays }.toString())
+                } else {
+                    val minutes = (hoveredDay.seconds / 60).coerceAtLeast(0)
+                    stringResource(
+                        Res.string.heatmap_summary_day,
+                        hoveredDay.date.toString(),
+                        if (hoveredDay.plays == 0) {
+                            stringResource(Res.string.heatmap_no_plays)
+                        } else {
+                            stringResource(Res.string.heatmap_play, hoveredDay.plays.toString()) +
+                                " · " + stringResource(Res.string.heatmap_minutes, minutes.toString())
+                        },
+                    )
+                },
+            style = LocalAppTypography.current.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            maxLines = 1,
+            modifier =
+                Modifier
+                    .padding(top = 4.dp)
+                    .fillMaxWidth(),
+        )
+        Box(
+            modifier =
+                Modifier
+                    .padding(top = 10.dp)
+                    .size(gridWidth, gridHeight)
+                    .onPointerEvent(PointerEventType.Move) { event ->
+                        val offset = event.changes.firstOrNull()?.position ?: return@onPointerEvent
+                        val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
+                        val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
+                        val date = gridStart.plus(DatePeriod(days = column * rows + row))
+                        hovered =
+                            activityByDate[date]
+                                ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
+                    }.onPointerEvent(PointerEventType.Exit) { hovered = null }
+                    .drawBehind {
+                        for (column in 0 until columns) {
+                            for (row in 0 until rows) {
+                                val date = gridStart.plus(DatePeriod(days = column * rows + row))
+                                val plays = activityByDate[date]?.plays ?: 0
+                                val level = heatLevel(plays, maxPlays)
+                                val color =
+                                    if (level <= 0f) {
+                                        emptyColor
+                                    } else {
+                                        accent.copy(alpha = level)
+                                    }
+                                drawRect(
+                                    color = color,
+                                    topLeft = Offset(column * (cellPx + gapPx), row * (cellPx + gapPx)),
+                                    size = Size(cellPx, cellPx),
+                                )
+                            }
+                        }
+                    },
+        )
+        Row(
+            modifier = Modifier.padding(top = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Text(
+                text = stringResource(Res.string.heatmap_less),
+                style = LocalAppTypography.current.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            listOf(0f, 0.25f, 0.45f, 0.7f, 1f).forEach { level ->
+                Box(
+                    modifier =
+                        Modifier
+                            .padding(horizontal = 2.dp)
+                            .size(cell)
+                            .background(if (level <= 0f) emptyColor else accent.copy(alpha = level)),
+                )
+            }
+            Text(
+                text = stringResource(Res.string.heatmap_more),
+                style = LocalAppTypography.current.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+    }
+}
+
+/** Пять уровней интенсивности, как у GitHub: от пустого дня до самого активного. */
+private fun heatLevel(
+    plays: Int,
+    maxPlays: Int,
+): Float {
+    if (plays <= 0) return 0f
+    val ratio = plays.toFloat() / maxPlays.coerceAtLeast(1)
+    return when {
+        ratio <= 0.25f -> 0.25f
+        ratio <= 0.5f -> 0.45f
+        ratio <= 0.75f -> 0.7f
+        else -> 1f
     }
 }

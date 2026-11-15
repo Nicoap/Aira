@@ -83,4 +83,6 @@ internal class AnalyticsDatasource(
         startTimestamp,
         endTimestamp,
     )
+
+    suspend fun getPlaybackEventsSince(fromTimestamp: LocalDateTime) = databaseDao.getPlaybackEventsSince(fromTimestamp)
 }

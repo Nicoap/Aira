@@ -752,4 +752,12 @@
     <string name="island_nothing_playing">Nada en reproduccion</string>
     <string name="island_mode_hover">Hover</string>
     <string name="island_mode_click">Clic</string>
+    <!-- Тепловая карта активности прослушивания -->
+    <string name="listening_activity">Actividad de escucha</string>
+    <string name="heatmap_summary_day">%1$s · %2$s</string>
+    <string name="heatmap_play">%1$s reproducciones</string>
+    <string name="heatmap_minutes">%1$s min</string>
+    <string name="heatmap_no_plays">Sin reproducciones</string>
+    <string name="heatmap_less">Menos</string>
+    <string name="heatmap_more">Más</string>
 </resources>
