@@ -16,7 +16,7 @@ import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.rememberDialogState
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import com.wavora.app.ui.theme.AppTheme
 import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.domain.manager.DataStoreManager
@@ -94,12 +94,12 @@ fun MiniPlayerWindow(
     }
 
     val dataStoreManager: DataStoreManager = koinInject()
-    val themeMode by dataStoreManager.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
-    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
-    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("auto")
-    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("auto")
-    val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("auto")
-    val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
+    val themeMode by dataStoreManager.themeMode.collectAsState(DataStoreManager.THEME_MODE_DARK)
+    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsState("#A259FF")
+    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsState("auto")
+    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsState("auto")
+    val themeTextColor by dataStoreManager.themeTextColor.collectAsState("auto")
+    val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsState("auto")
 
     DialogWindow(
         onCloseRequest = onCloseRequest,

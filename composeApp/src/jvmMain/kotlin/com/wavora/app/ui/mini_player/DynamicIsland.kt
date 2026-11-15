@@ -64,7 +64,7 @@ import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.lerp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.compose.runtime.collectAsState
 import coil3.compose.AsyncImage
 import com.wavora.app.ui.component.hoverMarquee
 import com.wavora.app.viewModel.SharedViewModel
@@ -317,9 +317,9 @@ private fun ExpandedIslandContent(
     accent: Color,
     modifier: Modifier = Modifier,
 ) {
-    val nowPlaying by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
-    val controller by sharedViewModel.controllerState.collectAsStateWithLifecycle()
-    val timeline by sharedViewModel.timeline.collectAsStateWithLifecycle()
+    val nowPlaying by sharedViewModel.nowPlayingScreenData.collectAsState()
+    val controller by sharedViewModel.controllerState.collectAsState()
+    val timeline by sharedViewModel.timeline.collectAsState()
     val onEvent = sharedViewModel::onUIEvent
     val hasTrack = nowPlaying.nowPlayingTitle.isNotBlank()
 
@@ -481,8 +481,8 @@ internal fun DynamicIsland(
     onClose: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val nowPlaying by sharedViewModel.nowPlayingScreenData.collectAsStateWithLifecycle()
-    val controller by sharedViewModel.controllerState.collectAsStateWithLifecycle()
+    val nowPlaying by sharedViewModel.nowPlayingScreenData.collectAsState()
+    val controller by sharedViewModel.controllerState.collectAsState()
     val hasTrack = nowPlaying.nowPlayingTitle.isNotBlank()
     val accent = MaterialTheme.colorScheme.primary
 

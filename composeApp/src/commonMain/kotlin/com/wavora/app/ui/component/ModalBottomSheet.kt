@@ -149,7 +149,6 @@ import com.wavora.app.ui.theme.seed
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraBorder
 import com.wavora.app.ui.theme.wavoraSurface
-import com.wavora.app.ui.theme.wavoraTextSecondary
 import com.wavora.app.ui.theme.white
 import com.wavora.app.viewModel.NowPlayingBottomSheetUIEvent
 import com.wavora.app.viewModel.NowPlayingBottomSheetViewModel
@@ -1803,7 +1802,7 @@ fun ActionButton(
     text: StringResource?,
     textString: String? = null,
     textColor: Color? = null,
-    iconColor: Color = Color.White,
+    iconColor: Color = MaterialTheme.colorScheme.onSurface,
     enable: Boolean = true,
     onClick: () -> Unit,
 ) {
@@ -1831,13 +1830,13 @@ fun ActionButton(
                     if (enable) {
                         ColorFilter.tint(iconColor)
                     } else {
-                        ColorFilter.tint(wavoraTextSecondary)
+                        ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant)
                     },
             )
             Text(
                 text = if (text != null) stringResource(text) else textString ?: "",
                 style = LocalAppTypography.current.labelSmall,
-                color = if (enable) textColor ?: Color.Unspecified else wavoraTextSecondary,
+                color = if (enable) textColor ?: Color.Unspecified else MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier =
                     Modifier
                         .padding(start = 10.dp)
@@ -1975,7 +1974,7 @@ fun PlaybackSpeedPitchBottomSheet(
                         painter = painterResource(Res.drawable.round_speed_24),
                         contentDescription = stringResource(Res.string.playback_speed),
                         modifier = Modifier.size(24.dp),
-                        colorFilter = ColorFilter.tint(wavoraTextSecondary),
+                        colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onSurfaceVariant),
                     )
                     Spacer(modifier = Modifier.weight(1f))
                     IconButton(
@@ -1990,13 +1989,13 @@ fun PlaybackSpeedPitchBottomSheet(
                         Icon(
                             Icons.Rounded.Remove,
                             contentDescription = "Decrease speed",
-                            tint = wavoraTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                     Text(
                         text = "x${String.format("%.1f", playbackSpeed)}",
                         style = LocalAppTypography.current.titleMedium,
-                        color = wavoraTextSecondary,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.widthIn(min = 60.dp),
                         textAlign = TextAlign.Center,
                     )
@@ -2012,7 +2011,7 @@ fun PlaybackSpeedPitchBottomSheet(
                         Icon(
                             Icons.Rounded.Add,
                             contentDescription = "Increase speed",
-                            tint = wavoraTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     }
                 }
@@ -2027,7 +2026,7 @@ fun PlaybackSpeedPitchBottomSheet(
                             Icons.Rounded.Tune,
                             contentDescription = stringResource(Res.string.pitch),
                             modifier = Modifier.size(24.dp),
-                            tint = wavoraTextSecondary,
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Spacer(modifier = Modifier.weight(1f))
                         IconButton(
@@ -2039,13 +2038,13 @@ fun PlaybackSpeedPitchBottomSheet(
                             Icon(
                                 Icons.Rounded.Remove,
                                 contentDescription = "Decrease pitch",
-                                tint = wavoraTextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                         Text(
                             text = "$pitch",
                             style = LocalAppTypography.current.titleMedium,
-                            color = wavoraTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.widthIn(min = 60.dp),
                             textAlign = TextAlign.Center,
                         )
@@ -2058,7 +2057,7 @@ fun PlaybackSpeedPitchBottomSheet(
                             Icon(
                                 Icons.Rounded.Add,
                                 contentDescription = "Increase pitch",
-                                tint = wavoraTextSecondary,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                         }
                     }
@@ -2158,7 +2157,7 @@ fun SleepTimerBottomSheet(
                     Text(
                         text = stringResource(Res.string.sleep_timer_off),
                         style = LocalAppTypography.current.titleMedium,
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onSurface,
                     )
                 }
 
@@ -2195,7 +2194,7 @@ fun SleepTimerBottomSheet(
                                 Text(
                                     text = preset.label,
                                     style = LocalAppTypography.current.bodySmall,
-                                    color = if (isSelected) seed else wavoraTextSecondary,
+                                    color = if (isSelected) seed else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                                 )
                             }
@@ -2233,7 +2232,7 @@ fun SleepTimerBottomSheet(
                         Text(
                             text = "End of song",
                             style = LocalAppTypography.current.bodySmall,
-                            color = if (isEndSelected) seed else wavoraTextSecondary,
+                            color = if (isEndSelected) seed else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (isEndSelected) FontWeight.SemiBold else FontWeight.Normal,
                         )
                     }
@@ -2261,7 +2260,7 @@ fun SleepTimerBottomSheet(
                         Text(
                             text = "Custom",
                             style = LocalAppTypography.current.bodySmall,
-                            color = if (isCustomSelected) seed else wavoraTextSecondary,
+                            color = if (isCustomSelected) seed else MaterialTheme.colorScheme.onSurfaceVariant,
                             fontWeight = if (isCustomSelected) FontWeight.SemiBold else FontWeight.Normal,
                         )
                     }
@@ -2288,7 +2287,7 @@ fun SleepTimerBottomSheet(
                                 Text(
                                     text = "min",
                                     style = LocalAppTypography.current.bodySmall,
-                                    color = wavoraTextSecondary,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )
                             },
                             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -2452,7 +2451,7 @@ fun AddToPlaylistModalBottomSheet(
                             text = stringResource(Res.string.no_playlist_found),
                             style = LocalAppTypography.current.labelSmall,
                             modifier = Modifier.padding(20.dp),
-                            color = wavoraTextSecondary,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                     } else {
                         Crossfade(isYouTubePlaylistClicked) { clicked ->
@@ -2481,7 +2480,7 @@ fun AddToPlaylistModalBottomSheet(
                                                 Text(
                                                     text = playlist.title,
                                                     style = LocalAppTypography.current.labelSmall,
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onSurface,
                                                 )
                                             }
                                         }
@@ -2521,7 +2520,7 @@ fun AddToPlaylistModalBottomSheet(
                                                 Text(
                                                     text = playlist.title,
                                                     style = LocalAppTypography.current.labelSmall,
-                                                    color = if (playlist.tracks?.contains(videoId) == true) wavoraTextSecondary else Color.White,
+                                                    color = if (playlist.tracks?.contains(videoId) == true) MaterialTheme.colorScheme.onSurfaceVariant else MaterialTheme.colorScheme.onSurface,
                                                 )
                                             }
                                         }
@@ -2999,7 +2998,7 @@ fun SortPlaylistBottomSheet(
                                 text = stringResource(filterOption.displayNameRes()),
                                 style = LocalAppTypography.current.labelMedium,
                                 fontWeight = FontWeight.Medium,
-                                color = if (isSelected) seed else Color.White,
+                                color = if (isSelected) seed else MaterialTheme.colorScheme.onSurface,
                             )
                             Spacer(modifier = Modifier.weight(1f))
                             if (isSelected) {

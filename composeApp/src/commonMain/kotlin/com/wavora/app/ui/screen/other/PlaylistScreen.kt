@@ -581,7 +581,7 @@ LazyColumn(
                                                                 }
                                                             } • ${data.year}",
                                                             style = LocalAppTypography.current.bodyMedium,
-                                                            color = Color(0xC4FFFFFF),
+                                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                             textAlign = TextAlign.Center,
                                                         )
                                                     }

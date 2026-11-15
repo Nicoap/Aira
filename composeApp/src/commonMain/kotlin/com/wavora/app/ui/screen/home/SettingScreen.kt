@@ -138,7 +138,6 @@ import com.wavora.app.ui.theme.wavoraGradientMid
 import com.wavora.app.ui.theme.wavoraPrimary
 import com.wavora.app.ui.theme.wavoraSecondary
 import com.wavora.app.ui.theme.wavoraSurface
-import com.wavora.app.ui.theme.wavoraTextDisabled
 import com.wavora.app.utils.VersionManager
 import com.wavora.app.viewModel.SettingAlertState
 import com.wavora.app.viewModel.SettingBasicAlertState
@@ -2228,7 +2227,7 @@ fun SettingScreen(
                                             .width(
                                                 (fraction.thumbCache * width).dp,
                                             ).background(
-                                                wavoraTextDisabled,
+                                                MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                                             ).fillMaxHeight(),
                                 )
                             }
@@ -2325,7 +2324,7 @@ fun SettingScreen(
                                 .size(12.dp)
                                 .clip(CircleShape)
                                 .background(
-                                    wavoraTextDisabled,
+                                    MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f),
                                 ),
                         )
                         Spacer(Modifier.width(8.dp))

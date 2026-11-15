@@ -231,8 +231,19 @@ LazyColumn(state = autoScrollbarState,
                                                         ),
                                                         Color.Black,
                                                     ),
-                                                startY = (screenSizeInfo.hPX / 2.5f) * 3 / 4, // Gradient applied to wrap the title only
+                                                startY = (screenSizeInfo.hPX / 2.5f) * 2 / 4, // Gradient applied to wrap the title only
                                             ),
+                                    ),
+                            )
+                            Box(
+                                Modifier
+                                    .fillMaxWidth()
+                                    .height(110.dp)
+                                    .align(Alignment.TopCenter)
+                                    .background(
+                                        Brush.verticalGradient(
+                                            listOf(Color.Black.copy(alpha = 0.6f), Color.Transparent),
+                                        ),
                                     ),
                             )
                             Column(
@@ -265,6 +276,7 @@ LazyColumn(state = autoScrollbarState,
                                         Text(
                                             topTrack.second.artistName?.connectArtists() ?: "",
                                             style = LocalAppTypography.current.bodyMedium,
+                                            color = Color.White,
                                             maxLines = 1,
                                         )
                                     }
@@ -280,6 +292,7 @@ LazyColumn(state = autoScrollbarState,
                                         Text(
                                             "${topTrack.first.totalListeningTime} seconds",
                                             style = LocalAppTypography.current.bodyLarge,
+                                            color = Color.White,
                                             maxLines = 1,
                                         )
                                     }
@@ -317,7 +330,7 @@ LazyColumn(state = autoScrollbarState,
                                     stringResource(Res.string.songs_played),
                                     style = LocalAppTypography.current.bodyMedium,
                                     textDecoration = TextDecoration.Underline,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                 )
                                 Text(
@@ -340,7 +353,7 @@ LazyColumn(state = autoScrollbarState,
                                     stringResource(Res.string.artists),
                                     style = LocalAppTypography.current.bodyMedium,
                                     textDecoration = TextDecoration.Underline,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                 )
                                 Text(
@@ -363,7 +376,7 @@ LazyColumn(state = autoScrollbarState,
                                     stringResource(Res.string.total_listened_time),
                                     style = LocalAppTypography.current.bodyMedium,
                                     textDecoration = TextDecoration.Underline,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     maxLines = 1,
                                 )
                                 Text(
@@ -394,7 +407,7 @@ LazyColumn(state = autoScrollbarState,
                                 Text(
                                     text = stringResource(Res.string.your_recently_played),
                                     style = LocalAppTypography.current.labelMedium,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f),
                                 )
                                 TextButton(
@@ -405,7 +418,7 @@ LazyColumn(state = autoScrollbarState,
                                         ButtonDefaults
                                             .textButtonColors()
                                             .copy(
-                                                contentColor = Color.White,
+                                                contentColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                 ) {
                                     Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -496,7 +509,7 @@ LazyColumn(state = autoScrollbarState,
                                 Text(
                                     text = stringResource(Res.string.your_top_artists),
                                     style = LocalAppTypography.current.labelMedium,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f),
                                 )
                                 TextButton(
@@ -511,7 +524,7 @@ LazyColumn(state = autoScrollbarState,
                                         ButtonDefaults
                                             .textButtonColors()
                                             .copy(
-                                                contentColor = Color.White,
+                                                contentColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                 ) {
                                     Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -560,7 +573,7 @@ LazyColumn(state = autoScrollbarState,
                                 Text(
                                     text = stringResource(Res.string.your_top_albums),
                                     style = LocalAppTypography.current.labelMedium,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f),
                                 )
                                 TextButton(
@@ -575,7 +588,7 @@ LazyColumn(state = autoScrollbarState,
                                         ButtonDefaults
                                             .textButtonColors()
                                             .copy(
-                                                contentColor = Color.White,
+                                                contentColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                 ) {
                                     Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -626,7 +639,7 @@ LazyColumn(state = autoScrollbarState,
                                 Text(
                                     text = stringResource(Res.string.your_top_tracks),
                                     style = LocalAppTypography.current.labelMedium,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.weight(1f),
                                 )
                                 TextButton(
@@ -641,7 +654,7 @@ LazyColumn(state = autoScrollbarState,
                                         ButtonDefaults
                                             .textButtonColors()
                                             .copy(
-                                                contentColor = Color.White,
+                                                contentColor = MaterialTheme.colorScheme.onSurface,
                                             ),
                                 ) {
                                     Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -744,7 +757,7 @@ LazyColumn(state = autoScrollbarState,
                             Text(
                                 text = stringResource(Res.string.date_range),
                                 style = LocalAppTypography.current.labelMedium,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                             )
                             Row(
                                 modifier = Modifier.padding(top = 12.dp),
@@ -901,13 +914,13 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                                         alpha = 0.8f,
                                     ),
                                 contentColor =
-                                    Color.White.copy(
+                                    MaterialTheme.colorScheme.onSurface.copy(
                                         alpha = 0.6f,
                                     ),
                             ),
                     ) {
                         Box {
-                            Icon(Icons.Rounded.CalendarToday, "Analytics", tint = Color.White)
+                            Icon(Icons.Rounded.CalendarToday, "Analytics", tint = MaterialTheme.colorScheme.onSurface)
                             Text(
                                 when (uiState.dayRange) {
                                     AnalyticsUiState.DayRange.LAST_7_DAYS -> "7d"
@@ -916,7 +929,7 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
                                     AnalyticsUiState.DayRange.THIS_YEAR -> "1y"
                                 },
                                 style = LocalAppTypography.current.bodySmall.copy(fontSize = 8.sp),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurface,
                                 modifier = Modifier.align(Alignment.Center),
                             )
                         }

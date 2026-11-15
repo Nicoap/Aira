@@ -97,7 +97,7 @@ fun PodcastEpisodeFullWidthItem(
                     text = "${episode.createdDay ?: ""}${if (!episode.durationString.isNullOrEmpty()) " • ${episode.durationString}" else ""}",
                     style = LocalAppTypography.current.bodyMedium,
                     maxLines = 1,
-                    color = Color(0xC4FFFFFF),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -114,7 +114,7 @@ fun PodcastEpisodeFullWidthItem(
                         text = description,
                         style = LocalAppTypography.current.bodyMedium,
                         maxLines = 1,
-                        color = Color(0xC4FFFFFF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier =
                             Modifier
                                 .fillMaxWidth()

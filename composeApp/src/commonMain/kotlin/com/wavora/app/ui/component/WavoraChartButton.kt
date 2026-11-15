@@ -20,7 +20,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.wavora.app.ui.theme.wavoraBorder
 import com.wavora.app.ui.theme.wavoraSurface
-import com.wavora.app.ui.theme.wavoraTextSecondary
+import androidx.compose.material3.MaterialTheme
 import org.jetbrains.compose.resources.stringResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.coming_soon
@@ -59,13 +59,13 @@ fun WavoraChartButton(
             Text(
                 text = stringResource(Res.string.introducing_wavora_chart),
                 fontSize = 13.sp,
-                color = wavoraTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Normal,
             )
             Text(
                 text = " · ${stringResource(Res.string.coming_soon)}",
                 fontSize = 13.sp,
-                color = wavoraTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.Normal,
             )
         }

@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import com.wavora.logger.Logger
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraSecondary
-import com.wavora.app.ui.theme.wavoraTextSecondary
+import androidx.compose.material3.MaterialTheme
 import org.jetbrains.compose.resources.stringResource
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.less
@@ -145,7 +145,7 @@ fun DescriptionView(
         androidx.compose.animation.AnimatedVisibility(!shouldHideExpandButton) {
             Text(
                 text = if (expanded) stringResource(Res.string.less) else stringResource(Res.string.more),
-                color = wavoraTextSecondary,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier =
                     Modifier.clickable {
                         expanded = !expanded

@@ -157,7 +157,7 @@ fun SongFullWidthItems(
                     contentAlignment = Alignment.Center,
                 ) {
                     Icon(
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.primary,
                         imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                         contentDescription = stringResource(Res.string.add_to_queue),
                     )
@@ -244,7 +244,7 @@ fun SongFullWidthItems(
                         } else {
                             Text(
                                 text = (index + 1).toString(),
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 style = LocalAppTypography.current.titleMedium,
                                 modifier = Modifier.align(Alignment.Center),
                             )
@@ -302,7 +302,7 @@ fun SongFullWidthItems(
                             Row {
                                 Icon(
                                     painter = painterResource(Res.drawable.download_for_offline_white),
-                                    tint = Color.White,
+                                    tint = MaterialTheme.colorScheme.primary,
                                     contentDescription = stringResource(Res.string.downloaded),
                                     modifier = Modifier.size(16.dp).padding(2.dp),
                                 )
@@ -337,7 +337,7 @@ fun SongFullWidthItems(
                                 artistLinks.forEachIndexed { idx, (name, id) ->
                                     ArtistLinkText(name = name, onClick = { openArtist(id) })
                                     if (idx < artistLinks.lastIndex) {
-                                        Text(", ", style = LocalAppTypography.current.bodySmall, maxLines = 1, color = Color(0xC4FFFFFF))
+                                        Text(", ", style = LocalAppTypography.current.bodySmall, maxLines = 1, color = MaterialTheme.colorScheme.onSurfaceVariant)
                                     }
                                 }
                             }
@@ -350,7 +350,7 @@ fun SongFullWidthItems(
                                     ) ?: "",
                                 style = LocalAppTypography.current.bodySmall,
                                 maxLines = 1,
-                                color = Color(0xC4FFFFFF),
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier =
                                     Modifier
                                         .fillMaxWidth()
@@ -371,7 +371,7 @@ fun SongFullWidthItems(
                     Icon(
                         imageVector = Icons.AutoMirrored.Rounded.QueueMusic,
                         contentDescription = stringResource(Res.string.add_to_queue),
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurface,
                         modifier =
                             Modifier
                                 .size(36.dp)
@@ -405,7 +405,7 @@ fun SongFullWidthItems(
                     Icon(
                         Icons.Rounded.DragHandle,
                         contentDescription = null,
-                        tint = Color.White,
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.padding(horizontal = 8.dp),
                     )
                 }
@@ -491,7 +491,7 @@ fun SuggestItems(
                         ) ?: "",
                     style = LocalAppTypography.current.bodySmall,
                     maxLines = 1,
-                    color = Color(0xC4FFFFFF),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
                             .fillMaxWidth()
@@ -650,7 +650,7 @@ fun PlaylistFullWidthItems(
                         text = "$firstSubtitle ${if (secondSubtitle.isNotEmpty()) " • $secondSubtitle" else ""}",
                         style = LocalAppTypography.current.bodySmall,
                         maxLines = 1,
-                        color = Color(0xC4FFFFFF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -667,7 +667,7 @@ fun PlaylistFullWidthItems(
                         text = thirdRowSubtitle,
                         style = LocalAppTypography.current.bodySmall,
                         maxLines = 1,
-                        color = Color(0xC4FFFFFF),
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier =
                             Modifier
                                 .fillMaxWidth()
@@ -757,7 +757,7 @@ fun ArtistFullWidthItems(
                     text = stringResource(Res.string.artists),
                     style = LocalAppTypography.current.bodySmall,
                     maxLines = 1,
-                    color = Color(0xC4FFFFFF),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier =
                         Modifier
                             .fillMaxWidth()

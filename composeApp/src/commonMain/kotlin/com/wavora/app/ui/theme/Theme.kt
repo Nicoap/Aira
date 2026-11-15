@@ -107,15 +107,18 @@ fun AppTheme(
             },
         )
     val darkTheme = background.luminance() < 0.5f
-    val primary = parseThemeColor(primaryColorHex, wavoraPrimary)
+    val primary = readableAccent(parseThemeColor(primaryColorHex, wavoraPrimary), background)
     val surface =
         parseThemeColor(
             surfaceColorHex,
             if (darkTheme) md_theme_dark_surface else LightColors.surface,
         )
-    val textColor = parseOptionalThemeColor(textColorHex) ?: contentColorFor(background)
+    // A custom text colour that cannot be read on the chosen background is replaced by the one that can.
+    val textColor =
+        parseOptionalThemeColor(textColorHex)?.takeIf { contrastRatio(it, background) >= 4.5f }
+            ?: contentColorFor(background)
     val secondaryTextColor =
-        parseOptionalThemeColor(secondaryTextColorHex)
+        parseOptionalThemeColor(secondaryTextColorHex)?.takeIf { contrastRatio(it, background) >= 3.5f }
             ?: textColor.copy(alpha = 0.72f)
     val colorScheme =
         if (darkTheme) {
@@ -136,10 +139,10 @@ fun AppTheme(
                 onBackground = textColor,
                 surface = surface,
                 onSurface = textColor,
-                surfaceVariant = surface,
+                surfaceVariant = lerp(surface, textColor, 0.16f),
                 onSurfaceVariant = secondaryTextColor,
-                outline = contentColorFor(surface).copy(alpha = 0.4f),
-                outlineVariant = contentColorFor(surface).copy(alpha = 0.2f),
+                outline = contentColorFor(surface).copy(alpha = 0.55f),
+                outlineVariant = contentColorFor(surface).copy(alpha = 0.3f),
                 // Подсказки и снекбары рисуются на inverseSurface: раньше это оставалось
                 // дефолтным цветом Material, поэтому они не следовали выбранной теме.
                 inverseSurface = lerp(surface, textColor, 0.14f),
@@ -165,10 +168,10 @@ fun AppTheme(
                 onBackground = textColor,
                 surface = surface,
                 onSurface = textColor,
-                surfaceVariant = surface,
+                surfaceVariant = lerp(surface, textColor, 0.16f),
                 onSurfaceVariant = secondaryTextColor,
-                outline = contentColorFor(surface).copy(alpha = 0.4f),
-                outlineVariant = contentColorFor(surface).copy(alpha = 0.2f),
+                outline = contentColorFor(surface).copy(alpha = 0.55f),
+                outlineVariant = contentColorFor(surface).copy(alpha = 0.3f),
                 // Подсказки и снекбары рисуются на inverseSurface: раньше это оставалось
                 // дефолтным цветом Material, поэтому они не следовали выбранной теме.
                 inverseSurface = lerp(surface, textColor, 0.14f),
@@ -312,4 +315,30 @@ private fun androidx.compose.material3.Typography.themed(scheme: androidx.compos
         labelMedium = labelMedium.fix(),
         labelSmall = labelSmall.fix(),
     )
+}
+
+private fun contrastRatio(
+    a: Color,
+    b: Color,
+): Float {
+    val la = a.luminance()
+    val lb = b.luminance()
+    return (maxOf(la, lb) + 0.05f) / (minOf(la, lb) + 0.05f)
+}
+
+/**
+ * The accent colour is used for icons, sliders and the current track, so it has to stand out from the
+ * background (at least 3:1). When it does not, it is moved towards white or black until it does.
+ */
+private fun readableAccent(
+    accent: Color,
+    background: Color,
+): Color {
+    if (contrastRatio(accent, background) >= 3f) return accent
+    val towards = if (background.luminance() < 0.5f) Color.White else Color.Black
+    var result = accent
+    repeat(10) {
+        if (contrastRatio(result, background) < 3f) result = lerp(result, towards, 0.15f)
+    }
+    return result
 }

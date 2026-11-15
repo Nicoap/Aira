@@ -41,7 +41,7 @@ fun ExplicitBadge(modifier: Modifier = Modifier) {
             // (same convention as Spotify/Apple Music), not a brand accent, so it
             // shouldn't compete visually with real Wavora UI.
             contentDescription = stringResource(Res.string.explicit_content),
-            tint = wavoraTextSecondary,
+            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
         )
     }
 }

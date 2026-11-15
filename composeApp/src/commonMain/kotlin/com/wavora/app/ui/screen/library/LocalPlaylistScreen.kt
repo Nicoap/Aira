@@ -201,7 +201,6 @@ import wavora.composeapp.generated.resources.sort_playlist
 import com.wavora.app.ui.theme.LocalAppTypography
 import com.wavora.app.ui.theme.wavoraBorder
 import com.wavora.app.ui.theme.wavoraSecondary
-import com.wavora.app.ui.theme.wavoraTextSecondary
 import com.wavora.app.expect.ui.VerticalScrollBar
 
 // "AI suggestions" accent gradient (blue -> pink), intentionally distinct from the
@@ -683,7 +682,7 @@ LazyColumn(
                                                     ) ?: "",
                                                 ),
                                             style = LocalAppTypography.current.bodyMedium,
-                                            color = Color(0xC4FFFFFF),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                             textAlign = TextAlign.Center,
                                         )
                                     }
@@ -837,7 +836,7 @@ LazyColumn(
                                                     ) ?: "",
                                                 ),
                                             style = LocalAppTypography.current.bodyMedium,
-                                            color = Color(0xC4FFFFFF),
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant,
                                         )
                                     }
                                 }
@@ -1283,7 +1282,7 @@ LazyColumn(
                                                                     uiState.filterState.displayNameRes(),
                                                                 ),
                                                         style = LocalAppTypography.current.bodySmall,
-                                                        color = wavoraTextSecondary,
+                                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
                                                     )
                                                 }
                                             }
@@ -1308,7 +1307,7 @@ LazyColumn(
                                                             stringResource(Res.string.change_order)
                                                         },
                                                     style = LocalAppTypography.current.bodySmall,
-                                                    color = if (isMobilePortrait) Color.White else wavoraTextSecondary,
+                                                    color = if (isMobilePortrait) Color.White else MaterialTheme.colorScheme.onSurfaceVariant,
                                                 )
                                             }
                                         }
