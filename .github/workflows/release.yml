@@ -126,18 +126,30 @@ jobs:
             exit 1
           fi
 
-          echo "Устанавливаю platforms;android-37 build-tools;37.0.0..."
+          # Google теперь публикует API 37 с минорной версией: в индексе лежат
+          # platforms;android-37.0 / -37.1 / -37.2, а пакета 'platforms;android-37'
+          # не существует (из-за него прошлый запуск падал). Ставим 37.0 — это база
+          # API 37, которую ищет AGP при compileSdk = 37.
+          echo "Устанавливаю platforms;android-37.0 build-tools;37.0.0..."
           # Не используем `if ! yes | sdkmanager ...`: pipefail превращает SIGPIPE
           # от `yes` в ошибку и маскирует реальный код возврата sdkmanager.
           set +e
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 \
-            "platforms;android-37" "build-tools;37.0.0"
+            "platforms;android-37.0" "build-tools;37.0.0"
           SDKMANAGER_37_EXIT=${PIPESTATUS[1]}
           set -e
           if [ "$SDKMANAGER_37_EXIT" -ne 0 ]; then
-            echo "::error::Google ещё не опубликовал 'platforms;android-37' в индексе sdkmanager, а проект без него не собирается."
+            echo "::error::Не удалось установить 'platforms;android-37.0' или 'build-tools;37.0.0'."
             exit 1
           fi
+
+          # AGP с compileSdk = 37 ищет каталог platforms/android-37, а sdkmanager
+          # распаковывает минорную платформу в platforms/android-37.0. Делаем
+          # символическую ссылку, иначе сборка падает на отсутствии платформы.
+          if [ ! -d "$SDK_ROOT/platforms/android-37" ] && [ -d "$SDK_ROOT/platforms/android-37.0" ]; then
+            ln -s "$SDK_ROOT/platforms/android-37.0" "$SDK_ROOT/platforms/android-37"
+          fi
+          ls -1 "$SDK_ROOT/platforms"
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
