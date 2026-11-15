@@ -3,7 +3,7 @@
 
   # Aira
 
-  **A free, open-source, cross-platform YouTube Music client — built with Kotlin Multiplatform & Compose.**
+  **A free, open-source, Ai-slop, cross-platform YouTube Music client — built with Kotlin Multiplatform & Compose.**
 
   [![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)](LICENSE)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
