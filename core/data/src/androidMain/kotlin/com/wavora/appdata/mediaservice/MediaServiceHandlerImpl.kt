@@ -371,26 +371,29 @@ internal class MediaServiceHandlerImpl(
                                     updateDiscordRpc(song)
                                 }
                             }
-            val discordRPCSettingsJob =
-                            launch {
-                                merge(
-                                dataStoreManager.discordRpcButtonOneLabel,
-                                dataStoreManager.discordRpcButtonOneEnabled,
-                                dataStoreManager.discordRpcButtonOneUrl,
-                                dataStoreManager.discordRpcButtonTwoLabel,
-                                dataStoreManager.discordRpcButtonTwoEnabled,
-                                dataStoreManager.discordRpcButtonTwoUrl,
-                                dataStoreManager.discordRpcSmallImageUrl,
-                                ).collect {
-                                nowPlayingState.value.songEntity?.let(::updateDiscordRpc)
-                                }
-                            }
                         } else if (it == FALSE) {
                             if (discordRPC?.isRpcRunning() == true) {
                                 discordRPC?.closeRPC()
                             }
                             discordRPC = null
                         }
+                    }
+                }
+            // Настройки кнопок и мини-картинки RPC применяем на лету, отдельной корутиной:
+            // раньше этот блок по ошибке оказался ВНУТРИ collectLatest включения RPC, из-за
+            // чего переменная не существовала вне него и Android-сборка не компилировалась.
+            val discordRPCSettingsJob =
+                launch {
+                    merge(
+                        dataStoreManager.discordRpcButtonOneLabel,
+                        dataStoreManager.discordRpcButtonOneEnabled,
+                        dataStoreManager.discordRpcButtonOneUrl,
+                        dataStoreManager.discordRpcButtonTwoLabel,
+                        dataStoreManager.discordRpcButtonTwoEnabled,
+                        dataStoreManager.discordRpcButtonTwoUrl,
+                        dataStoreManager.discordRpcSmallImageUrl,
+                    ).collect {
+                        nowPlayingState.value.songEntity?.let(::updateDiscordRpc)
                     }
                 }
             controlStateJob.join()
