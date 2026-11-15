@@ -454,16 +454,17 @@ internal class WindowsSystemMediaSession private constructor(
             }
         }
 
+        /**
+         * Идентичность окна для панели задач Windows.
+         *
+         * WHY пусто: раньше здесь вызывался `SetCurrentProcessExplicitAppUserModelID("Wavora")`.
+         * Явный AppUserModelID, для которого нет зарегистрированного ярлыка с тем же ID,
+         * заставляет Windows создать отдельную группу «Wavora» и нарисовать для неё ПУСТОЙ
+         * значок — именно поэтому в панели задач не было иконки приложения. Без этого вызова
+         * Windows берёт идентичность от `Aira.exe`, куда jpackage уже вшил иконку и имя.
+         */
         fun initializeWindowsAppUserModelId() {
-            if (Platform.isWindows()) setWindowsAppUserModelId()
-        }
-
-        private fun setWindowsAppUserModelId() {
-            try {
-                Shell32.api.SetCurrentProcessExplicitAppUserModelID(WString(WINDOWS_APP_USER_MODEL_ID)).checkHresult()
-            } catch (error: Exception) {
-                Logger.w(TAG, "Could not set the Windows app identity: ${error.message}")
-            }
+            // Намеренно ничего не делает — см. KDoc выше.
         }
 
         private fun createForWindow(
@@ -500,7 +501,7 @@ internal class WindowsSystemMediaSession private constructor(
             try {
                 display = controls.getInterface(SMTC_GET_DISPLAY_UPDATER)
                 display.call(DISPLAY_SET_TYPE, MEDIA_TYPE_MUSIC).checkHresult()
-                display.setString(DISPLAY_SET_APP_MEDIA_ID, WINDOWS_APP_USER_MODEL_ID)
+                display.setString(DISPLAY_SET_APP_MEDIA_ID, SMTC_APP_MEDIA_ID)
                 music = display.getInterface(DISPLAY_GET_MUSIC_PROPERTIES)
                 controls.call(SMTC_SET_IS_PLAY_ENABLED, 1).checkHresult()
                 controls.call(SMTC_SET_IS_PAUSE_ENABLED, 1).checkHresult()
@@ -846,14 +847,6 @@ private object WinRt {
     val api: Api by lazy { Native.load("combase", Api::class.java) }
 }
 
-private object Shell32 {
-    interface Api : StdCallLibrary {
-        fun SetCurrentProcessExplicitAppUserModelID(appId: WString): Int
-    }
-
-    val api: Api by lazy { Native.load("shell32", Api::class.java) }
-}
-
 private object Shcore {
     interface Api : StdCallLibrary {
         fun CreateRandomAccessStreamOnFile(
@@ -942,8 +935,10 @@ private const val E_POINTER = 0x80004003.toInt()
 private const val SMTC_CLASS_NAME = "Windows.Media.SystemMediaTransportControls"
 private const val TIMELINE_PROPERTIES_CLASS =
     "Windows.Media.SystemMediaTransportControlsTimelineProperties"
-private const val WINDOWS_APP_USER_MODEL_ID = "Wavora"
 private const val STGM_READ = 0
+/// Идентификатор приложения для медиа-панели Windows (не AppUserModelID процесса —
+/// тот больше не задаём явно, иначе панель задач рисует пустую иконку).
+private const val SMTC_APP_MEDIA_ID = "Aira"
 private const val STREAM_REFERENCE_CREATE_FROM_STREAM = 8
 private const val MAX_ARTWORK_BYTES = 8L * 1024 * 1024
 private const val ARTWORK_TIMEOUT_MS = 5_000
