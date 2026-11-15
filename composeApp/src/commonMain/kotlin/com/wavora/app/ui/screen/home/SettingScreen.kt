@@ -1519,11 +1519,9 @@ fun SettingScreen(
                     title = stringResource(Res.string.main_lyrics_provider),
                     subtitle =
                         when (mainLyricsProvider) {
-                            DataStoreManager.SIMPMUSIC -> stringResource(Res.string.wavora_lyrics)
                             DataStoreManager.YOUTUBE -> stringResource(Res.string.youtube_transcript)
-                            DataStoreManager.LRCLIB -> stringResource(Res.string.lrclib)
                             DataStoreManager.BETTER_LYRICS -> stringResource(Res.string.better_lyrics)
-                            else -> stringResource(Res.string.unknown)
+                            else -> stringResource(Res.string.lrclib)
                         },
                     onClick = {
                         viewModel.setAlertData(
@@ -1533,11 +1531,9 @@ fun SettingScreen(
                                     SettingAlertState.SelectData(
                                         listSelect =
                                             listOf(
-                                                (mainLyricsProvider == DataStoreManager.SIMPMUSIC) to
-                                                    wavoraLyrics,
+                                                (mainLyricsProvider == DataStoreManager.LRCLIB) to lrclib,
                                                 (mainLyricsProvider == DataStoreManager.YOUTUBE) to
                                                     youtubeTranscript,
-                                                (mainLyricsProvider == DataStoreManager.LRCLIB) to lrclib,
                                                 (mainLyricsProvider == DataStoreManager.BETTER_LYRICS) to
                                                     betterLyrics,
                                             ),
@@ -1546,11 +1542,9 @@ fun SettingScreen(
                                     change to { state ->
                                         viewModel.setLyricsProvider(
                                             when (state.selectOne?.getSelected()) {
-                                                wavoraLyrics -> DataStoreManager.SIMPMUSIC
                                                 youtubeTranscript -> DataStoreManager.YOUTUBE
-                                                lrclib -> DataStoreManager.LRCLIB
                                                 betterLyrics -> DataStoreManager.BETTER_LYRICS
-                                                else -> DataStoreManager.SIMPMUSIC
+                                                else -> DataStoreManager.LRCLIB
                                             },
                                         )
                                     },
@@ -1613,34 +1607,7 @@ fun SettingScreen(
                         )
                     },
                 )
-                SettingItem(
-                    title = stringResource(Res.string.help_build_lyrics_database),
-                    subtitle = stringResource(Res.string.help_build_lyrics_database_description),
-                    switch = (helpBuildLyricsDatabase to { viewModel.setHelpBuildLyricsDatabase(it) }),
-                )
-                SettingItem(
-                    title = stringResource(Res.string.contributor_name),
-                    subtitle = contributor.first.ifEmpty { stringResource(Res.string.anonymous) },
-                    isEnable = helpBuildLyricsDatabase,
-                    onClick = {
-                        viewModel.setAlertData(
-                            SettingAlertState(
-                                title = contributorName,
-                                textField =
-                                    SettingAlertState.TextFieldData(
-                                        label = contributorName,
-                                        value = "",
-                                    ),
-                                message = "",
-                                confirm =
-                                    set to { state ->
-                                        viewModel.setContributorName(state.textField?.value ?: "")
-                                    },
-                                dismiss = cancel,
-                            ),
-                        )
-                    },
-                )
+                // Раздел «Aira Lyrics» (сбор базы текстов и подписи контрибьютора) убран. 
                 SettingItem(
                     title = stringResource(Res.string.contributor_email),
                     subtitle = contributor.second.ifEmpty { stringResource(Res.string.anonymous) },

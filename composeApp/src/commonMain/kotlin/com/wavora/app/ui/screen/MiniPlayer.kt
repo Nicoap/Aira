@@ -238,6 +238,11 @@ fun MiniPlayer(
 
     val coroutineScope = rememberCoroutineScope()
 
+    // Длительность берём из метаданных трека, пока плеер не открыл поток: иначе в панели
+    // висело 00:00 до первого ответа сервера (на медленном соединении — секунды).
+    val metadataDurationMs = (songEntity?.durationSeconds ?: 0).toLong() * 1000L
+    val totalDuration = if (timelineState.total > 0L) timelineState.total else metadataDurationMs
+
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
@@ -610,8 +615,8 @@ fun MiniPlayer(
         LaunchedEffect(key1 = timelineState, key2 = isSliding) {
             if (!isSliding) {
                 sliderValue =
-                    if (timelineState.total > 0L) {
-                        timelineState.current.toFloat() * 100 / timelineState.total.toFloat()
+                    if (totalDuration > 0L) {
+                        timelineState.current.toFloat() * 100 / totalDuration.toFloat()
                     } else {
                         0f
                     }
@@ -747,7 +752,7 @@ fun MiniPlayer(
                         ) {
                             if (!narrowTimes) {
                             Text(
-                                text = formatDuration((timelineState.total * (sliderValue / 100f)).roundToLong()),
+                                text = formatDuration((totalDuration * (sliderValue / 100f)).roundToLong()),
                                 style = LocalAppTypography.current.bodyMedium,
                                 textAlign = TextAlign.Left,
                                 maxLines = 1,
@@ -851,7 +856,7 @@ fun MiniPlayer(
                             }
                             if (!narrowTimes) {
                             Text(
-                                text = formatDuration(timelineState.total),
+                                text = formatDuration(totalDuration),
                                 style = LocalAppTypography.current.bodyMedium,
                                 textAlign = TextAlign.Right,
                                 maxLines = 1,

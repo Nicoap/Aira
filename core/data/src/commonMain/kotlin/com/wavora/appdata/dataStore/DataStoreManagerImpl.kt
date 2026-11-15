@@ -17,6 +17,7 @@ import com.wavora.domain.manager.DataStoreManager.Values.AI_PROVIDER_GEMINI
 import com.wavora.domain.manager.DataStoreManager.Values.FALSE
 import com.wavora.domain.manager.DataStoreManager.Values.GITHUB
 import com.wavora.domain.manager.DataStoreManager.Values.LOCAL_PLAYLIST_FILTER_OLDER_FIRST
+import com.wavora.domain.manager.DataStoreManager.Values.LRCLIB
 import com.wavora.domain.manager.DataStoreManager.Values.PROXY_TYPE_HTTP
 import com.wavora.domain.manager.DataStoreManager.Values.PROXY_TYPE_SOCKS
 import com.wavora.domain.manager.DataStoreManager.Values.REPEAT_ALL
@@ -420,7 +421,10 @@ internal class DataStoreManagerImpl(
 
     override val lyricsProvider =
         settingsDataStore.data.map { preferences ->
-            preferences[LYRICS_PROVIDER] ?: SIMPMUSIC
+            // Источник «Aira Lyrics» больше не используется: старые значения
+            // переводим на публичный LRCLIB, чтобы тексты продолжали работать.
+            val stored = preferences[LYRICS_PROVIDER] ?: LRCLIB
+            if (stored == SIMPMUSIC) LRCLIB else stored
         }
 
     override suspend fun setLyricsProvider(provider: String) {

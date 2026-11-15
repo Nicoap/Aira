@@ -118,6 +118,7 @@ import com.wavora.app.ui.component.OfflineErrorState
 import com.wavora.app.ui.component.QuickPicksItem
 import com.wavora.app.ui.component.ReviewDialog
 import com.wavora.app.ui.component.RippleIconButton
+import com.wavora.app.ui.component.ScrollArrows
 import com.wavora.app.ui.component.ShareSavedLyricsDialog
 import com.wavora.app.ui.navigation.destination.home.HomeDestination
 import com.wavora.app.ui.navigation.destination.home.MoodDestination
@@ -1060,35 +1061,37 @@ fun QuickPicks(
                     .fillMaxWidth()
                     .padding(vertical = 5.dp),
         )
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(4),
-            modifier = Modifier.height(256.dp),
-            state = lazyListState,
-            flingBehavior = snapperFlingBehavior,
-        ) {
-            items(homeItem.contents, key = { it?.videoId?.takeIf { v -> v.isNotEmpty() } ?: it?.browseId?.takeIf { b -> b.isNotEmpty() } ?: it.hashCode() }) {
-                if (it != null) {
-                    QuickPicksItem(
-                        onClick = {
-                            val firstQueue: Track = it.toTrack()
-                            viewModel.setQueueData(
-                                QueueData.Data(
-                                    listTracks = arrayListOf(firstQueue),
-                                    firstPlayedTrack = firstQueue,
-                                    playlistId = "RDAMVM${it.videoId}",
-                                    playlistName = "\"${it.title}\" Radio",
-                                    playlistType = PlaylistType.RADIO,
-                                    continuation = null,
-                                ),
-                            )
-                            viewModel.loadMediaItem(
-                                firstQueue,
-                                type = Config.SONG_CLICK,
-                            )
-                        },
-                        data = it,
-                        widthDp = widthDp,
-                    )
+        ScrollArrows(state = lazyListState) {
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(4),
+                modifier = Modifier.height(256.dp),
+                state = lazyListState,
+                flingBehavior = snapperFlingBehavior,
+            ) {
+                items(homeItem.contents, key = { it?.videoId?.takeIf { v -> v.isNotEmpty() } ?: it?.browseId?.takeIf { b -> b.isNotEmpty() } ?: it.hashCode() }) {
+                    if (it != null) {
+                        QuickPicksItem(
+                            onClick = {
+                                val firstQueue: Track = it.toTrack()
+                                viewModel.setQueueData(
+                                    QueueData.Data(
+                                        listTracks = arrayListOf(firstQueue),
+                                        firstPlayedTrack = firstQueue,
+                                        playlistId = "RDAMVM${it.videoId}",
+                                        playlistName = "\"${it.title}\" Radio",
+                                        playlistType = PlaylistType.RADIO,
+                                        continuation = null,
+                                    ),
+                                )
+                                viewModel.loadMediaItem(
+                                    firstQueue,
+                                    type = Config.SONG_CLICK,
+                                )
+                            },
+                            data = it,
+                            widthDp = widthDp,
+                        )
+                    }
                 }
             }
         }
@@ -1136,19 +1139,21 @@ fun MoodMomentAndGenre(
                     .fillMaxWidth()
                     .padding(vertical = 5.dp),
         )
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(3),
-            modifier = Modifier.height(210.dp),
-            state = lazyListState1,
-            flingBehavior = snapperFlingBehavior1,
-        ) {
-            items(mood.moodsMoments, key = { it.title + it.params }) {
-                MoodMomentAndGenreHomeItem(title = it.title) {
-                    navController.navigate(
-                        MoodDestination(
-                            it.params,
-                        ),
-                    )
+        ScrollArrows(state = lazyListState1) {
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(3),
+                modifier = Modifier.height(210.dp),
+                state = lazyListState1,
+                flingBehavior = snapperFlingBehavior1,
+            ) {
+                items(mood.moodsMoments, key = { it.title + it.params }) {
+                    MoodMomentAndGenreHomeItem(title = it.title) {
+                        navController.navigate(
+                            MoodDestination(
+                                it.params,
+                            ),
+                        )
+                    }
                 }
             }
         }
@@ -1173,19 +1178,21 @@ fun MoodMomentAndGenre(
                     .fillMaxWidth()
                     .padding(vertical = 5.dp),
         )
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(3),
-            modifier = Modifier.height(210.dp),
-            state = lazyListState2,
-            flingBehavior = snapperFlingBehavior2,
-        ) {
-            items(mood.genres, key = { it.title + it.params }) {
-                MoodMomentAndGenreHomeItem(title = it.title) {
-                    navController.navigate(
-                        MoodDestination(
-                            it.params,
-                        ),
-                    )
+        ScrollArrows(state = lazyListState2) {
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(3),
+                modifier = Modifier.height(210.dp),
+                state = lazyListState2,
+                flingBehavior = snapperFlingBehavior2,
+            ) {
+                items(mood.genres, key = { it.title + it.params }) {
+                    MoodMomentAndGenreHomeItem(title = it.title) {
+                        navController.navigate(
+                            MoodDestination(
+                                it.params,
+                            ),
+                        )
+                    }
                 }
             }
         }
@@ -1252,22 +1259,24 @@ fun ChartData(
             )
             val lazyListState = rememberLazyListState()
             val snapperFlingBehavior = rememberSnapFlingBehavior(SnapLayoutInfoProvider(lazyListState = lazyListState))
-            LazyRow(flingBehavior = snapperFlingBehavior) {
-                items(item.playlists.size, key = { index ->
-                    val data = item.playlists[index]
-                    data.id + data.title + index
-                }) {
-                    HomeItemContentPlaylist(
-                        onClick = {
-                            navController.navigate(
-                                PlaylistDestination(
-                                    playlistId = item.playlists[it].id,
-                                    isYourYouTubePlaylist = false,
-                                ),
-                            )
-                        },
-                        data = item.playlists[it],
-                    )
+            ScrollArrows(state = lazyListState) {
+                LazyRow(flingBehavior = snapperFlingBehavior) {
+                    items(item.playlists.size, key = { index ->
+                        val data = item.playlists[index]
+                        data.id + data.title + index
+                    }) {
+                        HomeItemContentPlaylist(
+                            onClick = {
+                                navController.navigate(
+                                    PlaylistDestination(
+                                        playlistId = item.playlists[it].id,
+                                        isYourYouTubePlaylist = false,
+                                    ),
+                                )
+                            },
+                            data = item.playlists[it],
+                        )
+                    }
                 }
             }
         }
@@ -1281,28 +1290,30 @@ fun ChartData(
                     .fillMaxWidth()
                     .padding(vertical = 10.dp),
         )
-        LazyHorizontalGrid(
-            rows = GridCells.Fixed(3),
-            modifier = Modifier.height(240.dp),
-            state = lazyListState2,
-            flingBehavior = snapperFlingBehavior2,
-        ) {
-            items(chart.artists.itemArtists.size, key = { index ->
-                val item = chart.artists.itemArtists[index]
-                item.title + item.browseId + index
-            }) {
-                val data = chart.artists.itemArtists[it]
-                ItemArtistChart(
-                    onClick = {
-                        navController.navigate(
-                            ArtistDestination(
-                                channelId = data.browseId,
-                            ),
-                        )
-                    },
-                    data = data,
-                    widthDp = gridWidthDp,
-                )
+        ScrollArrows(state = lazyListState2) {
+            LazyHorizontalGrid(
+                rows = GridCells.Fixed(3),
+                modifier = Modifier.height(240.dp),
+                state = lazyListState2,
+                flingBehavior = snapperFlingBehavior2,
+            ) {
+                items(chart.artists.itemArtists.size, key = { index ->
+                    val item = chart.artists.itemArtists[index]
+                    item.title + item.browseId + index
+                }) {
+                    val data = chart.artists.itemArtists[it]
+                    ItemArtistChart(
+                        onClick = {
+                            navController.navigate(
+                                ArtistDestination(
+                                    channelId = data.browseId,
+                                ),
+                            )
+                        },
+                        data = data,
+                        widthDp = gridWidthDp,
+                    )
+                }
             }
         }
     }

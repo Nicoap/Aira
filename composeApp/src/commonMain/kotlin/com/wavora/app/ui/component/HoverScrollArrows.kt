@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyListState
+import androidx.compose.foundation.lazy.grid.LazyGridState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.KeyboardArrowLeft
@@ -105,6 +106,78 @@ fun ScrollArrows(
         ) {
             ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowRight) {
                 scope.launch { state.animateScrollBy(state.viewportSize * 0.8f) }
+            }
+        }
+    }
+}
+
+/**
+ * То же для `LazyHorizontalGrid` (Quick picks, Moods, Genre): стрёлки видны всегда, пока есть
+ * куда скроллить — на десктопе половина плиток уезжала за край без всякой подсказки.
+ */
+@Composable
+fun ScrollArrows(
+    state: LazyGridState,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    Box(modifier) {
+        content()
+        AnimatedVisibility(
+            visible = state.canScrollBackward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowLeft) {
+                scope.launch { state.animateScrollBy(-(state.layoutInfo.viewportSize.width * 0.8f)) }
+            }
+        }
+        AnimatedVisibility(
+            visible = state.canScrollForward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowRight) {
+                scope.launch { state.animateScrollBy(state.layoutInfo.viewportSize.width * 0.8f) }
+            }
+        }
+    }
+}
+
+/**
+ * То же для обычного `LazyRow` (карусели альбомов/плейлистов): стрелки видны всегда, пока есть
+ * куда скроллить, — половина плиток уезжала за край без подсказки.
+ */
+@Composable
+fun ScrollArrows(
+    state: LazyListState,
+    modifier: Modifier = Modifier,
+    content: @Composable () -> Unit,
+) {
+    val scope = rememberCoroutineScope()
+    Box(modifier) {
+        content()
+        AnimatedVisibility(
+            visible = state.canScrollBackward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterStart),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowLeft) {
+                scope.launch { state.animateScrollBy(-(state.layoutInfo.viewportSize.width * 0.8f)) }
+            }
+        }
+        AnimatedVisibility(
+            visible = state.canScrollForward,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.CenterEnd),
+        ) {
+            ScrollArrow(Icons.AutoMirrored.Rounded.KeyboardArrowRight) {
+                scope.launch { state.animateScrollBy(state.layoutInfo.viewportSize.width * 0.8f) }
             }
         }
     }

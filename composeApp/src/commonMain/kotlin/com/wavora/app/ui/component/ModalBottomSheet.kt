@@ -1389,11 +1389,11 @@ fun NowPlayingBottomSheet(
     if (mainLyricsProvider) {
         var selected by remember {
             mutableIntStateOf(
+                // Источник «Aira Lyrics» убран: остались публичные LRCLIB,
+                // расшифровка YouTube и BetterLyrics.
                 when (uiState.mainLyricsProvider) {
-                    DataStoreManager.SIMPMUSIC -> 0
-                    DataStoreManager.LRCLIB -> 1
-                    DataStoreManager.YOUTUBE -> 2
-                    DataStoreManager.BETTER_LYRICS -> 3
+                    DataStoreManager.YOUTUBE -> 1
+                    DataStoreManager.BETTER_LYRICS -> 2
                     else -> 0
                 },
             )
@@ -1420,7 +1420,7 @@ fun NowPlayingBottomSheet(
                     ) {
                         RadioButton(selected = selected == 0, onClick = { selected = 0 })
                         Spacer(modifier = Modifier.size(10.dp))
-                        Text(text = stringResource(Res.string.wavora_lyrics), style = LocalAppTypography.current.labelSmall)
+                        Text(text = stringResource(Res.string.lrclib), style = LocalAppTypography.current.labelSmall)
                     }
                     Row(
                         modifier =
@@ -1432,7 +1432,7 @@ fun NowPlayingBottomSheet(
                     ) {
                         RadioButton(selected = selected == 1, onClick = { selected = 1 })
                         Spacer(modifier = Modifier.size(10.dp))
-                        Text(text = stringResource(Res.string.lrclib), style = LocalAppTypography.current.labelSmall)
+                        Text(text = stringResource(Res.string.youtube_transcript), style = LocalAppTypography.current.labelSmall)
                     }
                     Row(
                         modifier =
@@ -1444,18 +1444,6 @@ fun NowPlayingBottomSheet(
                     ) {
                         RadioButton(selected = selected == 2, onClick = { selected = 2 })
                         Spacer(modifier = Modifier.size(10.dp))
-                        Text(text = stringResource(Res.string.youtube_transcript), style = LocalAppTypography.current.labelSmall)
-                    }
-                    Row(
-                        modifier =
-                            Modifier
-                                .padding(horizontal = 4.dp)
-                                .fillMaxWidth()
-                                .clickable { selected = 3 },
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        RadioButton(selected = selected == 3, onClick = { selected = 3 })
-                        Spacer(modifier = Modifier.size(10.dp))
                         Text(text = stringResource(Res.string.better_lyrics), style = LocalAppTypography.current.labelSmall)
                     }
                 }
@@ -1466,11 +1454,9 @@ fun NowPlayingBottomSheet(
                         viewModel.onUIEvent(
                             NowPlayingBottomSheetUIEvent.ChangeLyricsProvider(
                                 when (selected) {
-                                    0 -> DataStoreManager.SIMPMUSIC
-                                    1 -> DataStoreManager.LRCLIB
-                                    2 -> DataStoreManager.YOUTUBE
-                                    3 -> DataStoreManager.BETTER_LYRICS
-                                    else -> DataStoreManager.SIMPMUSIC
+                                    1 -> DataStoreManager.YOUTUBE
+                                    2 -> DataStoreManager.BETTER_LYRICS
+                                    else -> DataStoreManager.LRCLIB
                                 },
                             ),
                         )

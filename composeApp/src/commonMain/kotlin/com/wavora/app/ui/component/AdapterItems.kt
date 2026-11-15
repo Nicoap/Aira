@@ -193,7 +193,9 @@ fun HomeItem(
                 )
             }
         }
-        HoverScrollArrows(state = lazyListState) {
+        // Стрелки видны всегда, а не только при наведении: раньше подсказки о горизонтальной
+        // прокрутке не было вовсе, и половина карусели оставалась за краем экрана.
+        ScrollArrows(state = lazyListState) {
             LazyRow(
                 state = lazyListState,
                 flingBehavior = snapperFlingBehavior,

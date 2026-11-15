@@ -375,10 +375,9 @@ class NowPlayingViewModel(
             }
             resetLyricsVoteState()
             when (dataStoreManager.lyricsProvider.first()) {
-                DataStoreManager.SIMPMUSIC -> getWavoraLyrics(videoId, song, artist ?: "", duration)
-                DataStoreManager.LRCLIB -> getLrclibLyrics(song, artist ?: "", duration)
                 DataStoreManager.YOUTUBE -> getYouTubeCaption(videoId, song, artist ?: "", duration)
                 DataStoreManager.BETTER_LYRICS -> getBetterLyrics(song, artist ?: "", duration)
+                else -> getLrclibLyrics(song, artist ?: "", duration)
             }
         }
     }
@@ -423,7 +422,7 @@ class NowPlayingViewModel(
                             getAITranslationLyrics(videoId, lyrics)
                         }
                     }
-                    else -> getWavoraLyrics(videoId, song, artist, duration)
+                    else -> getLrclibLyrics(song, artist, duration)
                 }
             }
     }
@@ -454,7 +453,7 @@ class NowPlayingViewModel(
                         insertLyrics(data.toLyricsEntity(song.videoId))
                         getAITranslationLyrics(song.videoId, data)
                     }
-                    else -> getWavoraLyrics(song.videoId, song, artist, duration)
+                    else -> getSavedLyrics(song.toTrack().copy(durationSeconds = duration))
                 }
             }
         }
