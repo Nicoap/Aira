@@ -41,6 +41,53 @@ object ListenBrainzApi {
         }
     }
 
+    /**
+     * «Сейчас играет» для ListenBrainz (`playing_now`). Без этого на сайте
+     * в блоке «Listening now» ничего не появляется — отправлялись только
+     * финальные прослушивания.
+     */
+    suspend fun submitNowPlaying(
+        userToken: String,
+        artist: String,
+        track: String,
+        album: String?,
+    ): Result<Unit> {
+        if (userToken.isBlank()) return Result.failure(IllegalArgumentException("ListenBrainz: token vacío"))
+        return runCatching {
+            val body =
+                buildJsonObject {
+                    put("listen_type", "playing_now")
+                    put(
+                        "payload",
+                        buildJsonArray {
+                            add(
+                                buildJsonObject {
+                                    put(
+                                        "track_metadata",
+                                        buildJsonObject {
+                                            put("artist_name", artist)
+                                            put("track_name", track)
+                                            if (!album.isNullOrBlank()) put("release_name", album)
+                                        },
+                                    )
+                                },
+                            )
+                        },
+                    )
+                }
+            val response =
+                httpClient.post(SUBMIT_URL) {
+                    header("Authorization", "Token $userToken")
+                    contentType(ContentType.Application.Json)
+                    setBody(Json.encodeToString(kotlinx.serialization.json.JsonObject.serializer(), body))
+                }
+            val responseBody = response.bodyAsText()
+            if (!response.status.isSuccess()) {
+                error("ListenBrainz playing_now HTTP ${response.status.value}: $responseBody")
+            }
+        }
+    }
+
     suspend fun submitListen(
         userToken: String,
         artist: String,

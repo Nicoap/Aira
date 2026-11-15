@@ -80,7 +80,11 @@ jobs:
           fi
 
           TAG_VERSION="${TAG#v}"
-          if [ "$TAG_VERSION" != "$VERSION_NAME" ]; then
+          # Тег может нести суффикс сборки (например v1.0.0-aira), а version-name
+          # в libs.versions.toml — только числовую часть, поэтому сравниваем базу.
+          BASE_TAG_VERSION="${TAG_VERSION%%-*}"
+          BASE_VERSION_NAME="${VERSION_NAME%%-*}"
+          if [ "$BASE_TAG_VERSION" != "$BASE_VERSION_NAME" ]; then
             echo "::error::El tag ($TAG) no coincide con version-name en gradle/libs.versions.toml ($VERSION_NAME)."
             echo "::error::Actualizá libs.versions.toml y volvé a taguear, o corré workflow_dispatch sin 'tag' para usar la versión del repo."
             exit 1

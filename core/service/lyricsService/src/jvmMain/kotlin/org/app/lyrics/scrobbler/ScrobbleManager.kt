@@ -19,6 +19,40 @@ object ScrobbleManager {
      * escuchó. [startedAtEpochSeconds] es el momento en que EMPEZÓ a sonar
      * (Last.fm y ListenBrainz timestampean el inicio del listen, no el fin).
      */
+    /**
+     * «Сейчас играет»: сообщаем обоим сервисам сразу после старта трека.
+     * Раньше отправлялись только финальные прослушивания, поэтому в профилях
+     * Last.fm и ListenBrainz было пусто, пока трек не доиграет до конца.
+     */
+    suspend fun updateNowPlaying(
+        dataStoreManager: DataStoreManager,
+        artist: String,
+        title: String,
+        album: String?,
+    ) {
+        if (artist.isBlank() || title.isBlank()) return
+        val lastFmEnabled = dataStoreManager.scrobbleLastFmEnabled.first() == DataStoreManager.Values.TRUE
+        val listenBrainzEnabled = dataStoreManager.scrobbleListenBrainzEnabled.first() == DataStoreManager.Values.TRUE
+        if (!lastFmEnabled && !listenBrainzEnabled) return
+
+        if (lastFmEnabled) {
+            val sessionKey = dataStoreManager.scrobbleLastFmSessionKey.first()
+            if (sessionKey.isNotBlank()) {
+                LastFmApi
+                    .updateNowPlaying(sessionKey, artist, title, album)
+                    .onFailure { Logger.w(TAG, "Fallo al marcar 'ahora suena' en Last.fm ($title): ${it.message}") }
+            }
+        }
+        if (listenBrainzEnabled) {
+            val token = dataStoreManager.scrobbleListenBrainzToken.first()
+            if (token.isNotBlank()) {
+                ListenBrainzApi
+                    .submitNowPlaying(token, artist, title, album)
+                    .onFailure { Logger.w(TAG, "Fallo al marcar 'playing now' en ListenBrainz ($title): ${it.message}") }
+            }
+        }
+    }
+
     suspend fun maybeScrobble(
         dataStoreManager: DataStoreManager,
         artist: String,

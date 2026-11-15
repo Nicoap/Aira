@@ -289,6 +289,10 @@ class JvmMediaPlayerHandlerImpl(
     private var listenSong: SongEntity? = null
     private var listenMillis = 0L
     private var listenReachedEnd = false
+    // Номер текущей сессии и номер сессии, за которую скроббл уже ушёл: так трек не
+    // скробблится дважды, даже если отправка на середине случилась уже после перехода.
+    private var listenSessionId = 0L
+    private var listenScrobbledFor = -1L
     private var lastSamplePosition = -1L
     private var lastSampleAtMs = 0L
 
@@ -2670,8 +2674,12 @@ class JvmMediaPlayerHandlerImpl(
             listenSong = song
             listenMillis = 0L
             listenReachedEnd = false
+            listenSessionId += 1L
             lastSamplePosition = -1L
             lastSampleAtMs = 0L
+            // Сразу сообщаем «сейчас играет», иначе в Last.fm и ListenBrainz
+            // до конца трека ничего не видно.
+            notifyNowPlaying(song)
         }
         val nowMs = System.currentTimeMillis()
         val previous = lastSamplePosition
@@ -2687,6 +2695,51 @@ class JvmMediaPlayerHandlerImpl(
         if (position >= (song.durationSeconds * 1000L * LISTEN_END_RATIO).toLong()) {
             listenReachedEnd = true
         }
+        // Скроббл по достижении половины (или 4 минут), не дожидаясь конца трека:
+        // так история пополняется, даже если трек переключат.
+        if (listenScrobbledFor != listenSessionId) {
+            val listenedSeconds = listenMillis / 1000
+            val half = song.durationSeconds / 2
+            if (song.durationSeconds >= 30 && (listenedSeconds >= half || listenedSeconds >= 240)) {
+                scrobbleSession(song, listenedSeconds, listenSessionId)
+            }
+        }
+    }
+
+    /** Отправляет трек как «сейчас играет» в Last.fm / ListenBrainz. */
+    private fun notifyNowPlaying(song: SongEntity) {
+        val artist = song.artistName?.joinToString(", ") ?: ""
+        coroutineScope.launch {
+            withContext(Dispatchers.IO) {
+                org.app.lyrics.scrobbler.ScrobbleManager.updateNowPlaying(
+                    dataStoreManager = dataStoreManager,
+                    artist = artist,
+                    title = song.title,
+                    album = song.albumName,
+                )
+            }
+        }
+    }
+
+    /** Один скроббл за сессию трека; повторный вызов игнорируется. */
+    private fun scrobbleSession(
+        song: SongEntity,
+        listenedSeconds: Long,
+        sessionId: Long,
+    ) {
+        if (listenScrobbledFor == sessionId) return
+        listenScrobbledFor = sessionId
+        coroutineScope.launch {
+            withContext(Dispatchers.IO) {
+                org.app.lyrics.scrobbler.ScrobbleManager.maybeScrobble(
+                    dataStoreManager = dataStoreManager,
+                    artist = song.artistName?.joinToString(", ") ?: "",
+                    title = song.title,
+                    album = song.albumName,
+                    startedAtEpochSeconds = (System.currentTimeMillis() / 1000) - listenedSeconds,
+                )
+            }
+        }
     }
 
     /** Записывает одно событие статистики за прошедшую сессию трека, если накопилось достаточно. */
@@ -2694,6 +2747,7 @@ class JvmMediaPlayerHandlerImpl(
         val song = listenSong
         val listened = listenMillis
         val reachedEnd = listenReachedEnd
+        val sessionId = listenSessionId
         listenSong = null
         listenMillis = 0L
         listenReachedEnd = false
@@ -2705,21 +2759,13 @@ class JvmMediaPlayerHandlerImpl(
         val listenedSeconds = (listened / 1000).coerceAtMost(song.durationSeconds.toLong())
         coroutineScope.launch {
             // Скробблинг живёт отдельно от локальной статистики: у него свои тумблеры,
-            // но считается он по тому же накопленному времени — раньше процент брался
-            // в момент смены трека, когда позиция уже обнулилась, и скробблов не было.
+            // но считается он по тому же накопленному времени. Флаг listenScrobbled не
+            // даёт отправить трек второй раз, если он уже ушёл на середине.
             val scrobbleEligible =
                 song.durationSeconds >= 30 &&
                     (listenedSeconds >= song.durationSeconds / 2 || listenedSeconds >= 240)
             if (scrobbleEligible) {
-                withContext(Dispatchers.IO) {
-                    org.app.lyrics.scrobbler.ScrobbleManager.maybeScrobble(
-                        dataStoreManager = dataStoreManager,
-                        artist = song.artistName?.joinToString(", ") ?: "",
-                        title = song.title,
-                        album = song.albumName,
-                        startedAtEpochSeconds = (System.currentTimeMillis() / 1000) - listenedSeconds,
-                    )
-                }
+                scrobbleSession(song, listenedSeconds, sessionId)
             }
             val trackingEnabled = dataStoreManager.localTrackingEnabled.first() == TRUE
             if (!trackingEnabled) {

@@ -137,6 +137,47 @@ object LastFmApi {
         }
     }
 
+    /**
+     * «Сейчас играет»: Last.fm показывает трек сразу после старта.
+     * Без этого история пополнялась только в конце трека, а страница профиля
+     * оставалась пустой, пока трек не доиграет.
+     */
+    suspend fun updateNowPlaying(
+        sessionKey: String,
+        artist: String,
+        track: String,
+        album: String?,
+    ): Result<Unit> {
+        if (!isConfigured) return Result.failure(IllegalStateException("Last.fm no configurado (falta LASTFM_API_KEY/SECRET)"))
+        return runCatching {
+            val params =
+                buildMap {
+                    put("method", "track.updateNowPlaying")
+                    put("api_key", apiKey)
+                    put("sk", sessionKey)
+                    put("artist", artist)
+                    put("track", track)
+                    if (!album.isNullOrBlank()) put("album", album)
+                }
+            val response =
+                httpClient.post(API_ROOT) {
+                    setBody(
+                        FormDataContent(
+                            Parameters.build {
+                                params.forEach { (k, v) -> append(k, v) }
+                                append("api_sig", sign(params))
+                                append("format", "json")
+                            },
+                        ),
+                    )
+                }
+            val body = response.bodyAsText()
+            if (!response.status.isSuccess()) {
+                error("Last.fm track.updateNowPlaying HTTP ${response.status.value}: $body")
+            }
+        }
+    }
+
     /** Registra un scrobble. [timestampSeconds] es el momento en que EMPEZÓ a sonar, en epoch seconds UTC. */
     suspend fun scrobble(
         sessionKey: String,
