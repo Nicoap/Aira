@@ -288,6 +288,10 @@ class JvmMediaPlayerHandlerImpl(
     // в момент перехода: короткие треки и последний трек сессии раньше терялись.
     private var listenSong: SongEntity? = null
     private var listenMillis = 0L
+    // Стенные часы: на «грязном» IP поток постоянно перезапускается и позиция сбрасывается
+    // в ноль, поэтому дельта позиции иногда не накапливается вовсе. Тогда время считаем
+    // по реально прошедшим секундам воспроизведения.
+    private var listenWallMs = 0L
     private var listenReachedEnd = false
     // Номер текущей сессии и номер сессии, за которую скроббл уже ушёл: так трек не
     // скробблится дважды, даже если отправка на середине случилась уже после перехода.
@@ -2673,6 +2677,7 @@ class JvmMediaPlayerHandlerImpl(
             flushListening()
             listenSong = song
             listenMillis = 0L
+            listenWallMs = 0L
             listenReachedEnd = false
             listenSessionId += 1L
             lastSamplePosition = -1L
@@ -2684,6 +2689,11 @@ class JvmMediaPlayerHandlerImpl(
         val nowMs = System.currentTimeMillis()
         val previous = lastSamplePosition
         val elapsed = if (lastSampleAtMs > 0L) nowMs - lastSampleAtMs else Long.MAX_VALUE
+        // Пока трек играет, цикл тикает каждые 250 мс: нормальный интервал — до ~2 с.
+        // Всё, что больше, означает паузу/подвисание и в зачёт не идёт.
+        if (lastSampleAtMs > 0L && elapsed in 0..2000L) {
+            listenWallMs += elapsed
+        }
         lastSamplePosition = position
         lastSampleAtMs = nowMs
         if (previous >= 0L) {
@@ -2698,7 +2708,7 @@ class JvmMediaPlayerHandlerImpl(
         // Скроббл по достижении половины (или 4 минут), не дожидаясь конца трека:
         // так история пополняется, даже если трек переключат.
         if (listenScrobbledFor != listenSessionId) {
-            val listenedSeconds = listenMillis / 1000
+            val listenedSeconds = maxOf(listenMillis, listenWallMs) / 1000
             val half = song.durationSeconds / 2
             if (song.durationSeconds >= 30 && (listenedSeconds >= half || listenedSeconds >= 240)) {
                 scrobbleSession(song, listenedSeconds, listenSessionId)
@@ -2745,14 +2755,21 @@ class JvmMediaPlayerHandlerImpl(
     /** Записывает одно событие статистики за прошедшую сессию трека, если накопилось достаточно. */
     private fun flushListening() {
         val song = listenSong
-        val listened = listenMillis
+        // Берём максимум из двух счётчиков: позиция врёт при перезапусках потока, стенные
+        // часы — при паузах, поэтому надёжнее то, что больше.
+        val listened = maxOf(listenMillis, listenWallMs)
         val reachedEnd = listenReachedEnd
         val sessionId = listenSessionId
         listenSong = null
         listenMillis = 0L
+        listenWallMs = 0L
         listenReachedEnd = false
         lastSamplePosition = -1L
         lastSampleAtMs = 0L
+        Logger.d(
+            TAG,
+            "Flush listening: ${song?.title} pos=${listened / 1000}s of ${song?.durationSeconds}s (reachedEnd=$reachedEnd)",
+        )
         if (song == null || song.durationSeconds <= 0 || listened < LISTEN_MIN_MS) {
             return
         }

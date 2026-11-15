@@ -40,7 +40,7 @@ object ScrobbleManager {
             if (sessionKey.isNotBlank()) {
                 LastFmApi
                     .updateNowPlaying(sessionKey, artist, title, album)
-                    .onFailure { Logger.w(TAG, "Fallo al marcar 'ahora suena' en Last.fm ($title): ${it.message}") }
+                    .onFailure { handleLastFmFailure(dataStoreManager, title, it.message) }
             }
         }
         if (listenBrainzEnabled) {
@@ -71,7 +71,7 @@ object ScrobbleManager {
             } else {
                 LastFmApi
                     .scrobble(sessionKey, artist, title, album, startedAtEpochSeconds)
-                    .onFailure { Logger.w(TAG, "Fallo al scrobblear '$title' a Last.fm: ${it.message}") }
+                    .onFailure { handleLastFmFailure(dataStoreManager, title, it.message) }
             }
         }
 
@@ -84,6 +84,27 @@ object ScrobbleManager {
                     .submitListen(token, artist, title, album, startedAtEpochSeconds)
                     .onFailure { Logger.w(TAG, "Fallo al scrobblear '$title' a ListenBrainz: ${it.message}") }
             }
+        }
+    }
+
+    /**
+     * Общая обработка ошибок Last.fm.
+     *
+     * WHY: ключ сессии привязан к API-ключу приложения. После смены приложения
+     * (`Aira-Music-Player`) старый ключ навсегда невалиден, Last.fm отвечает
+     * `error: 9 / Invalid session key`, и без сброса пользователь навсегда видит
+     * «подключено», хотя скробблинг молча не работает.
+     */
+    private suspend fun handleLastFmFailure(
+        dataStoreManager: DataStoreManager,
+        title: String,
+        message: String?,
+    ) {
+        Logger.w(TAG, "Fallo al scrobblear '$title' a Last.fm: $message")
+        val invalidSession = message != null && (message.contains("Invalid session key") || message.contains("\"error\":9"))
+        if (invalidSession) {
+            dataStoreManager.clearScrobbleLastFmSession()
+            Logger.w(TAG, "Last.fm session key invalid (other API key?) — сессия сброшена, нужен повторный вход")
         }
     }
 }

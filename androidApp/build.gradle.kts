@@ -245,9 +245,19 @@ sentry {
                     println("Failed to load SENTRY_AUTH_TOKEN from local.properties: ${e.message}")
                     null
                 }
+        // Без токена Sentry отвечает 401 и валит задачу
+        // :androidApp:uploadSentryProguardMappingsMobileRelease, а вместе с ней и весь
+        // релиз. Поэтому аплоад включаем только когда токен действительно есть.
+        val hasToken = !token.isNullOrBlank()
         authToken.set(token ?: "")
-        includeProguardMapping.set(true)
-        autoUploadProguardMapping.set(true)
+        includeProguardMapping.set(hasToken)
+        autoUploadProguardMapping.set(hasToken)
+        if (!hasToken) {
+            uploadNativeSymbols.set(false)
+            includeDependenciesReport.set(false)
+            includeSourceContext.set(false)
+            includeNativeSources.set(false)
+        }
     } else {
         includeProguardMapping.set(false)
         autoUploadProguardMapping.set(false)
