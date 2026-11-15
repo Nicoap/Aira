@@ -257,40 +257,18 @@ Aira is a **Kotlin Multiplatform** project. Shared Kotlin code targets both `and
 
 ## Screenshots
 
-<h3 align="center">🖥️ Windows</h3>
-
 <p align="center">
-  <img src="docs/screenshots/001.png" width="220"/>
-  <img src="docs/screenshots/002.png" width="220"/>
-  <img src="docs/screenshots/003.png" width="220"/>
+  <img src="docs/screenshots/aira-01-home.png" width="420"/>
+  <img src="docs/screenshots/aira-02-library.png" width="420"/>
 </p>
 
 <p align="center">
-  <img src="docs/screenshots/004.png" width="220"/>
-  <img src="docs/screenshots/005.png" width="220"/>
-  <img src="docs/screenshots/006.png" width="220"/>
+  <img src="docs/screenshots/aira-03-settings.png" width="420"/>
+  <img src="docs/screenshots/aira-04-album.png" width="420"/>
 </p>
 
-<br>
-
-<h3 align="center">📱 Android</h3>
-
-<p align="center">
-  <img src="docs/screenshots/1.png" width="220"/>
-  <img src="docs/screenshots/2.png" width="220"/>
-  <img src="docs/screenshots/3.png" width="220"/>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/5.png" width="220"/>
-  <img src="docs/screenshots/6.png" width="220"/>
-</p>
-
-<p align="center">
-  <img src="docs/screenshots/7.png" width="220"/>
-  <img src="docs/screenshots/8.png" width="220"/>
-  <img src="docs/screenshots/9.png" width="220"/>
-</p>
+<sub align="center">Windows build: home with your own chips and sections, library mixes, theme settings with a
+custom palette, and an album page that glows with the colours of its cover art.</sub>
 
 
 ## Installation
