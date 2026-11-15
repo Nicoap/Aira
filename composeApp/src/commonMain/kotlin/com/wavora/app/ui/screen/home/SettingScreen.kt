@@ -307,6 +307,19 @@ import wavora.composeapp.generated.resources.theme_surface_color
 import wavora.composeapp.generated.resources.theme_text_color
 import wavora.composeapp.generated.resources.theme_secondary_text_color
 import wavora.composeapp.generated.resources.theme_color_description
+import wavora.composeapp.generated.resources.direct_stream
+import wavora.composeapp.generated.resources.direct_stream_off
+import wavora.composeapp.generated.resources.direct_stream_on
+import wavora.composeapp.generated.resources.mini_player_accent_color
+import wavora.composeapp.generated.resources.mini_player_background_color
+import wavora.composeapp.generated.resources.mini_player_theme
+import wavora.composeapp.generated.resources.mini_player_theme_off
+import wavora.composeapp.generated.resources.mini_player_theme_on
+import wavora.composeapp.generated.resources.theme_preset_graphite
+import wavora.composeapp.generated.resources.theme_preset_midnight
+import wavora.composeapp.generated.resources.theme_preset_nord
+import wavora.composeapp.generated.resources.theme_preset_paper
+import wavora.composeapp.generated.resources.theme_preset_sepia
 import wavora.composeapp.generated.resources.reset_theme
 import wavora.composeapp.generated.resources.reset_theme_description
 import wavora.composeapp.generated.resources.wavora_dev
@@ -740,9 +753,21 @@ fun SettingScreen(
             Column {
                 Spacer(Modifier.height(16.dp))
                 Text(text = stringResource(Res.string.user_interface), style = LocalAppTypography.current.labelMedium, color = MaterialTheme.colorScheme.onSurface)
+                // Подписи берём из ресурсов: иначе список тем остаётся русским при любом
+                // выбранном языке. Собираем их заранее — внутри onClick это уже не
+                // composable-контекст, а `map { stringResource(...) }` не компилируется.
+                val customThemeLabel = stringResource(WAVORA_CUSTOM_THEME_LABEL)
+                val presetLabels =
+                    listOf(
+                        stringResource(Res.string.theme_preset_graphite),
+                        stringResource(Res.string.theme_preset_midnight),
+                        stringResource(Res.string.theme_preset_nord),
+                        stringResource(Res.string.theme_preset_sepia),
+                        stringResource(Res.string.theme_preset_paper),
+                    )
                 SettingItem(
                     title = themePresetLabel,
-                    subtitle = currentThemePreset?.label ?: WAVORA_CUSTOM_THEME_LABEL,
+                    subtitle = currentThemePreset?.let { stringResource(it.labelRes) } ?: customThemeLabel,
                     onClick = {
                         val presets = WavoraThemePresets
                         viewModel.setAlertData(
@@ -751,14 +776,15 @@ fun SettingScreen(
                                 selectOne =
                                     SettingAlertState.SelectData(
                                         listSelect =
-                                            presets.map { preset ->
-                                                (preset.id == currentThemePreset?.id) to preset.label
-                                            } + ((currentThemePreset == null) to WAVORA_CUSTOM_THEME_LABEL),
+                                            presets.mapIndexed { index, preset ->
+                                                (preset.id == currentThemePreset?.id) to presetLabels[index]
+                                            } + ((currentThemePreset == null) to customThemeLabel),
                                     ),
                                 confirm =
                                     change to { state ->
                                         val chosenLabel = state.selectOne?.getSelected()
-                                        val preset = presets.firstOrNull { it.label == chosenLabel }
+                                        val chosenIndex = presetLabels.indexOf(chosenLabel)
+                                        val preset = presets.getOrNull(chosenIndex)
                                         if (preset != null) {
                                             viewModel.setThemeBackgroundColor(preset.background)
                                             viewModel.setThemeSurfaceColor(preset.surface)
@@ -822,19 +848,19 @@ fun SettingScreen(
                     )
                 }
                 SettingItem(
-                    title = "Своя тема мини-плеера",
+                    title = stringResource(Res.string.mini_player_theme),
                     subtitle =
                         if (miniPlayerThemeEnabled) {
-                            "Остров использует свои цвета"
+                            stringResource(Res.string.mini_player_theme_on)
                         } else {
-                            "Остров использует цвета основной темы"
+                            stringResource(Res.string.mini_player_theme_off)
                         },
                     switch = miniPlayerThemeEnabled to { viewModel.setMiniPlayerThemeEnabled(it) },
                 )
                 if (miniPlayerThemeEnabled) {
                     listOf(
-                        Triple("Фон мини-плеера", miniPlayerBackgroundColor, viewModel::setMiniPlayerBackgroundColor),
-                        Triple("Акцент мини-плеера", miniPlayerAccentColor, viewModel::setMiniPlayerAccentColor),
+                        Triple(stringResource(Res.string.mini_player_background_color), miniPlayerBackgroundColor, viewModel::setMiniPlayerBackgroundColor),
+                        Triple(stringResource(Res.string.mini_player_accent_color), miniPlayerAccentColor, viewModel::setMiniPlayerAccentColor),
                     ).forEach { (label, value, saveColor) ->
                         val fallbackColor = MaterialTheme.colorScheme.onSurface
                         val colorPreview =
@@ -1354,12 +1380,12 @@ fun SettingScreen(
                     switch = (saveLastPlayed to { viewModel.setSaveLastPlayed(it) }),
                 )
                 SettingItem(
-                    title = "Прямой поток",
+                    title = stringResource(Res.string.direct_stream),
                     subtitle =
                         if (directStreamEnabled) {
-                            "Ссылка идёт в плеер напрямую, без локального прокси"
+                            stringResource(Res.string.direct_stream_on)
                         } else {
-                            "Поток идёт через локальный прокси с разбиением на куски"
+                            stringResource(Res.string.direct_stream_off)
                         },
                     switch = (directStreamEnabled to { viewModel.setDirectStreamEnabled(it) }),
                 )

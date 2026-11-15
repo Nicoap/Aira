@@ -74,7 +74,11 @@ import com.wavora.app.viewModel.SharedViewModel
 import com.wavora.app.viewModel.UIEvent
 import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
+import org.jetbrains.compose.resources.stringResource
 import wavora.composeapp.generated.resources.Res
+import wavora.composeapp.generated.resources.island_mode_click
+import wavora.composeapp.generated.resources.island_mode_hover
+import wavora.composeapp.generated.resources.island_nothing_playing
 import wavora.composeapp.generated.resources.baseline_close_24
 import wavora.composeapp.generated.resources.baseline_favorite_24
 import wavora.composeapp.generated.resources.baseline_favorite_border_24
@@ -380,7 +384,7 @@ private fun ExpandedIslandContent(
     Box(modifier = modifier.padding(start = IslandFlare + 12.dp, end = IslandFlare + 12.dp, top = 12.dp)) {
         if (!hasTrack) {
             Text(
-                text = "Ничего не играет",
+                text = stringResource(Res.string.island_nothing_playing),
                 modifier = Modifier.align(Alignment.Center),
                 color = LocalIslandPalette.current.textSecondary,
                 fontSize = 13.sp,
@@ -479,7 +483,7 @@ private fun ExpandedIslandContent(
                         verticalAlignment = Alignment.CenterVertically,
                     ) {
                         Text(
-                            text = if (expandOnHover) "Наведение" else "Клик",
+                            text = if (expandOnHover) stringResource(Res.string.island_mode_hover) else stringResource(Res.string.island_mode_click),
                             modifier =
                                 Modifier
                                     .clip(RoundedCornerShape(50))

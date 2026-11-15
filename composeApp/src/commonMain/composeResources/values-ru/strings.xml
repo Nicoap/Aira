@@ -223,6 +223,8 @@
     <string name="sleep_timer_end_of_song">Таймер сна - Конец песни</string>
     <string name="sleep_timer_off">Таймер сна</string>
     <string name="sleep_minutes">Время отсчета (минуты)</string>
+    <string name="sleep_preset_minutes">%1$s мин</string>
+    <string name="sleep_preset_hour">1 час</string>
     <string name="set">Установить</string>
     <string name="sleep_timer_off_done">Таймер сна остановлен</string>
     <string name="sleep_timer_set_error">Пожалуйста, укажите корректный формат времени</string>
@@ -731,4 +733,26 @@
     <string name="download_folder_default">По умолчанию (.Aira/downloads в вашей папке пользователя)</string>
     <string name="download_folder_reset">Сбросить папку загрузок</string>
     <string name="download_folder_reset_hint">Вернуться к папке по умолчанию. Уже скачанные треки продолжат воспроизводиться.</string>
+    <string name="theme_preset">Тема</string>
+    <string name="theme_preset_graphite">Графит</string>
+    <string name="theme_preset_midnight">Полночь</string>
+    <string name="theme_preset_nord">Норд</string>
+    <string name="theme_preset_sepia">Сепия</string>
+    <string name="theme_preset_paper">Бумага</string>
+    <string name="theme_preset_custom">Своя</string>
+    <string name="mini_player_theme">Своя тема мини-плеера</string>
+    <string name="mini_player_theme_on">Остров использует свои цвета</string>
+    <string name="mini_player_theme_off">Остров использует цвета основной темы</string>
+    <string name="mini_player_background_color">Фон мини-плеера (HEX)</string>
+    <string name="mini_player_accent_color">Акцент мини-плеера (HEX)</string>
+    <string name="direct_stream">Прямой поток</string>
+    <string name="direct_stream_on">Ссылка идёт в плеер напрямую, без локального прокси</string>
+    <string name="direct_stream_off">Поток идёт через локальный прокси с разбиением на куски</string>
+    <string name="color_hue">Оттенок</string>
+    <string name="color_saturation">Насыщенность</string>
+    <string name="color_brightness">Яркость</string>
+    <string name="color_eyedropper">Пипетка</string>
+    <string name="island_nothing_playing">Ничего не играет</string>
+    <string name="island_mode_hover">Наведение</string>
+    <string name="island_mode_click">Клик</string>
 </resources>

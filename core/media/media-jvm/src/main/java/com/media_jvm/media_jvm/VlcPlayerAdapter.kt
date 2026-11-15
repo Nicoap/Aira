@@ -3807,26 +3807,34 @@ class VlcPlayerAdapter(
         }
 
         // Прямой поток — так работает апстрим Wavora: libVLC получает исходную ссылку
-        // googlevideo без локального прокси. Наш прокси с чанками и HLS-манифестами
-        // добавлял задержки и рывки, поэтому этот режим включён по умолчанию.
+        // googlevideo без локального прокси. Но на «грязном» exit-IP такая ссылка живёт
+        // только ~1 МиБ, после чего сервер отвечает 403 и VLC зацикливает последнюю секунду.
+        // Поэтому прямо отдаём её ТОЛЬКО когда сервер согласен отдать файл целиком, иначе
+        // молча падаем на HLS-манифест ниже — он надёжен в любом случае.
         if (dataStoreManager.directStreamEnabled.first()) {
             val row = streamRepository.getNewFormat(videoId).lastOrNull()
             val rawAudio =
                 row?.audioUrl?.takeIf { !it.isHlsLink() }?.let { streamRepository.unwrapStreamUrl(it) }
             val rawVideo =
                 row?.videoUrl?.takeIf { !it.isHlsLink() }?.let { streamRepository.unwrapStreamUrl(it) }
-            if (shouldFindVideo && rawVideo != null) {
-                Logger.w("Stream", "Direct video stream (no proxy)")
-                return PlayableSource(
-                    isVideo = true,
-                    url = rawVideo,
-                    audioSlaveUrl = rawAudio?.takeIf { it != rawVideo },
-                )
+            if (shouldFindVideo && rawVideo != null && isProgressiveUsable(rawVideo)) {
+                // Видео-itag идёт без звука: без второй ссылки включать прямой режим нельзя,
+                // иначе трек стартует без звука.
+                val slave = rawAudio?.takeIf { it != rawVideo }
+                if (slave == null || isProgressiveUsable(slave)) {
+                    Logger.w("Stream", "Direct video stream (no proxy)")
+                    return PlayableSource(
+                        isVideo = true,
+                        url = rawVideo,
+                        audioSlaveUrl = slave,
+                    )
+                }
             }
-            if (!shouldFindVideo && rawAudio != null) {
+            if (!shouldFindVideo && rawAudio != null && isProgressiveUsable(rawAudio)) {
                 Logger.w("Stream", "Direct audio stream (no proxy)")
                 return PlayableSource(isVideo = false, url = rawAudio)
             }
+            Logger.w("Stream", "Direct stream skipped (throttled on this IP), using HLS")
         }
 
         // Прогрессивная ссылка — лучшее качество (opus 251), но только если сервер отдаёт файл

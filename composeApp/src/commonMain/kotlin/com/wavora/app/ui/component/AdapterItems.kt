@@ -564,7 +564,9 @@ fun QuickPicksItem(
         modifier =
             Modifier
                 .wrapContentHeight()
-                .width(widthDp - 30.dp)
+                // Плитка занимала почти всю ширину контейнера (widthDp - 30.dp) и вылезала
+                // за границы видимой области сетки. Делим ширину пополам — в ряд влезает две.
+                .width(((widthDp / 2) - 20.dp).coerceAtLeast(220.dp))
                 .focusable(true)
                 .clickable {
                     onClick()

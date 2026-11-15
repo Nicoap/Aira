@@ -35,6 +35,14 @@ import androidx.compose.ui.unit.dp
 import com.wavora.app.expect.ui.startScreenColorPicker
 import com.wavora.app.ui.theme.LocalAppTypography
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.resources.stringResource
+import wavora.composeapp.generated.resources.Res
+import wavora.composeapp.generated.resources.cancel
+import wavora.composeapp.generated.resources.color_brightness
+import wavora.composeapp.generated.resources.color_eyedropper
+import wavora.composeapp.generated.resources.color_hue
+import wavora.composeapp.generated.resources.color_saturation
+import wavora.composeapp.generated.resources.done
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -112,7 +120,7 @@ fun ColorPickerDialog(
                     )
                 }
                 GradientSlider(
-                    label = "Оттенок",
+                    label = stringResource(Res.string.color_hue),
                     value = hue,
                     range = 0f..360f,
                     brush =
@@ -133,7 +141,7 @@ fun ColorPickerDialog(
                     },
                 )
                 GradientSlider(
-                    label = "Насыщенность",
+                    label = stringResource(Res.string.color_saturation),
                     value = saturation,
                     range = 0f..1f,
                     brush =
@@ -149,7 +157,7 @@ fun ColorPickerDialog(
                     },
                 )
                 GradientSlider(
-                    label = "Яркость",
+                    label = stringResource(Res.string.color_brightness),
                     value = brightness,
                     range = 0f..1f,
                     brush =
@@ -173,19 +181,19 @@ fun ColorPickerDialog(
                             }
                         },
                     ) {
-                        Text("Пипетка")
+                        Text(stringResource(Res.string.color_eyedropper))
                     }
                 }
             }
         },
         confirmButton = {
             TextButton(onClick = { onConfirm(currentColor.toHexString()) }) {
-                Text("Готово")
+                Text(stringResource(Res.string.done))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Отмена")
+                Text(stringResource(Res.string.cancel))
             }
         },
     )

@@ -1,5 +1,14 @@
 package com.wavora.app.ui.theme
 
+import org.jetbrains.compose.resources.StringResource
+import wavora.composeapp.generated.resources.Res
+import wavora.composeapp.generated.resources.theme_preset_custom
+import wavora.composeapp.generated.resources.theme_preset_graphite
+import wavora.composeapp.generated.resources.theme_preset_midnight
+import wavora.composeapp.generated.resources.theme_preset_nord
+import wavora.composeapp.generated.resources.theme_preset_paper
+import wavora.composeapp.generated.resources.theme_preset_sepia
+
 /**
  * Готовые темы вместо выбора «светлая / тёмная / системная».
  *
@@ -7,10 +16,13 @@ package com.wavora.app.ui.theme
  * переключатель светлой и тёмной темы ничего не решал — он выбирал лишь базовую схему, которую
  * всё равно перетирали HEX-значения. Теперь тема — это набор из четырёх цветов; «светлая» и
  * «тёмная» получаются автоматически по яркости фона (см. `AppTheme`).
+ *
+ * Названия пресетов хранятся ресурсами, а не строками: иначе список тем оставался русским
+ * при любом выбранном языке приложения.
  */
 data class WavoraThemePreset(
     val id: String,
-    val label: String,
+    val labelRes: StringResource,
     val background: String,
     val surface: String,
     val text: String,
@@ -25,7 +37,7 @@ val WavoraThemePresets =
     listOf(
         WavoraThemePreset(
             id = "graphite",
-            label = "Графит",
+            labelRes = Res.string.theme_preset_graphite,
             background = "#0B0B0B",
             surface = "#131313",
             text = "#F2F2F2",
@@ -33,7 +45,7 @@ val WavoraThemePresets =
         ),
         WavoraThemePreset(
             id = "midnight",
-            label = "Полночь",
+            labelRes = Res.string.theme_preset_midnight,
             background = "#0A1020",
             surface = "#121A2E",
             text = "#E8EEF9",
@@ -41,7 +53,7 @@ val WavoraThemePresets =
         ),
         WavoraThemePreset(
             id = "nord",
-            label = "Норд",
+            labelRes = Res.string.theme_preset_nord,
             background = "#2E3440",
             surface = "#3B4252",
             text = "#ECEFF4",
@@ -49,7 +61,7 @@ val WavoraThemePresets =
         ),
         WavoraThemePreset(
             id = "sepia",
-            label = "Сепия",
+            labelRes = Res.string.theme_preset_sepia,
             background = "#F4ECD8",
             surface = "#EBE0C7",
             text = "#3B2F2F",
@@ -57,7 +69,7 @@ val WavoraThemePresets =
         ),
         WavoraThemePreset(
             id = "paper",
-            label = "Бумага",
+            labelRes = Res.string.theme_preset_paper,
             background = "#FAFAF7",
             surface = "#F1F1EC",
             text = "#1F1F1F",
@@ -65,8 +77,8 @@ val WavoraThemePresets =
         ),
     )
 
-/** Подпись для набора цветов, который не совпал ни с одной заготовкой. */
-const val WAVORA_CUSTOM_THEME_LABEL = "Своя"
+/** Ресурс подписи для набора цветов, который не совпал ни с одной заготовкой. */
+val WAVORA_CUSTOM_THEME_LABEL: StringResource = Res.string.theme_preset_custom
 
 /**
  * Определяет, какой пресет сейчас применён, сравнивая сохранённые HEX-значения.

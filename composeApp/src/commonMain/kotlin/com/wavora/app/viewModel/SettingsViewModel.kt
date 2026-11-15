@@ -623,6 +623,10 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             dataStoreManager.miniPlayerThemeEnabled.collect { _miniPlayerThemeEnabled.value = it }
+        }
+        // Отдельная корутина: `collect` не возвращается, поэтому два сбора в одном блоке
+        // означали, что второй поток никогда не подписывался и свитч «не переключался».
+        viewModelScope.launch {
             dataStoreManager.directStreamEnabled.collect { _directStreamEnabled.value = it }
         }
         viewModelScope.launch {

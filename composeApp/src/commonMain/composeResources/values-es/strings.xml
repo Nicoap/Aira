@@ -264,6 +264,8 @@
     <string name="sleep_timer_end_of_song">Temporizador de sueño - Fin de la canción</string>
     <string name="sleep_timer_off">Temporizador de sueño</string>
     <string name="sleep_minutes">Temporizador (minutos)</string>
+    <string name="sleep_preset_minutes">%1$s min</string>
+    <string name="sleep_preset_hour">1 hora</string>
     <string name="set">Establecer</string>
     <string name="sleep_timer_off_done">Detener temporizador de sueño</string>
     <string name="sleep_timer_set_error">Por favor, establece un formato de hora correcto</string>
@@ -728,4 +730,26 @@
     <string name="download_folder_reset">Restablecer carpeta de descargas</string>
     <string name="download_folder_reset_hint">Volver a la carpeta predeterminada. Las pistas ya descargadas se siguen reproduciendo.</string>
     <string name="playback_failed">No se pudo reproducir esta pista: %1$s</string>
+    <string name="theme_preset">Tema</string>
+    <string name="theme_preset_graphite">Grafito</string>
+    <string name="theme_preset_midnight">Medianoche</string>
+    <string name="theme_preset_nord">Nord</string>
+    <string name="theme_preset_sepia">Sepia</string>
+    <string name="theme_preset_paper">Papel</string>
+    <string name="theme_preset_custom">Propia</string>
+    <string name="mini_player_theme">Tema propia del mini reproductor</string>
+    <string name="mini_player_theme_on">La isla usa sus propios colores</string>
+    <string name="mini_player_theme_off">La isla usa los colores del tema principal</string>
+    <string name="mini_player_background_color">Fondo del mini reproductor (HEX)</string>
+    <string name="mini_player_accent_color">Acento del mini reproductor (HEX)</string>
+    <string name="direct_stream">Flujo directo</string>
+    <string name="direct_stream_on">El enlace va al reproductor directamente, sin el proxy local</string>
+    <string name="direct_stream_off">La reproduccion pasa por el proxy local en fragmentos</string>
+    <string name="color_hue">Tono</string>
+    <string name="color_saturation">Saturacion</string>
+    <string name="color_brightness">Brillo</string>
+    <string name="color_eyedropper">Cuentagotas</string>
+    <string name="island_nothing_playing">Nada en reproduccion</string>
+    <string name="island_mode_hover">Hover</string>
+    <string name="island_mode_click">Clic</string>
 </resources>

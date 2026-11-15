@@ -558,45 +558,33 @@ LazyColumn(
                                         )
                                         Spacer(Modifier.height(8.dp))
                                     }
-                                    if (item.title == stringResource(Res.string.quick_picks)) {
-                                        AnimatedVisibility(
-                                            visible =
-                                                homeData.find {
-                                                    it.title ==
-                                                        stringResource(
-                                                            Res.string.quick_picks,
-                                                        )
-                                                } != null,
-                                        ) {
-                                            QuickPicks(
-                                                homeItem =
-                                                    (
-                                                        homeData.find {
-                                                            it.title ==
-                                                                stringResource(
-                                                                    Res.string.quick_picks,
+                                    // Название раздела приходит с сервера на языке запроса, поэтому
+                                    // строгое сравнение с переведённой строкой промахивалось: раздела
+                                    // «Quick picks» не было вовсе, и рисовался обычный заголовок из ответа.
+                                    val quickPicksTitle = stringResource(Res.string.quick_picks)
+                                    val quickPicksItem = homeData.firstOrNull { it.title.isQuickPicksTitle(quickPicksTitle) }
+                                    if (quickPicksItem != null) {
+                                        QuickPicks(
+                                            homeItem =
+                                                quickPicksItem.let { content ->
+                                                    content.copy(
+                                                        contents =
+                                                            content.contents.mapNotNull { ct ->
+                                                                ct?.copy(
+                                                                    artists =
+                                                                        ct.artists?.let { art ->
+                                                                            if (art.size > 1) {
+                                                                                art.dropLast(1)
+                                                                            } else {
+                                                                                art
+                                                                            }
+                                                                        },
                                                                 )
-                                                        } ?: return@AnimatedVisibility
-                                                    ).let { content ->
-                                                        content.copy(
-                                                            contents =
-                                                                content.contents.mapNotNull { ct ->
-                                                                    ct?.copy(
-                                                                        artists =
-                                                                            ct.artists?.let { art ->
-                                                                                if (art.size > 1) {
-                                                                                    art.dropLast(1)
-                                                                                } else {
-                                                                                    art
-                                                                                }
-                                                                            },
-                                                                    )
-                                                                },
-                                                        )
-                                                    },
-                                                viewModel = viewModel,
-                                            )
-                                        }
+                                                            },
+                                                    )
+                                                },
+                                            viewModel = viewModel,
+                                        )
                                     } else {
                                         HomeItem(
                                             navController = navController,
@@ -1025,6 +1013,15 @@ fun AccountLayout(
         }
     }
 }
+
+/**
+ * Раздел «Quick picks» приходит с сервера подписанным на языке запроса, а перевод у нас свой:
+ * сравниваем без регистра и по известным вариантам, иначе раздел не находился вовсе.
+ */
+private val QUICK_PICKS_TITLES = setOf("quick picks", "быстрый выбор", "selecciones rapidas", "selecciones rapidas!")
+
+private fun String.isQuickPicksTitle(localized: String): Boolean =
+    equals(localized, ignoreCase = true) || trim().lowercase() in QUICK_PICKS_TITLES
 
 @ExperimentalFoundationApi
 @Composable

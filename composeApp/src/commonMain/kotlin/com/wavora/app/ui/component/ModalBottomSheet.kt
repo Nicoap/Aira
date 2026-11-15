@@ -262,6 +262,8 @@ import wavora.composeapp.generated.resources.share
 import wavora.composeapp.generated.resources.share_url
 import wavora.composeapp.generated.resources.wavora_lyrics
 import wavora.composeapp.generated.resources.sleep_minutes
+import wavora.composeapp.generated.resources.sleep_preset_hour
+import wavora.composeapp.generated.resources.sleep_preset_minutes
 import wavora.composeapp.generated.resources.sleep_timer
 import wavora.composeapp.generated.resources.sleep_timer_end_of_song
 import wavora.composeapp.generated.resources.sleep_timer_off
@@ -2090,18 +2092,18 @@ fun SleepTimerBottomSheet(
     var customMinutes by rememberSaveable { mutableStateOf("") }
 
     data class Preset(
-        val label: String,
         val minutes: Int,
+        val isHour: Boolean = false,
     )
 
     val presets =
         listOf(
-            Preset("5 min", 5),
-            Preset("10 min", 10),
-            Preset("15 min", 15),
-            Preset("30 min", 30),
-            Preset("45 min", 45),
-            Preset("1 hour", 60),
+            Preset(5),
+            Preset(10),
+            Preset(15),
+            Preset(30),
+            Preset(45),
+            Preset(60, isHour = true),
         )
 
     // Whether the Set button should be enabled
@@ -2192,7 +2194,13 @@ fun SleepTimerBottomSheet(
                                 contentPadding = PaddingValues(vertical = 10.dp, horizontal = 4.dp),
                             ) {
                                 Text(
-                                    text = preset.label,
+                                    // Ярлыки таймера сна тоже должны следовать языку приложения.
+                                    text =
+                                        if (preset.isHour) {
+                                            stringResource(Res.string.sleep_preset_hour)
+                                        } else {
+                                            stringResource(Res.string.sleep_preset_minutes, preset.minutes.toString())
+                                        },
                                     style = LocalAppTypography.current.bodySmall,
                                     color = if (isSelected) seed else MaterialTheme.colorScheme.onSurfaceVariant,
                                     fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,

@@ -255,6 +255,8 @@
     <string name="sleep_timer_end_of_song">Sleep Timer - End of song</string>
     <string name="sleep_timer_off">Sleep Timer</string>
     <string name="sleep_minutes">Countdown time (minutes)</string>
+    <string name="sleep_preset_minutes">%1$s min</string>
+    <string name="sleep_preset_hour">1 hour</string>
     <string name="set">Set</string>
     <string name="sleep_timer_off_done">Stop sleep timer done</string>
     <string name="sleep_timer_set_error">Please set the correct format time</string>
@@ -732,4 +734,26 @@
     <string name="download_folder_reset">Reset download folder</string>
     <string name="download_folder_reset_hint">Go back to the default folder. Already downloaded tracks keep playing.</string>
     <string name="playback_failed">Couldn't play this track: %1$s</string>
+    <string name="theme_preset">Theme</string>
+    <string name="theme_preset_graphite">Graphite</string>
+    <string name="theme_preset_midnight">Midnight</string>
+    <string name="theme_preset_nord">Nord</string>
+    <string name="theme_preset_sepia">Sepia</string>
+    <string name="theme_preset_paper">Paper</string>
+    <string name="theme_preset_custom">Custom</string>
+    <string name="mini_player_theme">Custom mini player theme</string>
+    <string name="mini_player_theme_on">The island uses its own colors</string>
+    <string name="mini_player_theme_off">The island uses the main theme colors</string>
+    <string name="mini_player_background_color">Mini player background (HEX)</string>
+    <string name="mini_player_accent_color">Mini player accent (HEX)</string>
+    <string name="direct_stream">Direct stream</string>
+    <string name="direct_stream_on">The link goes to the player directly, without the local proxy</string>
+    <string name="direct_stream_off">Playback goes through the local proxy in chunks</string>
+    <string name="color_hue">Hue</string>
+    <string name="color_saturation">Saturation</string>
+    <string name="color_brightness">Brightness</string>
+    <string name="color_eyedropper">Eyedropper</string>
+    <string name="island_nothing_playing">Nothing playing</string>
+    <string name="island_mode_hover">Hover</string>
+    <string name="island_mode_click">Click</string>
 </resources>
