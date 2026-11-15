@@ -230,7 +230,7 @@ private fun Header(
                     translationY = -scroll.value.toFloat() / 2f // Parallax effect
                     alpha = (-1f / headerHeightPx) * scroll.value + 1
                 }.background(
-                    backgroundColor.rgbFactor(0.5f),
+                    androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.background, backgroundColor, 0.4f),
                 ),
     ) {
         AsyncImage(
@@ -345,8 +345,8 @@ private fun Toolbar(
                 Modifier.background(
                     Brush.verticalGradient(
                         listOf(
-                            backgroundColor.rgbFactor(0.5f),
-                            backgroundColor.rgbFactor(0.3f),
+                            androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.background, backgroundColor, 0.3f),
+                            androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.background, backgroundColor, 0.16f),
                         ),
                     ),
                 ),

@@ -170,7 +170,18 @@ internal fun parsePlaylistData(
                     trackCount =
                         try {
                             val subtitleText = secondSubtitle.joinToString(" ") { it.text }
-                            Regex("(\\d[\\d,.]*)\\s+(songs?|tracks?)\\b", RegexOption.IGNORE_CASE)
+                            // The count is the number that opens the first run in every language
+                            // ("396 songs", "396 С‚СЂРµРєРѕРІ", "1 234 canciones"); the English-only word
+                            // match below is the fallback. Without this a Russian header gave 0 and the
+                            // screen showed just the number of tracks loaded so far (a page of 100).
+                            val leading =
+                                Regex("^\\s*(\\d[\\d\\s,.\\u00A0\\u202F]*)")
+                                    .find(secondSubtitle.first().text)
+                                    ?.groupValues
+                                    ?.getOrNull(1)
+                                    ?.filter { it.isDigit() }
+                                    ?.toIntOrNull()
+                            leading ?: Regex("(\\d[\\d,.]*)\\s+(songs?|tracks?)\\b", RegexOption.IGNORE_CASE)
                                 .find(subtitleText)
                                 ?.groupValues
                                 ?.getOrNull(1)

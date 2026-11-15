@@ -241,8 +241,72 @@ private fun buildSyncedTranslatedWordsByLineIndex(
     return result
 }
 
+private class LyricsColors(
+    val current: Color,
+    val dim: Color,
+    val translatedCurrent: Color,
+    val translatedDim: Color,
+    val richPending: Color,
+)
+
+private val DarkLyricsColors =
+    LyricsColors(
+        current = Color.White,
+        dim = Color.LightGray.copy(alpha = 0.35f),
+        translatedCurrent = Color.Yellow,
+        translatedDim = Color(0xFF97971A).copy(alpha = 0.3f),
+        richPending = Color.LightGray.copy(alpha = 0.6f),
+    )
+
+private val LocalLyricsColors = androidx.compose.runtime.staticCompositionLocalOf { DarkLyricsColors }
+
+/**
+ * Lyrics were hard-coded white on a dark card, which is unreadable on a light theme. Over a dark surface
+ * (the full-screen sheet, the cover-coloured panel) the old colours stay; over any other surface the
+ * lines take the colours of the theme.
+ */
 @Composable
 fun LyricsView(
+    lyricsData: NowPlayingScreenData.LyricsData,
+    timeLine: StateFlow<TimeLine>,
+    onLineClick: (Float) -> Unit,
+    modifier: Modifier = Modifier,
+    showScrollShadows: Boolean = false,
+    backgroundColor: Color = Color(0xFF242424),
+    hasBlurBackground: Boolean = false,
+) {
+    val onSurface = androidx.compose.material3.MaterialTheme.colorScheme.onSurface
+    val primary = androidx.compose.material3.MaterialTheme.colorScheme.primary
+    val colors =
+        remember(backgroundColor, onSurface, primary) {
+            val dark = (0.2126f * backgroundColor.red + 0.7152f * backgroundColor.green + 0.0722f * backgroundColor.blue) < 0.45f
+            if (dark && backgroundColor.alpha > 0f) {
+                DarkLyricsColors
+            } else {
+                LyricsColors(
+                    current = onSurface,
+                    dim = onSurface.copy(alpha = 0.4f),
+                    translatedCurrent = primary,
+                    translatedDim = primary.copy(alpha = 0.5f),
+                    richPending = onSurface.copy(alpha = 0.55f),
+                )
+            }
+        }
+    CompositionLocalProvider(LocalLyricsColors provides colors) {
+        LyricsViewContent(
+            lyricsData = lyricsData,
+            timeLine = timeLine,
+            onLineClick = onLineClick,
+            modifier = modifier,
+            showScrollShadows = showScrollShadows,
+            backgroundColor = backgroundColor,
+            hasBlurBackground = hasBlurBackground,
+        )
+    }
+}
+
+@Composable
+private fun LyricsViewContent(
     lyricsData: NowPlayingScreenData.LyricsData,
     timeLine: StateFlow<TimeLine>,
     onLineClick: (Float) -> Unit,
@@ -384,13 +448,13 @@ fun LyricsLineItem(
                 Text(
                     text = originalWords,
                     style = LocalAppTypography.current.headlineLarge,
-                    color = if (isCurrent) Color.White else DimOriginalColor,
+                    color = if (isCurrent) LocalLyricsColors.current.current else LocalLyricsColors.current.dim,
                 )
                 if (translatedWords != null) {
                     Text(
                         text = translatedWords,
                         style = LocalAppTypography.current.bodyMedium,
-                        color = if (isCurrent) Color.Yellow else DimTranslatedColor,
+                        color = if (isCurrent) LocalLyricsColors.current.translatedCurrent else LocalLyricsColors.current.translatedDim,
                     )
                 }
                 Spacer(modifier = Modifier.height(12.dp))
@@ -405,13 +469,13 @@ fun LyricsLineItem(
             Text(
                 text = originalWords,
                 style = LocalAppTypography.current.headlineMedium,
-                color = DimOriginalColor,
+                color = LocalLyricsColors.current.dim,
             )
             if (translatedWords != null) {
                 Text(
                     text = translatedWords,
                     style = LocalAppTypography.current.bodyMedium,
-                    color = DimTranslatedColor,
+                    color = LocalLyricsColors.current.translatedDim,
                 )
             }
             Spacer(modifier = Modifier.height(12.dp))
@@ -483,7 +547,7 @@ fun RichSyncLyricsLineItem(
             Text(
                 text = translatedWords,
                 style = LocalAppTypography.current.bodyMedium,
-                color = if (isCurrent) Color.Yellow else DimTranslatedColor,
+                color = if (isCurrent) LocalLyricsColors.current.translatedCurrent else LocalLyricsColors.current.translatedDim,
             )
         }
 
@@ -509,7 +573,7 @@ private fun AnimatedWord(
         )
 
     if (!isCurrent) {
-        Text(text = word, style = style, color = DimOriginalColor)
+        Text(text = word, style = style, color = LocalLyricsColors.current.dim)
         return
     }
 
@@ -553,12 +617,12 @@ private fun AnimatedWord(
 
     Box {
         // Bottom layer: dimmed pending color, drawn for the whole word.
-        Text(text = word, style = style, color = DimRichPendingColor)
+        Text(text = word, style = style, color = LocalLyricsColors.current.richPending)
         // Top layer: white, clipped horizontally so only the wiped portion shows.
         Text(
             text = word,
             style = style,
-            color = Color.White,
+            color = LocalLyricsColors.current.current,
             modifier =
                 Modifier.drawWithContent {
                     clipRect(right = size.width * progress) {

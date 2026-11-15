@@ -175,7 +175,7 @@ internal inline fun <reified T> GridLibraryPlaylist(
                                     Text(
                                         text = stringResource(Res.string.create),
                                         style = LocalAppTypography.current.titleSmall,
-                                        color = Color.White,
+                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurface,
                                         maxLines = 1,
                                         modifier =
                                             Modifier
@@ -297,12 +297,12 @@ internal inline fun <reified T> GridLibraryPlaylist(
                             imageVector = Icons.Outlined.MusicOff,
                             contentDescription = null,
                             modifier = Modifier.size(48.dp),
-                            tint = Color.White.copy(alpha = 0.35f),
+                            tint = androidx.compose.material3.MaterialTheme.colorScheme.onSurface.copy(alpha = 0.35f),
                         )
                         Text(
                             text = stringResource(emptyText),
                             style = LocalAppTypography.current.bodyMedium,
-                            color = Color.White.copy(alpha = 0.6f),
+                            color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant,
                             textAlign = androidx.compose.ui.text.style.TextAlign.Center,
                         )
                     }

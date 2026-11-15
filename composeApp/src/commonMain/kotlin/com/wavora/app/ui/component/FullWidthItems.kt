@@ -83,7 +83,9 @@ import com.wavora.domain.utils.toListName
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.ui.theme.wavoraSecondary
 import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.launch
+import com.wavora.domain.utils.toSongEntity
 import org.jetbrains.compose.resources.painterResource
 import org.jetbrains.compose.resources.stringResource
 import org.koin.compose.koinInject
@@ -387,6 +389,15 @@ fun SongFullWidthItems(
                         checked = isLiked,
                     ) {
                         coroutineScope.launch {
+                            // На страницах вроде «исполнителя» трека ещё нет в БД: UPDATE лайка
+                            // менял ноль строк, поэтому сердечко не загоралось. Сначала заводим
+                            // запись песни, потом уже ставим лайк.
+                            if (songState == null) {
+                                val entity = songEntity ?: track?.toSongEntity()
+                                if (entity != null) {
+                                    songRepository.insertSong(entity).singleOrNull()
+                                }
+                            }
                             songRepository.updateLikeStatus(songId, if (isLiked) 0 else 1)
                         }
                     }

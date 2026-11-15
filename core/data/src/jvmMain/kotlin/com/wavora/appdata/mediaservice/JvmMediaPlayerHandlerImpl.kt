@@ -293,7 +293,7 @@ class JvmMediaPlayerHandlerImpl(
     private var lastSampleAtMs = 0L
 
     /** Минимум прослушивания, ниже которого событие не пишется (как у скробблеров). */
-    private val LISTEN_MIN_MS = 15_000L
+    private val LISTEN_MIN_MS = 5_000L
 
     /** Считаем трек дослушанным, если дошли до этой доли длительности. */
     private val LISTEN_END_RATIO = 0.85f
@@ -2478,6 +2478,9 @@ class JvmMediaPlayerHandlerImpl(
             nowPlayingState.value.songEntity?.let { updateDiscordRpc(it, true) }
         } else {
             stopProgressUpdate()
+            // Пауза тоже завершает сессию прослушивания: иначе статистика писалась бы
+            // только при переключении трека или закрытии приложения.
+            flushListening()
             mayBeSaveRecentSong()
             mayBeSavePlaybackState()
             nowPlayingState.value.songEntity?.let { updateDiscordRpc(it, false) }
@@ -2657,7 +2660,8 @@ class JvmMediaPlayerHandlerImpl(
      * времени + запас), чтобы перемотка и паузы не накручивали счётчик.
      */
     private fun sampleListening(position: Long) {
-        val song = nowPlayingState.value.songEntity
+        // Пока «сейчас играет» не догрузился, songEntity может быть null, а трек уже известен.
+        val song = nowPlayingState.value.songEntity ?: nowPlayingState.value.track?.toSongEntity()
         if (song == null || song.durationSeconds <= 0) {
             return
         }

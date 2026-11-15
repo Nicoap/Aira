@@ -119,7 +119,6 @@ import com.wavora.app.ui.component.QuickPicksItem
 import com.wavora.app.ui.component.ReviewDialog
 import com.wavora.app.ui.component.RippleIconButton
 import com.wavora.app.ui.component.ScrollArrows
-import com.wavora.app.ui.component.ShareSavedLyricsDialog
 import com.wavora.app.ui.navigation.destination.home.HomeDestination
 import com.wavora.app.ui.navigation.destination.home.MoodDestination
 import com.wavora.app.ui.navigation.destination.home.NotificationDestination
@@ -264,12 +263,8 @@ fun HomeScreen(
     val shouldShowLogInAlert by viewModel.showLogInAlert.collectAsStateWithLifecycle()
 
     val openAppTime by sharedViewModel.openAppTime.collectAsStateWithLifecycle()
-    val shareLyricsPermissions by sharedViewModel.shareSavedLyrics.collectAsStateWithLifecycle()
 
     var showReviewDialog by rememberSaveable {
-        mutableStateOf(false)
-    }
-    var showRequestShareLyricsPermissions by rememberSaveable {
         mutableStateOf(false)
     }
     var showBlogPromoDialog by rememberSaveable {
@@ -341,12 +336,10 @@ fun HomeScreen(
     LaunchedEffect(key1 = homeData) {
         accountShow = homeData.find { it.subtitle == accountInfo?.first } == null
     }
-    LaunchedEffect(openAppTime, shareLyricsPermissions) {
-        Logger.w("HomeScreen", "openAppTime: $openAppTime, shareLyricsPermissions: $shareLyricsPermissions")
+    LaunchedEffect(openAppTime) {
+        Logger.w("HomeScreen", "openAppTime: $openAppTime")
         if (openAppTime >= 10 && openAppTime % 10 == 0 && openAppTime <= 50) {
             showReviewDialog = true
-        } else if ((openAppTime == 2 || openAppTime % 15 == 0) && openAppTime <= 60 && !shareLyricsPermissions) {
-            showRequestShareLyricsPermissions = true
         } else if (openAppTime == 5) {
             // Blog promo: one-shot after 5 app opens, bump key suffix to re-promote later
             if (sharedViewModel.getString(BLOG_PROMO_KEY) != "true") {
@@ -354,7 +347,6 @@ fun HomeScreen(
             }
         } else {
             showReviewDialog = false
-            showRequestShareLyricsPermissions = false
         }
     }
 
@@ -420,21 +412,7 @@ fun HomeScreen(
         )
     }
 
-    if (showRequestShareLyricsPermissions) {
-        ShareSavedLyricsDialog(
-            onDismissRequest = {
-                showRequestShareLyricsPermissions = false
-                sharedViewModel.onDoneReview(
-                    isDismissOnly = true,
-                )
-            },
-            onConfirm = { contributor ->
-                sharedViewModel.onDoneRequestingShareLyrics(
-                    contributor,
-                )
-            },
-        )
-    }
+    // Диалог «помочь базе текстов / почта участника» убран вместе с сервисом Aira Lyrics.
 
     if (shouldShowLogInAlert) {
         var doNotShowAgain by rememberSaveable {

@@ -1607,37 +1607,6 @@ fun SettingScreen(
                         )
                     },
                 )
-                // Раздел «Aira Lyrics» (сбор базы текстов и подписи контрибьютора) убран. 
-                SettingItem(
-                    title = stringResource(Res.string.contributor_email),
-                    subtitle = contributor.second.ifEmpty { stringResource(Res.string.anonymous) },
-                    isEnable = helpBuildLyricsDatabase,
-                    onClick = {
-                        viewModel.setAlertData(
-                            SettingAlertState(
-                                title = contributorEmail,
-                                textField =
-                                    SettingAlertState.TextFieldData(
-                                        label = contributorEmail,
-                                        value = "",
-                                        verifyCodeBlock = {
-                                            if (it.isNotEmpty()) {
-                                                (it.contains("@")) to invalid
-                                            } else {
-                                                true to ""
-                                            }
-                                        },
-                                    ),
-                                message = "",
-                                confirm =
-                                    set to { state ->
-                                        viewModel.setContributorEmail(state.textField?.value ?: "")
-                                    },
-                                dismiss = cancel,
-                            ),
-                        )
-                    },
-                )
             }
         }
         item(key = "AI") {

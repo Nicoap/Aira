@@ -1034,7 +1034,7 @@ LazyColumn(
                                                                 "",
                                                             )
                                                         },
-                                                    color = Color.White,
+                                                    color = MaterialTheme.colorScheme.onBackground,
                                                     style = LocalAppTypography.current.bodyMedium,
                                                     modifier = Modifier.padding(vertical = 8.dp),
                                                 )

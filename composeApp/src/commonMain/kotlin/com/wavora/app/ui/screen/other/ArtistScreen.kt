@@ -729,7 +729,7 @@ fun ArtistScreen(
                             shape = RoundedCornerShape(8.dp),
                             colors =
                                 CardDefaults.elevatedCardColors().copy(
-                                    containerColor = color.rgbFactor(0.5f),
+                                    containerColor = androidx.compose.ui.graphics.lerp(MaterialTheme.colorScheme.surface, color, 0.18f),
                                 ),
                         ) {
                             DescriptionView(
