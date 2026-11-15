@@ -452,7 +452,7 @@ fun MediumMiniLayout(
                             IconButton(
                                 onClick = {
                                     // Toggle mute/unmute
-                                    val newVolume = if (controllerState.volume > 0f) 0f else 1f
+                                    val newVolume = VolumeMemory.toggle(controllerState.volume)
                                     onUIEvent(UIEvent.UpdateVolume(newVolume))
                                 },
                                 modifier = Modifier.size(28.dp),
@@ -791,7 +791,7 @@ fun SquareMiniLayout(
                 IconButton(
                     onClick = {
                         // Toggle mute/unmute
-                        val newVolume = if (controllerState.volume > 0f) 0f else 1f
+                        val newVolume = VolumeMemory.toggle(controllerState.volume)
                         onUIEvent(UIEvent.UpdateVolume(newVolume))
                     },
                     modifier = Modifier.size(32.dp),
@@ -1045,7 +1045,7 @@ fun ExpandedMiniLayout(
                         IconButton(
                             onClick = {
                                 // Toggle mute/unmute
-                                val newVolume = if (controllerState.volume > 0f) 0f else 1f
+                                val newVolume = VolumeMemory.toggle(controllerState.volume)
                                 onUIEvent(UIEvent.UpdateVolume(newVolume))
                             },
                             modifier = Modifier.size(28.dp),

@@ -6,6 +6,7 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import com.wavora.common.SELECTED_LANGUAGE
 import com.wavora.common.SUPPORTED_LANGUAGE
@@ -1674,6 +1675,34 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    // Отдельная тема мини-плеера: по умолчанию выключена, остров живёт на цветах основной темы.
+    override val miniPlayerThemeEnabled: Flow<Boolean> =
+        settingsDataStore.data.map { it[MINI_PLAYER_THEME_ENABLED] ?: false }
+
+    override suspend fun setMiniPlayerThemeEnabled(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[MINI_PLAYER_THEME_ENABLED] = enabled }
+        }
+    }
+
+    override val miniPlayerBackgroundColor: Flow<String> =
+        settingsDataStore.data.map { it[MINI_PLAYER_BACKGROUND_COLOR] ?: "auto" }
+
+    override suspend fun setMiniPlayerBackgroundColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[MINI_PLAYER_BACKGROUND_COLOR] = color }
+        }
+    }
+
+    override val miniPlayerAccentColor: Flow<String> =
+        settingsDataStore.data.map { it[MINI_PLAYER_ACCENT_COLOR] ?: "auto" }
+
+    override suspend fun setMiniPlayerAccentColor(color: String) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[MINI_PLAYER_ACCENT_COLOR] = color }
+        }
+    }
+
     override suspend fun resetThemeToDefaults() {
         withContext(Dispatchers.IO) {
             settingsDataStore.edit {
@@ -1684,6 +1713,9 @@ internal class DataStoreManagerImpl(
                 it.remove(THEME_TEXT_COLOR)
                 it.remove(THEME_SECONDARY_TEXT_COLOR)
                 it.remove(THEME_CUSTOM_PALETTE)
+                it.remove(MINI_PLAYER_THEME_ENABLED)
+                it.remove(MINI_PLAYER_BACKGROUND_COLOR)
+                it.remove(MINI_PLAYER_ACCENT_COLOR)
             }
         }
     }
@@ -1878,6 +1910,9 @@ internal class DataStoreManagerImpl(
         val THEME_TEXT_COLOR = stringPreferencesKey("theme_text_color")
         val THEME_SECONDARY_TEXT_COLOR = stringPreferencesKey("theme_secondary_text_color")
     val THEME_CUSTOM_PALETTE = stringPreferencesKey("theme_custom_palette")
+    val MINI_PLAYER_THEME_ENABLED = booleanPreferencesKey("mini_player_theme_enabled")
+    val MINI_PLAYER_BACKGROUND_COLOR = stringPreferencesKey("mini_player_background_color")
+    val MINI_PLAYER_ACCENT_COLOR = stringPreferencesKey("mini_player_accent_color")
 
         val LOCAL_TRACKING_ENABLED = stringPreferencesKey("local_tracking_enabled")
 

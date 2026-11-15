@@ -502,6 +502,24 @@ interface DataStoreManager {
 
     suspend fun setThemeCustomPalette(palette: String)
 
+    /**
+     * Отдельная тема мини-плеера (острова): выключена — цвета берутся из основной темы,
+     * включена — используются [miniPlayerBackgroundColor] и [miniPlayerAccentColor].
+     */
+    val miniPlayerThemeEnabled: Flow<Boolean>
+
+    suspend fun setMiniPlayerThemeEnabled(enabled: Boolean)
+
+    /** Фон острова: `auto` = поверхность основной темы, иначе `#RRGGBB`. */
+    val miniPlayerBackgroundColor: Flow<String>
+
+    suspend fun setMiniPlayerBackgroundColor(color: String)
+
+    /** Акцент острова (полоса прогресса, волна, лайк): `auto` = основной акцент. */
+    val miniPlayerAccentColor: Flow<String>
+
+    suspend fun setMiniPlayerAccentColor(color: String)
+
     suspend fun resetThemeToDefaults()
 
     val localTrackingEnabled: Flow<String>

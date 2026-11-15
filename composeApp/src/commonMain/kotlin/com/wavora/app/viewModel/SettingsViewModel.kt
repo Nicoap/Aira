@@ -212,6 +212,14 @@ class SettingsViewModel(
     private val _themeSecondaryTextColor = MutableStateFlow("auto")
     val themeSecondaryTextColor: StateFlow<String> = _themeSecondaryTextColor
 
+    // Отдельная тема мини-плеера (острова).
+    private val _miniPlayerThemeEnabled = MutableStateFlow(false)
+    val miniPlayerThemeEnabled: StateFlow<Boolean> = _miniPlayerThemeEnabled
+    private val _miniPlayerBackgroundColor = MutableStateFlow("auto")
+    val miniPlayerBackgroundColor: StateFlow<String> = _miniPlayerBackgroundColor
+    private val _miniPlayerAccentColor = MutableStateFlow("auto")
+    val miniPlayerAccentColor: StateFlow<String> = _miniPlayerAccentColor
+
     private val _keepServiceAlive = MutableStateFlow<Boolean>(false)
     val keepServiceAlive: StateFlow<Boolean> = _keepServiceAlive
 
@@ -609,6 +617,15 @@ class SettingsViewModel(
         viewModelScope.launch {
             dataStoreManager.themeSecondaryTextColor.collect { _themeSecondaryTextColor.value = it }
         }
+        viewModelScope.launch {
+            dataStoreManager.miniPlayerThemeEnabled.collect { _miniPlayerThemeEnabled.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.miniPlayerBackgroundColor.collect { _miniPlayerBackgroundColor.value = it }
+        }
+        viewModelScope.launch {
+            dataStoreManager.miniPlayerAccentColor.collect { _miniPlayerAccentColor.value = it }
+        }
     }
 
     fun setThemeMode(mode: String) {
@@ -637,6 +654,18 @@ class SettingsViewModel(
 
     fun resetThemeToDefaults() {
         viewModelScope.launch { dataStoreManager.resetThemeToDefaults() }
+    }
+
+    fun setMiniPlayerThemeEnabled(enabled: Boolean) {
+        viewModelScope.launch { dataStoreManager.setMiniPlayerThemeEnabled(enabled) }
+    }
+
+    fun setMiniPlayerBackgroundColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setMiniPlayerBackgroundColor(color) }
+    }
+
+    fun setMiniPlayerAccentColor(color: String) {
+        viewModelScope.launch { dataStoreManager.setMiniPlayerAccentColor(color) }
     }
 
     /**

@@ -46,3 +46,7 @@ sentry.properties
 /output/
 # Upload
 /upload/
+
+# IDE / Kotlin build output inside modules (bin/, not just build/)
+**/bin/
+

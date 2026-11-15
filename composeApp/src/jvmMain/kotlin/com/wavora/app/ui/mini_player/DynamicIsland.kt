@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
@@ -43,6 +45,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.Outline
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
@@ -93,6 +96,57 @@ private val IslandFlare = 11.dp
 private val IslandCorner = 24.dp
 private val IslandBlack = Color(0xFF000000)
 private val IslandTextSecondary = Color(0xFFA6A6A6)
+
+/**
+ * Цвета острова. По умолчанию берутся из основной темы, но в настройках можно включить
+ * отдельную тему мини-плеера и задать свой фон и акцент — иначе остров всегда висел
+ * чёрным независимо от выбранной темы.
+ */
+internal data class IslandPalette(
+    val background: Color,
+    val text: Color,
+    val textSecondary: Color,
+    val accent: Color,
+) {
+    companion object {
+        /** `null`/`auto` в настройках означает «как в основной теме». */
+        @Composable
+        fun resolve(
+            customBackground: String?,
+            customAccent: String?,
+        ): IslandPalette {
+            val scheme = MaterialTheme.colorScheme
+            val background = parseIslandColor(customBackground) ?: scheme.surface
+            val accent = parseIslandColor(customAccent) ?: scheme.primary
+            val text = if (background.luminance() > 0.5f) Color.Black else Color.White
+            return IslandPalette(
+                background = background,
+                text = text,
+                textSecondary = text.copy(alpha = 0.62f),
+                accent = accent,
+            )
+        }
+
+        private fun parseIslandColor(value: String?): Color? {
+            if (value.isNullOrBlank() || value.equals("auto", ignoreCase = true)) return null
+            val hex = value.trim().removePrefix("#")
+            if (hex.length != 6) return null
+            val rgb = hex.toLongOrNull(16) ?: return null
+            return Color(0xFF000000L or rgb)
+        }
+    }
+}
+
+private val LocalIslandPalette =
+    staticCompositionLocalOf {
+        IslandPalette(
+            background = IslandBlack,
+            text = Color.White,
+            textSecondary = IslandTextSecondary,
+            accent = Color.White,
+        )
+    }
+
 
 /**
  * Notch-like outline: flat top that merges into the screen edge through small concave "flares", rounded
@@ -246,7 +300,7 @@ private fun IslandSlider(
                 },
         contentAlignment = Alignment.CenterStart,
     ) {
-        Box(Modifier.fillMaxWidth().height(3.dp).clip(CircleShape).background(Color.White.copy(alpha = 0.2f)))
+        Box(Modifier.fillMaxWidth().height(3.dp).clip(CircleShape).background(LocalIslandPalette.current.text.copy(alpha = 0.2f)))
         Box(Modifier.fillMaxWidth(value.coerceIn(0f, 1f)).height(3.dp).clip(CircleShape).background(fillColor))
     }
 }
@@ -262,7 +316,7 @@ private fun IslandIconButton(
     description: String,
     size: Dp,
     iconSize: Dp,
-    tint: Color = Color.White,
+    tint: Color = LocalIslandPalette.current.text,
     onClick: () -> Unit,
 ) {
     Box(
@@ -297,7 +351,7 @@ private fun CompactIslandContent(
         Text(
             text = if (hasTrack) title else "Wavora",
             modifier = Modifier.weight(1f),
-            color = Color.White,
+            color = LocalIslandPalette.current.text,
             fontSize = 12.sp,
             fontWeight = FontWeight.SemiBold,
             maxLines = 1,
@@ -328,7 +382,7 @@ private fun ExpandedIslandContent(
             Text(
                 text = "Ничего не играет",
                 modifier = Modifier.align(Alignment.Center),
-                color = IslandTextSecondary,
+                color = LocalIslandPalette.current.textSecondary,
                 fontSize = 13.sp,
             )
         } else {
@@ -343,7 +397,7 @@ private fun ExpandedIslandContent(
                         Text(
                             text = nowPlaying.nowPlayingTitle,
                             modifier = Modifier.fillMaxWidth().hoverMarquee(),
-                            color = Color.White,
+                            color = LocalIslandPalette.current.text,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold,
                             maxLines = 1,
@@ -353,7 +407,7 @@ private fun ExpandedIslandContent(
                         Text(
                             text = nowPlaying.artistName,
                             modifier = Modifier.fillMaxWidth().hoverMarquee(),
-                            color = IslandTextSecondary,
+                            color = LocalIslandPalette.current.textSecondary,
                             fontSize = 12.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Clip,
@@ -361,27 +415,27 @@ private fun ExpandedIslandContent(
                     }
                     Spacer(Modifier.width(6.dp))
                     Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxHeight()) {
-                        IslandIconButton(Res.drawable.baseline_close_24, "Close", 22.dp, 14.dp, IslandTextSecondary, onClose)
+                        IslandIconButton(Res.drawable.baseline_close_24, "Close", 22.dp, 14.dp, LocalIslandPalette.current.textSecondary, onClose)
                         IslandIconButton(
                             resId = if (controller.isLiked) Res.drawable.baseline_favorite_24 else Res.drawable.baseline_favorite_border_24,
                             description = "Like",
                             size = 30.dp,
                             iconSize = 20.dp,
-                            tint = if (controller.isLiked) accent else Color.White,
+                            tint = if (controller.isLiked) accent else LocalIslandPalette.current.text,
                         ) { onEvent(UIEvent.ToggleLike) }
                     }
                 }
                 Spacer(Modifier.height(8.dp))
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(formatTime(timeline.current), color = IslandTextSecondary, fontSize = 10.sp)
+                    Text(formatTime(timeline.current), color = LocalIslandPalette.current.textSecondary, fontSize = 10.sp)
                     IslandSlider(
                         value = if (timeline.total > 0) timeline.current.toFloat() / timeline.total.toFloat() else 0f,
                         onValueChange = { onEvent(UIEvent.UpdateProgress(it * 100f)) },
-                        fillColor = Color.White,
+                        fillColor = LocalIslandPalette.current.text,
                         enabled = timeline.total > 0,
                         modifier = Modifier.weight(1f).padding(horizontal = 8.dp),
                     )
-                    Text(formatTime(timeline.total), color = IslandTextSecondary, fontSize = 10.sp)
+                    Text(formatTime(timeline.total), color = LocalIslandPalette.current.textSecondary, fontSize = 10.sp)
                 }
                 Box(Modifier.fillMaxWidth().height(46.dp), contentAlignment = Alignment.Center) {
                     Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(14.dp)) {
@@ -390,14 +444,14 @@ private fun ExpandedIslandContent(
                             "Previous",
                             36.dp,
                             24.dp,
-                            tint = if (controller.isPreviousAvailable) Color.White else Color.White.copy(alpha = 0.3f),
+                            tint = if (controller.isPreviousAvailable) LocalIslandPalette.current.text else LocalIslandPalette.current.text.copy(alpha = 0.3f),
                         ) { if (controller.isPreviousAvailable) onEvent(UIEvent.Previous) }
                         Box(
                             modifier =
                                 Modifier
                                     .size(42.dp)
                                     .clip(CircleShape)
-                                    .background(Color.White)
+                                    .background(LocalIslandPalette.current.text)
                                     .clickable { onEvent(UIEvent.PlayPause) }
                                     .pointerHoverIcon(PointerIcon.Hand),
                             contentAlignment = Alignment.Center,
@@ -408,7 +462,7 @@ private fun ExpandedIslandContent(
                                         if (controller.isPlaying) Res.drawable.baseline_pause_24 else Res.drawable.baseline_play_arrow_24,
                                     ),
                                 contentDescription = "Play/Pause",
-                                tint = IslandBlack,
+                                tint = LocalIslandPalette.current.background,
                                 modifier = Modifier.size(26.dp),
                             )
                         }
@@ -417,7 +471,7 @@ private fun ExpandedIslandContent(
                             "Next",
                             36.dp,
                             24.dp,
-                            tint = if (controller.isNextAvailable) Color.White else Color.White.copy(alpha = 0.3f),
+                            tint = if (controller.isNextAvailable) LocalIslandPalette.current.text else LocalIslandPalette.current.text.copy(alpha = 0.3f),
                         ) { if (controller.isNextAvailable) onEvent(UIEvent.Next) }
                     }
                     Row(
@@ -429,11 +483,11 @@ private fun ExpandedIslandContent(
                             modifier =
                                 Modifier
                                     .clip(RoundedCornerShape(50))
-                                    .background(Color.White.copy(alpha = 0.12f))
+                                    .background(LocalIslandPalette.current.text.copy(alpha = 0.12f))
                                     .clickable(onClick = onToggleExpandMode)
                                     .pointerHoverIcon(PointerIcon.Hand)
                                     .padding(horizontal = 8.dp, vertical = 3.dp),
-                            color = IslandTextSecondary,
+                            color = LocalIslandPalette.current.textSecondary,
                             fontSize = 10.sp,
                         )
                     }
@@ -444,19 +498,19 @@ private fun ExpandedIslandContent(
                         Icon(
                             imageVector = if (controller.volume > 0f) Icons.Filled.VolumeUp else Icons.Filled.VolumeOff,
                             contentDescription = "Volume",
-                            tint = IslandTextSecondary,
+                            tint = LocalIslandPalette.current.textSecondary,
                             modifier =
                                 Modifier
                                     .size(18.dp)
                                     .clickable(
                                         interactionSource = remember { MutableInteractionSource() },
                                         indication = null,
-                                    ) { onEvent(UIEvent.UpdateVolume(if (controller.volume > 0f) 0f else 1f)) },
+                                    ) { onEvent(UIEvent.UpdateVolume(VolumeMemory.toggle(controller.volume))) },
                         )
                         IslandSlider(
                             value = controller.volume,
                             onValueChange = { onEvent(UIEvent.UpdateVolume(it)) },
-                            fillColor = IslandTextSecondary,
+                            fillColor = LocalIslandPalette.current.textSecondary,
                             modifier = Modifier.width(56.dp).padding(start = 6.dp),
                         )
                     }
@@ -474,6 +528,7 @@ private fun ExpandedIslandContent(
 @Composable
 internal fun DynamicIsland(
     sharedViewModel: SharedViewModel,
+    palette: IslandPalette,
     expanded: Boolean,
     expandOnHover: Boolean,
     onToggleExpandMode: () -> Unit,
@@ -499,12 +554,13 @@ internal fun DynamicIsland(
     val playing = controller.isPlaying && hasTrack
     val phaseState = rememberVisualizerPhase(playing)
 
-    Box(
+    CompositionLocalProvider(LocalIslandPalette provides palette) {
+        Box(
         modifier =
             modifier
                 .size(width, height)
                 .clip(IslandShape(IslandFlare, IslandCorner))
-                .background(IslandBlack)
+                .background(LocalIslandPalette.current.background)
                 .pointerInput(expanded, expandOnHover) {
                     if (!expanded && !expandOnHover) detectTapGestures { onExpandClick() }
                 },
@@ -549,5 +605,6 @@ internal fun DynamicIsland(
                     .padding(horizontal = IslandFlare + 14.dp)
                     .height(8.dp),
         )
+        }
     }
 }

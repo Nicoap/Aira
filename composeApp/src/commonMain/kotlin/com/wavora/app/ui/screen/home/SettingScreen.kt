@@ -617,6 +617,9 @@ fun SettingScreen(
     val themeSurfaceColor by viewModel.themeSurfaceColor.collectAsStateWithLifecycle()
     val themeTextColor by viewModel.themeTextColor.collectAsStateWithLifecycle()
     val themeSecondaryTextColor by viewModel.themeSecondaryTextColor.collectAsStateWithLifecycle()
+    val miniPlayerThemeEnabled by viewModel.miniPlayerThemeEnabled.collectAsStateWithLifecycle()
+    val miniPlayerBackgroundColor by viewModel.miniPlayerBackgroundColor.collectAsStateWithLifecycle()
+    val miniPlayerAccentColor by viewModel.miniPlayerAccentColor.collectAsStateWithLifecycle()
     val isDarkTheme =
         when (themeMode) {
             DataStoreManager.THEME_MODE_LIGHT -> false
@@ -816,6 +819,57 @@ fun SettingScreen(
                             }
                         },
                     )
+                }
+                SettingItem(
+                    title = "Своя тема мини-плеера",
+                    subtitle =
+                        if (miniPlayerThemeEnabled) {
+                            "Остров использует свои цвета"
+                        } else {
+                            "Остров использует цвета основной темы"
+                        },
+                    switch = miniPlayerThemeEnabled to { viewModel.setMiniPlayerThemeEnabled(it) },
+                )
+                if (miniPlayerThemeEnabled) {
+                    listOf(
+                        Triple("Фон мини-плеера", miniPlayerBackgroundColor, viewModel::setMiniPlayerBackgroundColor),
+                        Triple("Акцент мини-плеера", miniPlayerAccentColor, viewModel::setMiniPlayerAccentColor),
+                    ).forEach { (label, value, saveColor) ->
+                        val fallbackColor = MaterialTheme.colorScheme.onSurface
+                        val colorPreview =
+                            remember(value, fallbackColor) {
+                                value.removePrefix("#").toLongOrNull(16)?.let { Color(0xFF000000L or it) }
+                                    ?: fallbackColor
+                            }
+                        SettingItem(
+                            title = label,
+                            subtitle = "",
+                            onClick = {
+                                colorPickerTitle = label
+                                colorPickerValue = colorPreview.toHexString()
+                                colorPickerSave = saveColor
+                            },
+                            otherView = {
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                ) {
+                                    Box(
+                                        Modifier
+                                            .size(18.dp)
+                                            .clip(CircleShape)
+                                            .background(colorPreview)
+                                            .border(1.dp, MaterialTheme.colorScheme.outline, CircleShape),
+                                    )
+                                    Text(
+                                        text = value.uppercase(),
+                                        style = LocalAppTypography.current.bodySmall.copy(fontFamily = FontFamily.Monospace),
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                }
+                            },
+                        )
+                    }
                 }
                 SettingItem(
                     title = resetThemeLabel,

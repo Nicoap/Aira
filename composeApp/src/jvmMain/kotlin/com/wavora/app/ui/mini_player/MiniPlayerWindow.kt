@@ -100,6 +100,9 @@ fun MiniPlayerWindow(
     val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsState("auto")
     val themeTextColor by dataStoreManager.themeTextColor.collectAsState("auto")
     val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsState("auto")
+    val islandThemeEnabled by dataStoreManager.miniPlayerThemeEnabled.collectAsState(false)
+    val islandBackground by dataStoreManager.miniPlayerBackgroundColor.collectAsState("auto")
+    val islandAccent by dataStoreManager.miniPlayerAccentColor.collectAsState("auto")
 
     DialogWindow(
         onCloseRequest = onCloseRequest,
@@ -130,6 +133,11 @@ fun MiniPlayerWindow(
             ) {
                 DynamicIsland(
                     sharedViewModel = sharedViewModel,
+                    palette =
+                        IslandPalette.resolve(
+                            customBackground = islandBackground.takeIf { islandThemeEnabled },
+                            customAccent = islandAccent.takeIf { islandThemeEnabled },
+                        ),
                     expanded = expanded,
                     expandOnHover = expandOnHover,
                     onToggleExpandMode = {
