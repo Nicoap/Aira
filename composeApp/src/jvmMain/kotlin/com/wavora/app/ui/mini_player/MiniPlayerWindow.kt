@@ -11,34 +11,39 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.input.key.Key
-import androidx.compose.ui.input.key.KeyEventType
-import androidx.compose.ui.input.key.key
-import androidx.compose.ui.input.key.type
 import androidx.compose.ui.input.pointer.PointerEventType
 import androidx.compose.ui.input.pointer.onPointerEvent
-import androidx.compose.ui.unit.DpSize
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Window
-import androidx.compose.ui.window.WindowPlacement
+import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.WindowPosition
-import androidx.compose.ui.window.WindowState
+import androidx.compose.ui.window.rememberDialogState
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.wavora.app.ui.theme.AppTheme
 import com.wavora.app.viewModel.SharedViewModel
-import com.wavora.app.viewModel.UIEvent
+import com.wavora.domain.manager.DataStoreManager
+import kotlinx.coroutines.delay
 import org.jetbrains.compose.resources.painterResource
+import org.koin.compose.koinInject
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.system_app_icon
-
 import java.util.prefs.Preferences
 
+private const val PREF_EXPAND_ON_HOVER = "islandExpandOnHover"
+
+// Hover mode: a short intent delay before opening, a longer grace period before closing.
+private const val HOVER_OPEN_DELAY_MS = 90L
+private const val HOVER_CLOSE_DELAY_MS = 380L
+
+// Click mode: the island closes by itself once the pointer has been away for a while.
+private const val CLICK_MODE_CLOSE_DELAY_MS = 1600L
+
 /**
- * Mini player window - a separate always-on-top window for music controls.
+ * The mini player as a "dynamic island": a capsule hanging from the top edge of the screen (centred), which
+ * opens into a full player on hover or on click, depending on the mode chosen in the island itself.
  *
- * Now shaped like a "dynamic island": a small pill when idle (cover, title,
- * play/pause + next), expanding on hover into the full mini player with
- * artwork, seek bar and the rest of the controls. The window is not resizable
- * and its size is driven entirely by [expanded], so it always looks the same
- * on every machine and nothing can be dragged into a broken layout.
+ * It is a dialog-type window: always on top, without a title bar, not focusable (using it never takes the
+ * keyboard away from the game or app underneath) and without a taskbar button. The window is as small as the
+ * capsule at rest, so it does not block the screen area around it; while it is open (and during the closing
+ * animation) the window is the size of the opened player and the island animates inside it.
  */
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
@@ -47,111 +52,94 @@ fun MiniPlayerWindow(
     onCloseRequest: () -> Unit,
 ) {
     val prefs = remember { Preferences.userRoot().node("Wavora/MiniPlayer") }
-
-    // Island sizes in dp: idle pill vs hovered panel.
-    val compactSize = DpSize(340.dp, 72.dp)
-    val expandedSize = DpSize(460.dp, 188.dp)
-
-    // Load saved position or use default
-    val savedX = prefs.getFloat("windowX", Float.NaN)
-    val savedY = prefs.getFloat("windowY", Float.NaN)
-
+    var expandOnHover by remember { mutableStateOf(prefs.getBoolean(PREF_EXPAND_ON_HOVER, true)) }
     var expanded by remember { mutableStateOf(false) }
+    var hovering by remember { mutableStateOf(false) }
+    var windowBig by remember { mutableStateOf(false) }
 
-    var windowState by remember {
-        mutableStateOf(
-            WindowState(
-                placement = WindowPlacement.Floating,
-                position =
-                    if (savedX.isNaN() || savedY.isNaN()) {
-                        WindowPosition(Alignment.BottomEnd)
-                    } else {
-                        WindowPosition(savedX.coerceAtLeast(0f).dp, savedY.coerceAtLeast(0f).dp)
-                    },
-                size = compactSize,
-            ),
+    val dialogState =
+        rememberDialogState(
+            position = WindowPosition(Alignment.TopCenter),
+            size = IslandCompactSize,
         )
-    }
 
-    // Island behaviour: keep the centre in place while growing/shrinking, so the
-    // pill does not jump to the side when the pointer enters it.
-    LaunchedEffect(expanded) {
-        val target = if (expanded) expandedSize else compactSize
-        val current = windowState.size
-        if (current != target) {
-            val position = windowState.position
-            if (position is WindowPosition.Absolute) {
-                windowState.position =
-                    WindowPosition(
-                        position.x + (current.width - target.width) / 2,
-                        position.y + (current.height - target.height) / 2,
-                    )
+    // Open/close policy.
+    LaunchedEffect(hovering, expandOnHover) {
+        if (expandOnHover) {
+            if (hovering) {
+                delay(HOVER_OPEN_DELAY_MS)
+                expanded = true
+            } else {
+                delay(HOVER_CLOSE_DELAY_MS)
+                expanded = false
             }
-            windowState.size = target
+        } else if (!hovering && expanded) {
+            delay(CLICK_MODE_CLOSE_DELAY_MS)
+            expanded = false
         }
     }
 
-    // Save position only: the size is owned by the island above.
-    LaunchedEffect(windowState.position) {
-        val pos = windowState.position
-        if (pos is WindowPosition.Absolute) {
-            prefs.putFloat("windowX", pos.x.value)
-            prefs.putFloat("windowY", pos.y.value)
+    // The window grows at once when the island opens and shrinks only after the closing animation is over.
+    LaunchedEffect(expanded) {
+        if (expanded) {
+            windowBig = true
+        } else {
+            delay(IslandAnimationMs + 80L)
+            windowBig = false
         }
     }
-
-    // WAVORA FIX: transparent + undecorated windows are invisible on Windows
-    // with integrated or older GPU drivers. Use native decoration on Windows.
-    val isWindows = remember {
-        System.getProperty("os.name", "").contains("Windows", ignoreCase = true)
+    LaunchedEffect(windowBig) {
+        dialogState.size = if (windowBig) IslandExpandedSize else IslandCompactSize
+        dialogState.position = WindowPosition(Alignment.TopCenter)
     }
 
-    Window(
+    val dataStoreManager: DataStoreManager = koinInject()
+    val themeMode by dataStoreManager.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
+    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
+    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("auto")
+    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("auto")
+    val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("auto")
+    val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
+
+    DialogWindow(
         onCloseRequest = onCloseRequest,
+        state = dialogState,
         title = "Wavora - Mini Player",
         icon = painterResource(Res.drawable.system_app_icon),
-        alwaysOnTop = true,
         undecorated = true,
         transparent = true,
         resizable = false,
-        state = windowState,
-        onKeyEvent = { keyEvent ->
-            when {
-                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.Spacebar -> {
-                    sharedViewModel.onUIEvent(UIEvent.PlayPause)
-                    true
-                }
-
-                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionRight -> {
-                    sharedViewModel.onUIEvent(UIEvent.Next)
-                    true
-                }
-
-                keyEvent.type == KeyEventType.KeyDown && keyEvent.key == Key.DirectionLeft -> {
-                    sharedViewModel.onUIEvent(UIEvent.Previous)
-                    true
-                }
-
-                else -> {
-                    false
-                }
-            }
-        },
+        focusable = false,
+        alwaysOnTop = true,
     ) {
-        // Остров: в покое это компактная пилюля, при наведении раскрывается.
-        Box(
-            modifier =
-                Modifier
-                    .fillMaxSize()
-                    .onPointerEvent(PointerEventType.Enter) { expanded = true }
-                    .onPointerEvent(PointerEventType.Exit) { expanded = false },
+        AppTheme(
+            mode = themeMode,
+            primaryColorHex = themePrimaryColor,
+            backgroundColorHex = themeBackgroundColor,
+            surfaceColorHex = themeSurfaceColor,
+            textColorHex = themeTextColor,
+            secondaryTextColorHex = themeSecondaryTextColor,
         ) {
-            MiniPlayerRoot(
-                sharedViewModel = sharedViewModel,
-                onClose = onCloseRequest,
-                windowState = windowState,
-                window = window,
-            )
+            Box(
+                modifier =
+                    Modifier
+                        .fillMaxSize()
+                        .onPointerEvent(PointerEventType.Enter) { hovering = true }
+                        .onPointerEvent(PointerEventType.Exit) { hovering = false },
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                DynamicIsland(
+                    sharedViewModel = sharedViewModel,
+                    expanded = expanded,
+                    expandOnHover = expandOnHover,
+                    onToggleExpandMode = {
+                        expandOnHover = !expandOnHover
+                        prefs.putBoolean(PREF_EXPAND_ON_HOVER, expandOnHover)
+                    },
+                    onExpandClick = { expanded = true },
+                    onClose = onCloseRequest,
+                )
+            }
         }
     }
 }
