@@ -15,8 +15,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Sensors
@@ -73,6 +75,7 @@ import com.wavora.app.ui.component.HomeItemContentPlaylist
 import com.wavora.app.ui.component.HomeItemVideo
 import com.wavora.app.ui.component.LimitedBorderAnimationView
 import com.wavora.app.ui.component.NowPlayingBottomSheet
+import com.wavora.app.ui.component.ScrollArrows
 import com.wavora.app.ui.component.SongFullWidthItems
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
 import com.wavora.app.ui.navigation.destination.list.ArtistDestination
@@ -416,9 +419,7 @@ fun ArtistScreen(
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
                                     }
                                 }
-                                LazyRow(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ArtistCarousel {
                                     item {
                                         Spacer(Modifier.size(10.dp))
                                     }
@@ -483,9 +484,7 @@ fun ArtistScreen(
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
                                     }
                                 }
-                                LazyRow(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ArtistCarousel {
                                     item {
                                         Spacer(Modifier.size(10.dp))
                                     }
@@ -549,9 +548,7 @@ fun ArtistScreen(
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
                                     }
                                 }
-                                LazyRow(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ArtistCarousel {
                                     item {
                                         Spacer(Modifier.size(10.dp))
                                     }
@@ -617,9 +614,7 @@ fun ArtistScreen(
                                                 .padding(vertical = 10.dp),
                                     )
                                 }
-                                LazyRow(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ArtistCarousel {
                                     item {
                                         Spacer(Modifier.size(10.dp))
                                     }
@@ -664,9 +659,7 @@ fun ArtistScreen(
                                                 .padding(vertical = 10.dp),
                                     )
                                 }
-                                LazyRow(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                ) {
+                                ArtistCarousel {
                                     item {
                                         Spacer(Modifier.size(10.dp))
                                     }
@@ -765,5 +758,24 @@ fun ArtistScreen(
                 )
             }
         }
+    }
+}
+
+/**
+ * Горизонтальная карусель страницы исполнителя со стрелками прокрутки.
+ *
+ * WHY: все разделы страницы (синглы, альбомы, видео, «звучит в», похожие) были обычными
+ * LazyRow без единой подсказки о прокрутке — на десктопе половина карточек уезжала за
+ * правый край, и было неочевидно, что там вообще что-то есть.
+ */
+@Composable
+private fun ArtistCarousel(content: LazyListScope.() -> Unit) {
+    val state = rememberLazyListState()
+    ScrollArrows(state = state) {
+        LazyRow(
+            state = state,
+            verticalAlignment = Alignment.CenterVertically,
+            content = content,
+        )
     }
 }
