@@ -68,7 +68,6 @@ Aira's goal isn't to be "yet another YouTube Music wrapper." It exists to push a
 - Playback state (track, queue, shuffle/repeat) is restored across app restarts
 
 ### 🎤 Lyrics
-- **Aira community lyrics** — synced lyrics served by Aira's own Cloudflare Workers backend, with an opt-in "help build the database" contribution flow
 - **LRCLIB** and **BetterLyrics** as additional open fallback providers
 - **Spotify** synced lyrics via the user's own `sp_dc` cookie
 - **YouTube** auto-generated captions as a last-resort fallback
@@ -464,7 +463,6 @@ El objetivo de Aira no es ser "otro wrapper más de YouTube Music". Existe para 
 - El estado de reproducción (canción, cola, aleatorio/repetir) se restaura entre reinicios de la app
 
 ### 🎤 Letras
-- **Letras comunitarias de Aira** — letras sincronizadas servidas por el propio backend de Aira en Cloudflare Workers, con un flujo opcional de "ayudar a construir la base de datos"
 - **LRCLIB** y **BetterLyrics** como proveedores adicionales de respaldo, abiertos
 - Letras sincronizadas de **Spotify** vía la cookie `sp_dc` propia del usuario
 - Subtítulos autogenerados de **YouTube** como último recurso
