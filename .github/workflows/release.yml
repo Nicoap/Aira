@@ -290,9 +290,13 @@ jobs:
           archive: false
           if-no-files-found: error
 
+      # Включается переменной репозитория SIGNPATH_ENABLED=true — это делается
+      # после одобрения заявки в SignPath Foundation, когда в организации
+      # появится trusted build system GitHub.com. Пока переменной нет, шаг
+      # пропускается и в релиз уходит неподписанный MSI (пайплайн не падает).
       - name: Подписать MSI в SignPath
         id: sign-msi
-        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+        if: ${{ vars.SIGNPATH_ENABLED == 'true' }}
         uses: signpath/github-action-submit-signing-request@v3
         with:
           api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
