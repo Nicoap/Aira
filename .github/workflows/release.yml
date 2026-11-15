@@ -315,27 +315,44 @@ jobs:
             release-assets/desktop/*.msi
 
   # ---------------------------------------------------------------------------
-  # Verify — после публикации проверяем, что ассеты реально скачиваются по
-  # тем URL, которые увидит пользователь (releases/latest/download/...).
+  # Verify — после публикации проверяем через API, что все ассеты релиза
+  # реально загружены и названы так, как их ждёт документация релиза.
+  #
+  # WHY не через releases/download/...: репозиторий ПРИВАТНЫЙ, и GitHub на
+  # анонимный запрос к такой ссылке отвечает 404 (прячет существование), даже
+  # когда ассет на месте. Из-за этого прошлый прогон падал на живой сборке.
   # ---------------------------------------------------------------------------
   verify:
     runs-on: ubuntu-latest
     needs: [publish, resolve-version]
     steps:
-      - name: Скачать опубликованные ассеты
+      - name: Проверить ассеты опубликованного релиза
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          TAG: ${{ needs.resolve-version.outputs.tag }}
+          VERSION: ${{ needs.resolve-version.outputs.version }}
         run: |
           set -euo pipefail
-          BASE="https://github.com/Nicoap/Aira/releases/download/${{ needs.resolve-version.outputs.tag }}"
-          VERSION="${{ needs.resolve-version.outputs.version }}"
+          API="https://api.github.com/repos/Nicoap/Aira/releases/tags/$TAG"
+          JSON=$(curl -sS -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" "$API")
 
-          for asset in "Aira-${VERSION}.msi" "Aira-universal.apk"; do
-            URL="$BASE/$asset"
-            CODE=$(curl -sL -o /dev/null -w "%{http_code}" -I "$URL")
-            echo "[$CODE] $URL"
-            if [ "$CODE" != "200" ]; then
-              echo "::error::GET $URL вернул HTTP $CODE — ассет не опубликован или назван иначе."
+          echo "--- Ассеты релиза $TAG ---"
+          echo "$JSON" | jq -r '.assets[] | "  \(.name)  \(.size) байт  \(.state)"'
+
+          for asset in \
+            "Aira-${VERSION}.msi" \
+            "Aira-arm64.apk" \
+            "Aira-armeabi-v7a.apk" \
+            "Aira-x86_64.apk" \
+            "Aira-universal.apk"; do
+            STATE=$(echo "$JSON" | jq -r --arg n "$asset" '.assets[] | select(.name == $n) | .state')
+            SIZE=$(echo "$JSON" | jq -r --arg n "$asset" '.assets[] | select(.name == $n) | .size')
+            if [ "$STATE" != "uploaded" ] || [ -z "$SIZE" ] || [ "$SIZE" -lt 1000000 ]; then
+              echo "::error::Ассет $asset отсутствует или не загружен (state=${STATE:-none}, size=${SIZE:-0})."
               exit 1
             fi
+            echo "OK: $asset ($SIZE байт)"
           done
-          echo "Все ассеты релиза доступны."
+          echo "Все ассеты релиза на месте."
