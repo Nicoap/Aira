@@ -18,6 +18,7 @@ import com.wavora.domain.utils.Resource
 import com.wavora.scraper.YouTube
 import com.wavora.scraper.extractor.rewriteStreamUrl
 import com.wavora.scraper.extractor.rewriteStreamUrlWithHint
+import com.wavora.scraper.extractor.upstreamStreamUrl
 import com.wavora.scraper.models.MediaType
 import com.wavora.scraper.models.response.PlayerResponse
 import com.wavora.logger.Logger
@@ -420,6 +421,8 @@ internal class StreamRepositoryImpl(
         }.flowOn(Dispatchers.IO)
 
     override fun is403Url(url: String) = flow { emit(youTube.is403Url(url)) }.flowOn(Dispatchers.IO)
+
+    override fun unwrapStreamUrl(url: String): String = upstreamStreamUrl(url)
 
     override suspend fun invalidateFormat(videoId: String) {
         withContext(Dispatchers.IO) {

@@ -215,6 +215,10 @@ class SettingsViewModel(
     // Отдельная тема мини-плеера (острова).
     private val _miniPlayerThemeEnabled = MutableStateFlow(false)
     val miniPlayerThemeEnabled: StateFlow<Boolean> = _miniPlayerThemeEnabled
+
+    // Прямой поток: отдавать плееру исходную ссылку без локального прокси.
+    private val _directStreamEnabled = MutableStateFlow(true)
+    val directStreamEnabled: StateFlow<Boolean> = _directStreamEnabled
     private val _miniPlayerBackgroundColor = MutableStateFlow("auto")
     val miniPlayerBackgroundColor: StateFlow<String> = _miniPlayerBackgroundColor
     private val _miniPlayerAccentColor = MutableStateFlow("auto")
@@ -619,6 +623,7 @@ class SettingsViewModel(
         }
         viewModelScope.launch {
             dataStoreManager.miniPlayerThemeEnabled.collect { _miniPlayerThemeEnabled.value = it }
+            dataStoreManager.directStreamEnabled.collect { _directStreamEnabled.value = it }
         }
         viewModelScope.launch {
             dataStoreManager.miniPlayerBackgroundColor.collect { _miniPlayerBackgroundColor.value = it }
@@ -658,6 +663,10 @@ class SettingsViewModel(
 
     fun setMiniPlayerThemeEnabled(enabled: Boolean) {
         viewModelScope.launch { dataStoreManager.setMiniPlayerThemeEnabled(enabled) }
+    }
+
+    fun setDirectStreamEnabled(enabled: Boolean) {
+        viewModelScope.launch { dataStoreManager.setDirectStreamEnabled(enabled) }
     }
 
     fun setMiniPlayerBackgroundColor(color: String) {

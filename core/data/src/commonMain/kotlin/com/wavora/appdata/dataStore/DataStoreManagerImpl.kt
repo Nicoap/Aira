@@ -1676,6 +1676,15 @@ internal class DataStoreManagerImpl(
         }
     }
 
+    override val directStreamEnabled: Flow<Boolean> =
+        settingsDataStore.data.map { it[DIRECT_STREAM_ENABLED] ?: true }
+
+    override suspend fun setDirectStreamEnabled(enabled: Boolean) {
+        withContext(Dispatchers.IO) {
+            settingsDataStore.edit { it[DIRECT_STREAM_ENABLED] = enabled }
+        }
+    }
+
     // Отдельная тема мини-плеера: по умолчанию выключена, остров живёт на цветах основной темы.
     override val miniPlayerThemeEnabled: Flow<Boolean> =
         settingsDataStore.data.map { it[MINI_PLAYER_THEME_ENABLED] ?: false }
@@ -1911,6 +1920,9 @@ internal class DataStoreManagerImpl(
         val THEME_TEXT_COLOR = stringPreferencesKey("theme_text_color")
         val THEME_SECONDARY_TEXT_COLOR = stringPreferencesKey("theme_secondary_text_color")
     val THEME_CUSTOM_PALETTE = stringPreferencesKey("theme_custom_palette")
+
+    // Прямой поток по умолчанию: прокси с чанками и HLS-манифестами давал рывки.
+    val DIRECT_STREAM_ENABLED = booleanPreferencesKey("direct_stream_enabled")
     val MINI_PLAYER_THEME_ENABLED = booleanPreferencesKey("mini_player_theme_enabled")
     val MINI_PLAYER_BACKGROUND_COLOR = stringPreferencesKey("mini_player_background_color")
     val MINI_PLAYER_ACCENT_COLOR = stringPreferencesKey("mini_player_accent_color")

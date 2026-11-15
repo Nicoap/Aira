@@ -618,6 +618,7 @@ fun SettingScreen(
     val themeTextColor by viewModel.themeTextColor.collectAsStateWithLifecycle()
     val themeSecondaryTextColor by viewModel.themeSecondaryTextColor.collectAsStateWithLifecycle()
     val miniPlayerThemeEnabled by viewModel.miniPlayerThemeEnabled.collectAsStateWithLifecycle()
+    val directStreamEnabled by viewModel.directStreamEnabled.collectAsStateWithLifecycle()
     val miniPlayerBackgroundColor by viewModel.miniPlayerBackgroundColor.collectAsStateWithLifecycle()
     val miniPlayerAccentColor by viewModel.miniPlayerAccentColor.collectAsStateWithLifecycle()
     val isDarkTheme =
@@ -1351,6 +1352,16 @@ fun SettingScreen(
                     title = stringResource(Res.string.save_last_played),
                     subtitle = stringResource(Res.string.save_last_played_track_and_queue),
                     switch = (saveLastPlayed to { viewModel.setSaveLastPlayed(it) }),
+                )
+                SettingItem(
+                    title = "Прямой поток",
+                    subtitle =
+                        if (directStreamEnabled) {
+                            "Ссылка идёт в плеер напрямую, без локального прокси"
+                        } else {
+                            "Поток идёт через локальный прокси с разбиением на куски"
+                        },
+                    switch = (directStreamEnabled to { viewModel.setDirectStreamEnabled(it) }),
                 )
                 if (getPlatform() == Platform.Android) {
                     SettingItem(

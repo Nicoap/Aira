@@ -3806,6 +3806,29 @@ class VlcPlayerAdapter(
             }
         }
 
+        // Прямой поток — так работает апстрим Wavora: libVLC получает исходную ссылку
+        // googlevideo без локального прокси. Наш прокси с чанками и HLS-манифестами
+        // добавлял задержки и рывки, поэтому этот режим включён по умолчанию.
+        if (dataStoreManager.directStreamEnabled.first()) {
+            val row = streamRepository.getNewFormat(videoId).lastOrNull()
+            val rawAudio =
+                row?.audioUrl?.takeIf { !it.isHlsLink() }?.let { streamRepository.unwrapStreamUrl(it) }
+            val rawVideo =
+                row?.videoUrl?.takeIf { !it.isHlsLink() }?.let { streamRepository.unwrapStreamUrl(it) }
+            if (shouldFindVideo && rawVideo != null) {
+                Logger.w("Stream", "Direct video stream (no proxy)")
+                return PlayableSource(
+                    isVideo = true,
+                    url = rawVideo,
+                    audioSlaveUrl = rawAudio?.takeIf { it != rawVideo },
+                )
+            }
+            if (!shouldFindVideo && rawAudio != null) {
+                Logger.w("Stream", "Direct audio stream (no proxy)")
+                return PlayableSource(isVideo = false, url = rawAudio)
+            }
+        }
+
         // Прогрессивная ссылка — лучшее качество (opus 251), но только если сервер отдаёт файл
         // целиком: на «грязном» exit-IP он режет её на ~1 МиБ и дальше отвечает 403. Проверяем
         // один раз и, если поток полный, играем напрямую — без HLS и потери качества.

@@ -51,5 +51,13 @@ interface StreamRepository {
 
     fun is403Url(url: String): Flow<Boolean>
 
+    /**
+     * Возвращает исходную ссылку, если [url] — локальная прокси-ссылка.
+     *
+     * WHY: в режиме прямого потока плеер получает ссылку googlevideo напрямую (как в
+     * апстриме), а прокси остаётся только запасным вариантом.
+     */
+    fun unwrapStreamUrl(url: String): String
+
     suspend fun invalidateFormat(videoId: String)
 }

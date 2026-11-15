@@ -503,6 +503,16 @@ interface DataStoreManager {
     suspend fun setThemeCustomPalette(palette: String)
 
     /**
+     * Прямой поток: отдавать плееру исходную ссылку без локального прокси (как в апстриме).
+     *
+     * WHY: прокси с разбиением на чанки и HLS-манифестами добавлял задержки и рывки
+     * при воспроизведении, поэтому по умолчанию включён прямой режим.
+     */
+    val directStreamEnabled: Flow<Boolean>
+
+    suspend fun setDirectStreamEnabled(enabled: Boolean)
+
+    /**
      * Отдельная тема мини-плеера (острова): выключена — цвета берутся из основной темы,
      * включена — используются [miniPlayerBackgroundColor] и [miniPlayerAccentColor].
      */
