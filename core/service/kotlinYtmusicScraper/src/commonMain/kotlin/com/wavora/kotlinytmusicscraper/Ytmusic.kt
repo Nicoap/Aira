@@ -641,7 +641,7 @@ class Ytmusic {
         }
 
     suspend fun checkForGithubReleaseUpdate() =
-        httpClient.get("https://api.github.com/repos/nicoqw/Aira/releases/latest") {
+        httpClient.get("https://api.github.com/repos/Nicoap/Aira/releases/latest") {
             contentType(ContentType.Application.Json)
         }
 
@@ -1294,8 +1294,8 @@ class Ytmusic {
         // Credentials are NOT hard-coded in source — they live only in this remote file,
         // AUDIT FIX (Tidal 400 en el 100% de las canciones, sesiones 30/08 y 02/09):
         // esta URL apuntaba a un repo "wavora-files" separado que NUNCA existió bajo
-        // el org Wavora-dev (confirmado en vivo: github.com/nicoqw/Aira-files
-        // da 404, y github.com/nicoqw solo lista un repo público: "Wavora"). El
+        // el org Wavora-dev (confirmado en vivo: github.com/Nicoap/Aira-files
+        // da 404, y github.com/Nicoap solo lista un repo público: "Wavora"). El
         // diseño original (ver el comentario de arriba) quería mantener este archivo
         // fuera del repo principal para que las credenciales de Tidal no queden
         // públicas en el código fuente open-source. Repuntamos al único repo real que

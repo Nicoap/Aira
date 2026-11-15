@@ -121,7 +121,7 @@
     <string name="about_us">О нас</string>
     <string name="version">Версия</string>
     <string name="github">Github</string>
-    <string name="wavora_dev">nicoqw</string>
+    <string name="wavora_dev">Nicoap</string>
     <string name="buy_me_a_coffee">Купите мне кофе</string>
     <string name="developer_blog">Блог разработчика</string>
     <string name="developer_blog_tagline">Читайте заметки разработчика, руководства и информацию о процессе разработки.</string>
@@ -282,7 +282,7 @@
     <string name="older_first">Сначала старые</string>
     <string name="newer_first">Сначала новые</string>
     <string name="added_date">Дата добавления</string>
-    <string name="credit_app">Простое музыкальное приложение, использующее YouTube Music в качестве серверной части. \n\nAira — приложение с открытым исходным кодом для потокового воспроизведения музыки из YouTube и YouTube Music без рекламы и слежки. Возможности:\n\n - Потоковое воспроизведение музыки \n - Синхронизированные тексты песен\n - Гибкая настройка интерфейса и тем\n - и т. д. \n\nAira бесплатен и без рекламы\n\nСделано с ❤️ nicoqw\n\nAira основана на проекте Aira (GPL-3.0): https://github.com/nicoqw/Aira</string>
+    <string name="credit_app">Простое музыкальное приложение, использующее YouTube Music в качестве серверной части. \n\nAira — приложение с открытым исходным кодом для потокового воспроизведения музыки из YouTube и YouTube Music без рекламы и слежки. Возможности:\n\n - Потоковое воспроизведение музыки \n - Синхронизированные тексты песен\n - Гибкая настройка интерфейса и тем\n - и т. д. \n\nAira бесплатен и без рекламы\n\nСделано с ❤️ nicoqw\n\nAira основана на проекте Wavora (GPL-3.0): https://github.com/Nicoap/Aira</string>
     <string name="issue_tracker">Трекер проблем</string>
     <string name="featured_playlists">Избранные альбомы</string>
     <string name="featured_inArtist">Где встречается</string>

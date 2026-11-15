@@ -2612,7 +2612,7 @@ fun SettingScreen(
                     title = stringResource(Res.string.author),
                     subtitle = stringResource(Res.string.wavora_dev),
                     onClick = {
-                        uriHandler.openUri("https://github.com/nicoqw")
+                        uriHandler.openUri("https://github.com/Nicoap")
                     },
                 )
                 SettingItem(

@@ -39,6 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import com.wavora.app.expect.openUrl
+import com.wavora.domain.extension.now
 import com.wavora.app.ui.component.RippleIconButton
 import com.wavora.app.ui.theme.typo
 import com.wavora.app.utils.VersionManager
@@ -97,14 +98,14 @@ fun CreditScreen(
             fontSize = 13.sp,
         )
 
-        // Developer - clickable, opens dev blog
+        // Developer - clickable, opens the GitHub profile
         Text(
-            text = "nicoqw",
+            text = "Nicoap",
             style = LocalAppTypography.current.bodyMedium,
             textDecoration = TextDecoration.Underline,
             modifier =
                 Modifier.clickable {
-                    openUrl("https://wavora.app")
+                    openUrl("https://github.com/Nicoap")
                 },
         )
 
@@ -124,44 +125,10 @@ fun CreditScreen(
         Spacer(modifier = Modifier.height(10.dp))
 
         CompositionLocalProvider(LocalMinimumInteractiveComponentSize provides Dp.Unspecified) {
-            // Website button
-            TextButton(
-                onClick = {
-                    openUrl("https://wavora.app")
-                },
-                modifier =
-                    Modifier
-                        .align(Alignment.Start)
-                        .padding(horizontal = 25.dp)
-                        .defaultMinSize(minHeight = 1.dp, minWidth = 1.dp),
-            ) {
-                Text(text = stringResource(Res.string.website))
-            }
-
-            // Developer blog button
-            TextButton(
-                onClick = {
-                    openUrl("https://wavora.app")
-                },
-                modifier =
-                    Modifier
-                        .align(Alignment.Start)
-                        .padding(horizontal = 25.dp)
-                        .defaultMinSize(minHeight = 1.dp, minWidth = 1.dp),
-            ) {
-                Column {
-                    Text(text = stringResource(Res.string.developer_blog))
-                    Text(
-                        text = stringResource(Res.string.developer_blog_tagline),
-                        style = LocalAppTypography.current.bodySmall,
-                    )
-                }
-            }
-
             // GitHub button
             TextButton(
                 onClick = {
-                    openUrl("https://github.com/nicoqw/Aira")
+                    openUrl("https://github.com/Nicoap/Aira")
                 },
                 modifier =
                     Modifier
@@ -175,7 +142,7 @@ fun CreditScreen(
             // Issue tracker button
             TextButton(
                 onClick = {
-                    openUrl("https://github.com/nicoqw/Aira/issues")
+                    openUrl("https://github.com/Nicoap/Aira/issues")
                 },
                 modifier =
                     Modifier
@@ -203,9 +170,9 @@ fun CreditScreen(
 
         Spacer(modifier = Modifier.height(10.dp))
 
-        // Copyright text
+        // Copyright text: год считается на лету, чтобы не протухать каждый январь
         Text(
-            text = stringResource(Res.string.copyright),
+            text = "© ${now().year} Nicoap",
             style = LocalAppTypography.current.bodySmall,
             modifier =
                 Modifier

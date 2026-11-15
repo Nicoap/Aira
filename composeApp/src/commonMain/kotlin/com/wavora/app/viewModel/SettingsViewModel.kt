@@ -194,7 +194,7 @@ class SettingsViewModel(
     val discordRpcButtonTwoLabel: StateFlow<String> = _discordRpcButtonTwoLabel
     private val _discordRpcButtonTwoEnabled = MutableStateFlow(true)
     val discordRpcButtonTwoEnabled: StateFlow<Boolean> = _discordRpcButtonTwoEnabled
-    private val _discordRpcButtonTwoUrl = MutableStateFlow("https://github.com/nicoqw/Aira")
+    private val _discordRpcButtonTwoUrl = MutableStateFlow("https://github.com/Nicoap/Aira")
     val discordRpcButtonTwoUrl: StateFlow<String> = _discordRpcButtonTwoUrl
     private val _discordRpcSmallImageUrl =
         MutableStateFlow("https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png")

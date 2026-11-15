@@ -8,11 +8,11 @@
   [![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)](LICENSE)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.11.1-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-  [![Platform: Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://github.com/nicoqw/Aira/releases)
-  [![Platform: Desktop](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/nicoqw/Aira/releases)
-  [![GitHub Repo](https://img.shields.io/badge/GitHub-nicoqw%2FAira-181717?style=flat-square&logo=github)](https://github.com/nicoqw/Aira)
+  [![Platform: Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://github.com/Nicoap/Aira/releases)
+  [![Platform: Desktop](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Nicoap/Aira/releases)
+  [![GitHub Repo](https://img.shields.io/badge/GitHub-Nicoap%2FAira-181717?style=flat-square&logo=github)](https://github.com/Nicoap/Aira)
 
-  [Releases](https://github.com/nicoqw/Aira/releases) · [Report a bug](https://github.com/nicoqw/Aira/issues) · [Español ↓](#-aira-en-español)
+  [Releases](https://github.com/Nicoap/Aira/releases) · [Report a bug](https://github.com/Nicoap/Aira/issues) · [Español ↓](#-aira-en-español)
 
 </div>
 
@@ -292,16 +292,16 @@ Aira is a **Kotlin Multiplatform** project. Shared Kotlin code targets both `and
 ## Installation
 
 ### Android
-Download the latest `.apk` from [Releases](https://github.com/nicoqw/Aira/releases). Requires **Android 8.0 (API 26) or newer**.
+Download the latest `.apk` from [Releases](https://github.com/Nicoap/Aira/releases). Requires **Android 8.0 (API 26) or newer**.
 
 ### Windows
-Download the `.msi` installer from [Releases](https://github.com/nicoqw/Aira/releases). Requires [VLC](https://www.videolan.org/vlc/) (64-bit) installed on the system.
+Download the `.msi` installer from [Releases](https://github.com/Nicoap/Aira/releases). Requires [VLC](https://www.videolan.org/vlc/) (64-bit) installed on the system.
 
 ### macOS
-Download the `.dmg` from [Releases](https://github.com/nicoqw/Aira/releases). Requires VLC installed.
+Download the `.dmg` from [Releases](https://github.com/Nicoap/Aira/releases). Requires VLC installed.
 
 ### Linux
-Download the `.AppImage` from [Releases](https://github.com/nicoqw/Aira/releases), mark it executable, and run it. Requires VLC (`libvlc`) installed on the system.
+Download the `.AppImage` from [Releases](https://github.com/Nicoap/Aira/releases), mark it executable, and run it. Requires VLC (`libvlc`) installed on the system.
 
 ## Building
 
@@ -317,7 +317,7 @@ Open the project root — both IDEs will pick up the Kotlin Multiplatform + Comp
 ### From the command line
 
 ```bash
-git clone https://github.com/nicoqw/Aira
+git clone https://github.com/Nicoap/Aira
 cd Aira
 
 # One-time: download and stage VLC's native libraries for the desktop target
@@ -603,16 +603,16 @@ Nada de esto busca desmerecer a SimpMusic — es la base sobre la que se constru
 ## Instalación
 
 ### Android
-Descargá el `.apk` más reciente desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere **Android 8.0 (API 26) o superior**.
+Descargá el `.apk` más reciente desde [Releases](https://github.com/Nicoap/Aira/releases). Requiere **Android 8.0 (API 26) o superior**.
 
 ### Windows
-Descargá el instalador `.msi` desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere tener [VLC](https://www.videolan.org/vlc/) (64-bit) instalado en el sistema.
+Descargá el instalador `.msi` desde [Releases](https://github.com/Nicoap/Aira/releases). Requiere tener [VLC](https://www.videolan.org/vlc/) (64-bit) instalado en el sistema.
 
 ### macOS
-Descargá el `.dmg` desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere VLC instalado.
+Descargá el `.dmg` desde [Releases](https://github.com/Nicoap/Aira/releases). Requiere VLC instalado.
 
 ### Linux
-Descargá el `.AppImage` desde [Releases](https://github.com/nicoqw/Aira/releases), marcalo como ejecutable, y ejecutalo. Requiere VLC (`libvlc`) instalado en el sistema.
+Descargá el `.AppImage` desde [Releases](https://github.com/Nicoap/Aira/releases), marcalo como ejecutable, y ejecutalo. Requiere VLC (`libvlc`) instalado en el sistema.
 
 ## Compilación
 
@@ -628,7 +628,7 @@ Abrí la raíz del proyecto — ambos IDEs detectan automáticamente la configur
 ### Desde la línea de comandos
 
 ```bash
-git clone https://github.com/nicoqw/Aira
+git clone https://github.com/Nicoap/Aira
 cd Aira
 
 # Una sola vez: descarga y prepara las librerías nativas de VLC para el target de escritorio

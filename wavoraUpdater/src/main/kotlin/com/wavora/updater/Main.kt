@@ -53,7 +53,7 @@ import java.net.URI
 // stale as new versions ship - it always resolves to whatever is newest
 // at the moment the user clicks it, regardless of which version this
 // particular copy of WavoraUpdater was bundled with.
-private const val MANUAL_DOWNLOAD_URL = "https://github.com/nicoqw/Aira/releases/latest"
+private const val MANUAL_DOWNLOAD_URL = "https://github.com/Nicoap/Aira/releases/latest"
 
 // ===== Brand tokens (copied, not imported: wavoraUpdater deliberately does
 // not depend on :composeApp's theme module - see build.gradle.kts's doc on

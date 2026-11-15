@@ -41,7 +41,7 @@ fun ReviewDialog(
         confirmButton = {
             TextButton(onClick = {
                 onDoneReview.invoke()
-                uriHandler.openUri("https://github.com/nicoqw/Aira")
+                uriHandler.openUri("https://github.com/Nicoap/Aira")
             }) {
                 Text(
                     stringResource(Res.string.give_a_star),

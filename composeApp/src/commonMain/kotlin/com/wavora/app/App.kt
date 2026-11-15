@@ -852,7 +852,7 @@ fun App(
                                             // manual fallback as always.
                                             shouldShowUpdateDialog = false
                                             viewModel.showedUpdateDialog = false
-                                            openUrl("https://github.com/nicoqw/Aira/releases")
+                                            openUrl("https://github.com/Nicoap/Aira/releases")
                                         }
                                     } else {
                                         // Android / Android TV.
@@ -882,7 +882,7 @@ fun App(
                                                     // manual fallback as before this change.
                                                     shouldShowUpdateDialog = false
                                                     viewModel.showedUpdateDialog = false
-                                                    openUrl("https://github.com/nicoqw/Aira/releases")
+                                                    openUrl("https://github.com/Nicoap/Aira/releases")
                                                 }
                                             }
                                         }

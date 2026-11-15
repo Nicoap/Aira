@@ -11,7 +11,7 @@ data class DiscordRpcSettings(
     val buttonOneUrl: String = "https://music.youtube.com/watch?v={videoId}",
     val buttonOneEnabled: Boolean = true,
     val buttonTwoLabel: String = "Visit Wavora",
-    val buttonTwoUrl: String = "https://github.com/nicoqw/Aira",
+    val buttonTwoUrl: String = "https://github.com/Nicoap/Aira",
     val buttonTwoEnabled: Boolean = true,
     val smallImageUrl: String = "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png",
 )

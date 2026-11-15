@@ -116,7 +116,7 @@
     <string name="about_us">Tentang kami</string>
     <string name="version">Versi</string>
     <string name="github">Github</string>
-    <string name="wavora_dev">nicoqw</string>
+    <string name="wavora_dev">Nicoap</string>
     <string name="buy_me_a_coffee">Belikan aku secangkir kopi</string>
     <string name="paypal">PayPal</string>
     <string name="title">Judul</string>
@@ -259,7 +259,7 @@
     <string name="suggest">Saran</string>
     <string name="reload">Memuat ulang</string>
     <string name="added_date">Tanggal ditambahkan</string>
-    <string name="credit_app">Aplikasi musik sederhana yang menggunakan YouTube Music untuk backend \n\nAira adalah proyek sumber terbuka untuk streaming musik dari YouTube dan YouTube Music tanpa iklan dan pelacakan. Aira menyediakan banyak fitur:\n\n - Streaming musik\n - Lirik yang disinkronkan\n - Personalisasi data\n - dll... \n\nAira selalu gratis dan tidak ada iklan\n\nDibangun dengan ❤️ oleh Tuan Minh Nguyen Duc (nicoqw)</string>
+    <string name="credit_app">Aplikasi musik sederhana yang menggunakan YouTube Music untuk backend \n\nAira adalah proyek sumber terbuka untuk streaming musik dari YouTube dan YouTube Music tanpa iklan dan pelacakan. Aira menyediakan banyak fitur:\n\n - Streaming musik\n - Lirik yang disinkronkan\n - Personalisasi data\n - dll... \n\nAira selalu gratis dan tidak ada iklan\n\nDibangun dengan ❤️ oleh Tuan Minh Nguyen Duc (Nicoap)</string>
     <string name="issue_tracker">Pelacak Masalah</string>
     <string name="featured_playlists">Rekomendasi Playlist</string>
     <string name="featured_inArtist">Termasuk di</string>
