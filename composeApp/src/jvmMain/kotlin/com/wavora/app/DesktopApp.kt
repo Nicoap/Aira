@@ -271,6 +271,12 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     application {
         var appReady by remember { mutableStateOf<AppReady?>(null) }
         var splashPrimaryColor by remember { mutableStateOf("#A259FF") }
+        // Полная палитра для сплэша: иначе окно рисовалось на дефолтном тёмном фоне
+        // и не совпадало с выбранной темой (пользователь видел «чужое» окно).
+        var splashBackgroundColor by remember { mutableStateOf("auto") }
+        var splashSurfaceColor by remember { mutableStateOf("auto") }
+        var splashTextColor by remember { mutableStateOf("auto") }
+        var splashSecondaryTextColor by remember { mutableStateOf("auto") }
         // WAVORA SPLASH FIX (Objetivo 1, Problema 4): antes, apenas `appReady`
         // dejaba de ser null, `SplashWindow` se desmontaba en el mismo frame que
         // `MainAppWindow` aparecía — un corte seco. Ahora `SplashScreen` corre su
@@ -336,10 +342,18 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                             loadAllModules()
                             loadKoinModules(viewModelModule)
                         }
-                        val loadedThemePrimaryColor =
-                            getKoin().get<DataStoreManager>().themePrimaryColor.first()
+                        val themeStore = getKoin().get<DataStoreManager>()
+                        val loadedThemePrimaryColor = themeStore.themePrimaryColor.first()
+                        val loadedBackgroundColor = themeStore.themeBackgroundColor.first()
+                        val loadedSurfaceColor = themeStore.themeSurfaceColor.first()
+                        val loadedTextColor = themeStore.themeTextColor.first()
+                        val loadedSecondaryTextColor = themeStore.themeSecondaryTextColor.first()
                         withContext(Dispatchers.Main) {
                             splashPrimaryColor = loadedThemePrimaryColor
+                            splashBackgroundColor = loadedBackgroundColor
+                            splashSurfaceColor = loadedSurfaceColor
+                            splashTextColor = loadedTextColor
+                            splashSecondaryTextColor = loadedSecondaryTextColor
                         }
                         com.wavora.app.diagnostics.StartupTiming.end("startKoin + loadAllModules")
 
@@ -451,6 +465,10 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                 onExitFinished = { splashExited = true },
                 canForceClose = canForceClose,
                 primaryColorHex = splashPrimaryColor,
+                backgroundColorHex = splashBackgroundColor,
+                surfaceColorHex = splashSurfaceColor,
+                textColorHex = splashTextColor,
+                secondaryTextColorHex = splashSecondaryTextColor,
             )
         }
         if (currentAppReady != null && splashExited) {
@@ -546,6 +564,10 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
     onExitFinished: () -> Unit,
     canForceClose: Boolean,
     primaryColorHex: String,
+    backgroundColorHex: String,
+    surfaceColorHex: String,
+    textColorHex: String,
+    secondaryTextColorHex: String,
 ) {
     val windowState =
         remember {
@@ -568,7 +590,13 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
         alwaysOnTop = !canForceClose,
         state = windowState,
     ) {
-        AppTheme(primaryColorHex = primaryColorHex) {
+        AppTheme(
+            primaryColorHex = primaryColorHex,
+            backgroundColorHex = backgroundColorHex,
+            surfaceColorHex = surfaceColorHex,
+            textColorHex = textColorHex,
+            secondaryTextColorHex = secondaryTextColorHex,
+        ) {
             SplashScreen(visible = visible, onExitFinished = onExitFinished)
         }
     }

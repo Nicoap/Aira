@@ -2508,7 +2508,6 @@ class JvmMediaPlayerHandlerImpl(
             // Статистику пишем по накопленному времени прослушивания, а не по проценту
             // в момент перехода — иначе короткие треки и последний трек сессии терялись.
             flushListening()
-            maybeScrobbleToExternalServices(lastPlayed, currentState.progress)
         }
         Logger.w(TAG, "Smooth Switching Transition Current Position: ${player.currentPosition}")
         mayBeNormalizeVolume()
@@ -2705,6 +2704,23 @@ class JvmMediaPlayerHandlerImpl(
         }
         val listenedSeconds = (listened / 1000).coerceAtMost(song.durationSeconds.toLong())
         coroutineScope.launch {
+            // Скробблинг живёт отдельно от локальной статистики: у него свои тумблеры,
+            // но считается он по тому же накопленному времени — раньше процент брался
+            // в момент смены трека, когда позиция уже обнулилась, и скробблов не было.
+            val scrobbleEligible =
+                song.durationSeconds >= 30 &&
+                    (listenedSeconds >= song.durationSeconds / 2 || listenedSeconds >= 240)
+            if (scrobbleEligible) {
+                withContext(Dispatchers.IO) {
+                    org.app.lyrics.scrobbler.ScrobbleManager.maybeScrobble(
+                        dataStoreManager = dataStoreManager,
+                        artist = song.artistName?.joinToString(", ") ?: "",
+                        title = song.title,
+                        album = song.albumName,
+                        startedAtEpochSeconds = (System.currentTimeMillis() / 1000) - listenedSeconds,
+                    )
+                }
+            }
             val trackingEnabled = dataStoreManager.localTrackingEnabled.first() == TRUE
             if (!trackingEnabled) {
                 return@launch
@@ -2720,44 +2736,6 @@ class JvmMediaPlayerHandlerImpl(
                 ).collect {
                     Logger.d(TAG, "Inserted playback event for ${song.title}: $it")
                 }
-        }
-    }
-
-    /**
-     * Scrobbling a Last.fm/ListenBrainz - toggle independiente del tracking
-     * local de arriba (mayBeTrackingListeningLocal), con el umbral estándar
-     * de la industria: track de al menos 30s, escuchado al menos la mitad o
-     * 4 minutos (lo que sea menor). Nunca bloquea ni afecta la reproducción -
-     * ScrobbleManager atrapa cualquier error de red/config internamente.
-     *
-     * BUGFIX: `coroutineScope` acá es el SERVICE_SCOPE de VlcModule, que en
-     * Desktop corre sobre un único hilo dedicado ("VLC-Player-Thread") -
-     * VLC no es thread-safe y todas las llamadas al player se serializan
-     * ahí. Antes de este fix, ScrobbleManager.maybeScrobble (red +
-     * DataStore) se ejecutaba arrancando en ese mismo hilo, compitiendo
-     * directamente con la reproducción. Ahora se fuerza a Dispatchers.IO.
-     */
-    private fun maybeScrobbleToExternalServices(
-        song: SongEntity,
-        currentPositionMillis: Long,
-    ) {
-        coroutineScope.launch {
-            if (song.durationSeconds < 30) return@launch
-            val percent = currentPositionMillis / (song.durationSeconds * 1000f)
-            val listenedSeconds = currentPositionMillis / 1000
-            val eligible = percent >= 0.5f || listenedSeconds >= 240
-            if (!eligible) return@launch
-
-            val startedAtEpochSeconds = (System.currentTimeMillis() / 1000) - listenedSeconds
-            withContext(Dispatchers.IO) {
-                org.app.lyrics.scrobbler.ScrobbleManager.maybeScrobble(
-                    dataStoreManager = dataStoreManager,
-                    artist = song.artistName?.joinToString(", ") ?: "",
-                    title = song.title,
-                    album = song.albumName,
-                    startedAtEpochSeconds = startedAtEpochSeconds,
-                )
-            }
         }
     }
 

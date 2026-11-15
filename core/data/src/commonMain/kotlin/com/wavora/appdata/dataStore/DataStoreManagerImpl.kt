@@ -1736,7 +1736,9 @@ internal class DataStoreManagerImpl(
 
     override val localTrackingEnabled: Flow<String> =
         settingsDataStore.data.map { preferences ->
-            preferences[LOCAL_TRACKING_ENABLED] ?: FALSE
+            // Историю прослушиваний включаем по умолчанию: без неё не работает ни статистика,
+            // ни «миксы для вас» (они строятся на счётчиках прослушивания).
+            preferences[LOCAL_TRACKING_ENABLED] ?: TRUE
         }
 
     override suspend fun setLocalTrackingEnabled(enabled: Boolean) {

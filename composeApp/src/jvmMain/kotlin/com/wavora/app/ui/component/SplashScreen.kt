@@ -11,6 +11,7 @@ import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
@@ -106,6 +107,9 @@ fun SplashScreen(
         modifier =
             modifier
                 .fillMaxSize()
+                // Тёмный «пустой» фон сплэша не совпадал со светлыми темами: заливка
+                // цветом фона темы делает окно частью выбранного оформления.
+                .background(MaterialTheme.colorScheme.background)
                 .graphicsLayer {
                     val s = 1f + 0.16f * exit.value
                     scaleX = s

@@ -37,6 +37,7 @@ import androidx.compose.material.icons.rounded.Check
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -65,7 +66,6 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wavora.app.ui.theme.LocalAppTypography
 import com.wavora.app.ui.theme.wavoraGradientEnd
 import com.wavora.app.ui.theme.wavoraGradientStart
-import com.wavora.app.ui.theme.wavoraPrimary
 import com.wavora.app.ui.theme.wavoraSecondary
 import com.wavora.app.viewModel.SettingsViewModel
 import com.wavora.app.viewModel.detectSystemLanguageTag
@@ -193,13 +193,13 @@ private fun LanguageSelectionStep(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(Color(0xFF0B0B0F)),
+                .background(MaterialTheme.colorScheme.background),
     ) {
         Box(
             modifier =
                 Modifier
                     .fillMaxSize()
-                    .background(Brush.radialGradient(listOf(wavoraPrimary.copy(alpha = 0.07f), Color.Transparent))),
+                    .background(Brush.radialGradient(listOf(MaterialTheme.colorScheme.primary.copy(alpha = 0.07f), Color.Transparent))),
         )
 
         Column(
@@ -215,7 +215,7 @@ private fun LanguageSelectionStep(
             Icon(
                 painter = painterResource(Res.drawable.mono),
                 contentDescription = "Aira",
-                tint = Color.White.copy(alpha = 0.9f),
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
                 modifier = Modifier.size(40.dp),
             )
             Spacer(Modifier.height(28.dp))
@@ -224,14 +224,14 @@ private fun LanguageSelectionStep(
                 style = LocalAppTypography.current.headlineMedium,
                 textAlign = TextAlign.Center,
                 fontWeight = FontWeight.Bold,
-                color = Color.White,
+                color = MaterialTheme.colorScheme.onBackground,
             )
             Spacer(Modifier.height(10.dp))
             Text(
                 text = stringResource(Res.string.onboarding_language_subtitle),
                 style = LocalAppTypography.current.bodyMedium,
                 textAlign = TextAlign.Center,
-                color = Color.White.copy(alpha = 0.65f),
+                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
                 lineHeight = 20.sp,
             )
             Spacer(Modifier.height(24.dp))
@@ -250,7 +250,7 @@ private fun LanguageSelectionStep(
                                 .fillMaxWidth()
                                 .clip(RoundedCornerShape(14.dp))
                                 .background(
-                                    if (isSelected) wavoraPrimary.copy(alpha = 0.16f) else Color.Transparent,
+                                    if (isSelected) MaterialTheme.colorScheme.primary.copy(alpha = 0.16f) else Color.Transparent,
                                 ).clickable {
                                     if (code != selectedCode) {
                                         selectedCode = code
@@ -263,14 +263,14 @@ private fun LanguageSelectionStep(
                         Text(
                             text = name,
                             style = LocalAppTypography.current.bodyLarge,
-                            color = if (isSelected) Color.White else Color.White.copy(alpha = 0.75f),
+                            color = if (isSelected) MaterialTheme.colorScheme.onBackground else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.75f),
                             fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
                         )
                         AnimatedVisibility(visible = isSelected) {
                             Icon(
                                 imageVector = Icons.Rounded.Check,
                                 contentDescription = null,
-                                tint = wavoraPrimary,
+                                tint = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.size(20.dp),
                             )
                         }
@@ -303,7 +303,7 @@ private fun LanguageSelectionStep(
                             } else {
                                 stringResource(Res.string.onboarding_next)
                             },
-                        color = Color.White,
+                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.SemiBold,
                         style = LocalAppTypography.current.labelLarge,
                     )
@@ -325,7 +325,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
             emoji = "🎵",
             title = { stringResource(Res.string.onboarding_page1_title) },
             subtitle = { stringResource(Res.string.onboarding_page1_subtitle) },
-            accentColor = wavoraPrimary,
+            accentColor = MaterialTheme.colorScheme.primary,
         ),
         OnboardingPage(
             emoji = "📝",
@@ -353,7 +353,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF0B0B0F)),
+            .background(MaterialTheme.colorScheme.background),
     ) {
         // Subtle gradient background that changes per page
         val bgColor by animateColorAsState(
@@ -379,7 +379,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
             Icon(
                 painter = painterResource(Res.drawable.mono),
                 contentDescription = "Aira",
-                tint = Color.White.copy(alpha = 0.9f),
+                tint = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.9f),
                 modifier = Modifier.size(40.dp),
             )
 
@@ -452,14 +452,14 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                                 style = LocalAppTypography.current.headlineMedium,
                                 textAlign = TextAlign.Center,
                                 fontWeight = FontWeight.Bold,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onBackground,
                             )
                             Spacer(Modifier.height(16.dp))
                             Text(
                                 text = onboardingPages[page].subtitle(),
                                 style = LocalAppTypography.current.bodyMedium,
                                 textAlign = TextAlign.Center,
-                                color = Color.White.copy(alpha = 0.65f),
+                                color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.65f),
                                 lineHeight = 22.sp,
                             )
                         }
@@ -483,7 +483,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                         label = "dot_w_$i",
                     )
                     val color by animateColorAsState(
-                        targetValue = if (isSelected) wavoraPrimary else Color.White.copy(alpha = 0.25f),
+                        targetValue = if (isSelected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onBackground.copy(alpha = 0.25f),
                         animationSpec = tween(300),
                         label = "dot_c_$i",
                     )
@@ -526,7 +526,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                         } else {
                             stringResource(Res.string.onboarding_skip)
                         },
-                        color = Color.White.copy(alpha = 0.5f),
+                        color = MaterialTheme.colorScheme.onBackground.copy(alpha = 0.5f),
                         style = LocalAppTypography.current.labelLarge,
                     )
                 }
@@ -562,7 +562,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                             } else {
                                 stringResource(Res.string.onboarding_next)
                             },
-                            color = Color.White,
+                            color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.SemiBold,
                             style = LocalAppTypography.current.labelLarge,
                         )
