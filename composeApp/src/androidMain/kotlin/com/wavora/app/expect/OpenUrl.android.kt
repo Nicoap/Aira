@@ -50,7 +50,7 @@ actual fun shareLogs(): Boolean {
             Intent(Intent.ACTION_SEND).apply {
                 type = "text/plain"
                 putExtra(Intent.EXTRA_STREAM, uri)
-                putExtra(Intent.EXTRA_SUBJECT, "Wavora - log de diagnóstico")
+                putExtra(Intent.EXTRA_SUBJECT, "Aira - log de diagnóstico")
                 addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                 setFlags(FLAG_ACTIVITY_NEW_TASK)
             }

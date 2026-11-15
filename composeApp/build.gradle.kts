@@ -713,11 +713,12 @@ buildkonfig {
 
         // Last.fm requiere una API key + shared secret propios de la app
         // (gratis en last.fm/api/account/create) - son credenciales DE
-        // WAVORA, no de cada usuario, por eso se hornean en el build igual
+        // AIRA, no de cada usuario, por eso se hornean en el build igual
         // que el DSN de Sentry de arriba, y no algo que el usuario final
         // configure. Sin esto, LastFmApi.isConfigured queda en false y la
         // sección de Last.fm en Ajustes muestra "no configurado" sin romper
-        // nada (ver LastFmApi.kt en lyricsService).
+        // nada (ver LastFmApi.kt en lyricsService). Se leen de las variables
+        // de entorno LASTFM_API_KEY / LASTFM_API_SECRET o de local.properties.
         val lastFmApiKey =
             System.getenv("LASTFM_API_KEY")
                 ?: try {

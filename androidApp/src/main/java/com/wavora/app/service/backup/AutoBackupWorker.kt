@@ -54,7 +54,7 @@ class AutoBackupWorker(
             // Create temp backup file
             val tempBackupFile = createBackupFile(backupDownloaded)
 
-            // Save to Downloads/Wavora folder
+            // Save to Downloads/Aira folder
             val success = saveToDownloads(tempBackupFile)
 
             // Delete temp file
@@ -151,14 +151,14 @@ class AutoBackupWorker(
 
     private fun saveToDownloads(backupFile: File): Boolean {
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val fileName = "wavora_backup_$timestamp.zip"
+        val fileName = "aira_backup_$timestamp.zip"
 
         return try {
             val contentValues = ContentValues().apply {
                 put(MediaStore.Downloads.DISPLAY_NAME, fileName)
                 put(MediaStore.Downloads.MIME_TYPE, "application/zip")
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/Wavora")
+                    put(MediaStore.Downloads.RELATIVE_PATH, "Download/Aira")
                 }
             }
 
@@ -173,7 +173,7 @@ class AutoBackupWorker(
                         input.copyTo(output)
                     }
                 }
-                Logger.i(TAG, "Backup saved to Downloads/Wavora/$fileName")
+                Logger.i(TAG, "Backup saved to Downloads/Aira/$fileName")
                 true
             } ?: false
         } catch (e: Exception) {
@@ -197,9 +197,9 @@ class AutoBackupWorker(
             }
 
             val selectionArgs = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                arrayOf("Download/Wavora/", "wavora_backup_%.zip")
+                arrayOf("Download/Aira/", "aira_backup_%.zip")
             } else {
-                arrayOf("wavora_backup_%.zip")
+                arrayOf("aira_backup_%.zip")
             }
 
             val sortOrder = "${MediaStore.Downloads.DATE_ADDED} DESC"
@@ -219,7 +219,7 @@ class AutoBackupWorker(
                 while (cursor.moveToNext()) {
                     val id = cursor.getLong(idColumn)
                     val name = cursor.getString(nameColumn)
-                    if (name.startsWith("wavora_backup_") && name.endsWith(".zip")) {
+                    if (name.startsWith("aira_backup_") && name.endsWith(".zip")) {
                         backupFiles.add(id to name)
                     }
                 }

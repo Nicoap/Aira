@@ -1581,7 +1581,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val discordRpcButtonTwoUrl: Flow<String> =
-        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_URL] ?: "https://github.com/Wavora-dev/Wavora" }
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_URL] ?: "https://github.com/nicoqw/Aira" }
 
     override suspend fun setDiscordRpcButtonTwoUrl(url: String) {
         withContext(Dispatchers.IO) {

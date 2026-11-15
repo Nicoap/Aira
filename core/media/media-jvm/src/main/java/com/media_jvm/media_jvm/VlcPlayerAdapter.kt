@@ -1771,14 +1771,21 @@ class VlcPlayerAdapter(
                             if (currentPlayer?.id != player.id) return@launch
                             val audio = runCatching { player.mediaPlayer.audio() }.getOrNull() ?: return@launch
                             val muted = runCatching { audio.isMute }.getOrNull()
-                            if (muted == true) {
+                            // Бесшумный трек бывает и без мьюта: VLC держит аудиодорожку
+                            // выключенной (track = -1), пока не выберешь её явно.
+                            val track = runCatching { audio.track() }.getOrNull()
+                            val trackCount = runCatching { audio.trackCount() }.getOrNull()
+                            val noTrack = track != null && track < 0 && (trackCount ?: 0) > 0
+                            if (muted == true || noTrack) {
                                 runCatching { audio.isMute = false }
+                                if (noTrack) runCatching { audio.setTrack(0) }
                                 runCatching { audio.setVolume((internalVolume * 100).toInt()) }
                                 player.preRollIntentionallyUnmuted = true
                                 CrossfadeAudit.log(
                                     "AUDIO_WATCHDOG_RESTORED",
                                     playerId = player.id,
-                                    details = "check=$it volume=${(internalVolume * 100).toInt()}",
+                                    details = "check=$it volume=${(internalVolume * 100).toInt()} " +
+                                        "wasMuted=$muted track=$track/$trackCount",
                                 )
                             }
                         }
@@ -3190,9 +3197,9 @@ class VlcPlayerAdapter(
         const val AUDIO_NETWORK_CACHING_MS = 3000L
 
         // Страховка «играет, но без звука»: сколько раз и с каким шагом проверяем
-        // флаг mute у только что запущенного плеера.
-        private const val AUDIO_WATCHDOG_CHECKS = 6
-        private const val AUDIO_WATCHDOG_INTERVAL_MS = 800L
+        // флаг mute и включённость аудиодорожки у только что запущенного плеера.
+        private const val AUDIO_WATCHDOG_CHECKS = 12
+        private const val AUDIO_WATCHDOG_INTERVAL_MS = 1000L
 
         // Сколько помним, что прогрессивный поток на этом IP оборван, прежде чем проверить снова.
         private const val THROTTLED_MEMO_MS = 2 * 60 * 1000L

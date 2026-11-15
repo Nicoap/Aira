@@ -120,7 +120,7 @@
     <string name="about_us">O nas</string>
     <string name="version">Wersja</string>
     <string name="github">Github</string>
-    <string name="wavora_dev">wavora-dev</string>
+    <string name="wavora_dev">nicoqw</string>
     <string name="buy_me_a_coffee">Kup mi kawę</string>
     <string name="paypal">PayPal</string>
     <string name="title">Tytuł</string>
@@ -139,7 +139,7 @@
     <string name="albums_inArtist">Albumy</string>
     <string name="singles_inArtist">Single</string>
     <string name="fans_might_also_like_inArtist">Fanom może się również podobać</string>
-    <string name="crash_log">Wavora uległ awarii. Przepraszamy za ten problem.\nWyślij dziennik awarii do dewelopera</string>
+    <string name="crash_log">Aira uległ awarii. Przepraszamy za ten problem.\nWyślij dziennik awarii do dewelopera</string>
     <string name="crash">Awaria</string>
     <string name="send">Wyślij</string>
     <string name="mail_subject">Zgłoś awarię</string>
@@ -198,12 +198,12 @@
     <string name="what_segments_will_be_skipped">Jakie segmenty zostaną pominięte</string>
     <string name="save">Zapisz</string>
     <string name="saved">Zapisano</string>
-    <string name="sponsor_block_intro">SponsorBlock to społecznie rozwijany system pomijania irytujących fragmentów filmów w serwisie YouTube.\nWięcej informacji: https://sponsor.ajay.app/\nW Wavora funkcja SponsorBlock jest dostępna tylko wtedy, gdy urządzenie jest w trybie online</string>
+    <string name="sponsor_block_intro">SponsorBlock to społecznie rozwijany system pomijania irytujących fragmentów filmów w serwisie YouTube.\nWięcej informacji: https://sponsor.ajay.app/\nW Aira funkcja SponsorBlock jest dostępna tylko wtedy, gdy urządzenie jest w trybie online</string>
     <string name="skip_sponsor_part_of_video">Pomiń część filmu sponsora</string>
     <string name="customactivityoncrash_error_activity_error_occurred_explanation">Wystąpił nieoczekiwany błąd. Przepraszamy za niedogodności.</string>
     <string name="customactivityoncrash_error_activity_restart_app">Zrestartuj aplikację</string>
-    <string name="help_build_lyrics_database">Pomóż zbudować bazę tekstów piosenek Wavora</string>
-    <string name="help_build_lyrics_database_description">Wyślij swoje zapisane teksty do bazy danych tekstów piosenek Wavora</string>
+    <string name="help_build_lyrics_database">Pomóż zbudować bazę tekstów piosenek Aira</string>
+    <string name="help_build_lyrics_database_description">Wyślij swoje zapisane teksty do bazy danych tekstów piosenek Aira</string>
     <string name="customactivityoncrash_error_activity_close_app">Zamknij aplikację</string>
     <string name="customactivityoncrash_error_activity_error_details">Opis błędu</string>
     <string name="customactivityoncrash_error_activity_error_details_title">Opis błędu</string>
@@ -238,7 +238,7 @@
     <string name="saved_to_local_playlist">Zapisz do lokalnej playlisty</string>
     <string name="if_you_want_to_unsync_this_playlist_please_go_to_local_playlist">jeśli chcesz odsynchronizować tę playlistę, przejdź do lokalnej playlisty</string>
     <string name="log_in_to_get_YouTube_playlist">Zaloguj się, aby pobrać playlistę YouTube</string>
-    <string name="sync_playlist_warning">Wavora automatycznie utworzy listę odtwarzania muzyki YouTube. Jesteś pewny?</string>
+    <string name="sync_playlist_warning">Aira automatycznie utworzy listę odtwarzania muzyki YouTube. Jesteś pewny?</string>
     <string name="syncing">Synchronizuję</string>
     <string name="unsync_playlist_warning">"Odsynchronizować tą playlistę? Ta playlista nie zostanie usunięta z YouTube Music "</string>
     <string name="unsyncing">Odsynchronizowanie</string>
@@ -255,7 +255,7 @@
     <string name="email">E-mail</string>
     <string name="password">Hasło</string>
     <string name="please_enter_your_email_and_password">Wprowadź swój e-mail i hasło</string>
-    <string name="translation_language_message">Wpisz kod języka (Eg: en) (2 litery). Jeśli chcesz ustawić ten sam język Wavora, proszę ustawić pole edycji puste.</string>
+    <string name="translation_language_message">Wpisz kod języka (Eg: en) (2 litery). Jeśli chcesz ustawić ten sam język Aira, proszę ustawić pole edycji puste.</string>
     <string name="invalid_language_code">Niepoprawny kod języka</string>
     <string name="lyrics_provider_youtube">Teksty piosenek dostarczone przez YouTube</string>
     <string name="lyrics_provider_betterlyrics">Tekst dostarczony przez BetterLyrics</string>
@@ -274,7 +274,7 @@
     <string name="older_first">Najpierw starsze</string>
     <string name="newer_first">Najpierw nowsze</string>
     <string name="added_date">Dodana data</string>
-    <string name="credit_app">Prosta aplikacja muzyczna wykorzystująca YouTube Music jako backend\n\nWavora to projekt open source służący do strumieniowego przesyłania muzyki z serwisów YouTube i YouTube Music bez reklam i śledzenia. Wavora oferuje wiele funkcji:\n\n - Strumieniowe przesyłanie muzyki \n - Zsynchronizowane teksty piosenek\n - Personalizację danych\n - itp. \n\nWavora jest zawsze bezpłatny i nie zawiera reklam\n\nStworzony z ❤️ przez Tuan Minh Nguyen Duc (wavora-dev)</string>
+    <string name="credit_app">Prosta aplikacja muzyczna wykorzystująca YouTube Music jako backend\n\nAira to projekt open source służący do strumieniowego przesyłania muzyki z serwisów YouTube i YouTube Music bez reklam i śledzenia. Aira oferuje wiele funkcji:\n\n - Strumieniowe przesyłanie muzyki \n - Zsynchronizowane teksty piosenek\n - Personalizację danych\n - itp. \n\nAira jest zawsze bezpłatny i nie zawiera reklam\n\nStworzony z ❤️ przez Tuan Minh Nguyen Duc (nicoqw)</string>
     <string name="issue_tracker">Lista problemow</string>
     <string name="featured_playlists">Polecane playlisty</string>
     <string name="featured_inArtist">Polecane</string>
@@ -316,7 +316,7 @@
     <string name="enable_spotify_lyrics">Włącz teksty piosenek Spotify</string>
     <string name="spotify_lyrícs_info">Więcej tekstu bez tłumaczenia</string>
     <string name="enable_canvas">Włącz Canvas</string>
-    <string name="canvas_info">Pokaż Spotify Canvas w Wavora</string>
+    <string name="canvas_info">Pokaż Spotify Canvas w Aira</string>
     <string name="spotify_lyrics_provider">Tekst piosenki dostarczony przez Spotify</string>
     <string name="offline_mode">Tryb offline</string>
     <string name="added_to_youtube_liked">Dodano do polubień YouTube</string>
@@ -365,7 +365,7 @@
     <string name="loading">Ładowanie</string>
     <string name="updating">Aktualizowanie</string>
     <string name="go_to_log_in_page">Przejdź do strony logowania</string>
-    <string name="log_in_warning">YouTube Music wymaga teraz zalogowania się do strumieniowania muzyki. Instancja Piped może również przestać działać. Należy zalogować się do YouTube, aby uzyskać lepsze doświadczenia z Wavora.</string>
+    <string name="log_in_warning">YouTube Music wymaga teraz zalogowania się do strumieniowania muzyki. Instancja Piped może również przestać działać. Należy zalogować się do YouTube, aby uzyskać lepsze doświadczenia z Aira.</string>
     <string name="spotify_canvas_cache">Pamięć podręczna Spotify Canvas</string>
     <string name="clear_canvas_cache">Wyczyść pamięć podręczną Canvas</string>
     <string name="proxy">Proxy</string>
@@ -404,8 +404,8 @@
     <string name="other_version">Inne wersje</string>
     <string name="later">Później</string>
     <string name="give_a_star">Daj gwiazdkę</string>
-    <string name="enjoying_wavora">Ciesz się Wavora</string>
-    <string name="if_you_enjoy_using_wavora_star_wavora_on_github_or_leave_a_review_on">Jeśli lubisz używać Wavora, zostaw gwiazdkę na GitHub lub zostaw recenzję na</string>
+    <string name="enjoying_wavora">Ciesz się Aira</string>
+    <string name="if_you_enjoy_using_wavora_star_wavora_on_github_or_leave_a_review_on">Jeśli lubisz używać Aira, zostaw gwiazdkę na GitHub lub zostaw recenzję na</string>
     <string name="if_you_love_my_work_consider">"Jeśli kochasz moją pracę, rozważ "</string>
     <string name="buying_me_a_coffee">postawienie mi kawy.</string>
     <string name="fade_audio_effect">Efekt zanikania dźwięku</string>
@@ -450,14 +450,14 @@
     <string name="contributor_name">Nazwa kontrybutora</string>
     <string name="contributor_email">E-mail kontrybutora</string>
     <string name="anonymous">Anonimowy</string>
-    <string name="wavora_lyrics">Teksty Wavora</string>
-    <string name="lyrics_provider_wavora">Tekst dostarczony przez Teksty Wavora</string>
+    <string name="wavora_lyrics">Teksty Aira</string>
+    <string name="lyrics_provider_wavora">Tekst dostarczony przez Teksty Aira</string>
     <string name="backup_in_progress">Kopia zapasowa w toku</string>
     <string name="restore_in_progress">Przywracanie w toku</string>
     <string name="backup_downloaded">Utwórz kopię zapasową pobranych danych</string>
     <string name="backup_downloaded_description">Utwórz kopię zapasową wszystkich pobranych utworów</string>
     <string name="auto_backup">Automatyczna kopia zapasowa</string>
-    <string name="auto_backup_description">Automatycznie wykonaj kopię zapasową swoich danych do folderu Pobrane/Wavora</string>
+    <string name="auto_backup_description">Automatycznie wykonaj kopię zapasową swoich danych do folderu Pobrane/Aira</string>
     <string name="backup_frequency">Częstotliwość kopii zapasowych</string>
     <string name="daily">Codziennie</string>
     <string name="weekly">Tygodniowo</string>
@@ -517,7 +517,7 @@
     <string name="downvote">Głos przeciw</string>
     <string name="vote_submitted">Dziękujemy za głosowanie nad tym tekstem!</string>
     <string name="vote_error">Przesyłanie nie powiodło się</string>
-    <string name="open_app">Otwórz Wavora</string>
+    <string name="open_app">Otwórz Aira</string>
     <string name="close_miniplayer">Zamknij mini odtwarzacz</string>
     <string name="open_miniplayer">Otwórz mini odtwarzacz</string>
     <string name="quit_app">Zamknij aplikację</string>

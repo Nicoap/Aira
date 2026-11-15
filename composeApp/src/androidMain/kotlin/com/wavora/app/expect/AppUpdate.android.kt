@@ -17,7 +17,7 @@ import org.koin.mp.KoinPlatform.getKoin
 import java.io.File
 
 private const val TAG = "AppUpdate"
-private const val APK_FILE_NAME = "wavora-update.apk"
+private const val APK_FILE_NAME = "aira-update.apk"
 
 actual fun supportsInAppUpdate(): Boolean = true
 
@@ -60,7 +60,7 @@ private fun downloadAndInstall(context: AppCompatActivity, downloadUrl: String, 
     val downloadManager = context.getSystemService(Context.DOWNLOAD_SERVICE) as DownloadManager
     val request =
         DownloadManager.Request(downloadUrl.toUri())
-            .setTitle("Wavora $versionName")
+            .setTitle("Aira $versionName")
             .setDescription("Descargando actualización…")
             .setNotificationVisibility(DownloadManager.Request.VISIBILITY_VISIBLE_NOTIFY_COMPLETED)
             .setDestinationUri(Uri.fromFile(apkFile))

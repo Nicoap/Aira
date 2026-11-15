@@ -2612,35 +2612,14 @@ fun SettingScreen(
                     title = stringResource(Res.string.author),
                     subtitle = stringResource(Res.string.wavora_dev),
                     onClick = {
-                        uriHandler.openUri("https://github.com/wavora-dev")
-                    },
-                )
-                SettingItem(
-                    title = stringResource(Res.string.developer_blog),
-                    subtitle = stringResource(Res.string.developer_blog_tagline),
-                    onClick = {
-                        uriHandler.openUri("https://wavora.app")
-                    },
-                )
-                SettingItem(
-                    title = stringResource(Res.string.join_discord_server),
-                    subtitle = stringResource(Res.string.join_discord_server_subtitle),
-                    onClick = {
-                        uriHandler.openUri("https://discord.gg/zx6vMdNhEc")
-                    },
-                )
-                SettingItem(
-                    title = stringResource(Res.string.follow_on_instagram),
-                    subtitle = stringResource(Res.string.follow_on_instagram_subtitle),
-                    onClick = {
-                        uriHandler.openUri("https://www.instagram.com/wavora.music/")
+                        uriHandler.openUri("https://github.com/nicoqw")
                     },
                 )
                 SettingItem(
                     title = stringResource(Res.string.buy_me_a_coffee),
                     subtitle = stringResource(Res.string.donation),
                     onClick = {
-                        uriHandler.openUri("https://www.patreon.com/Wavora")
+                        uriHandler.openUri("https://boosty.to/nicoqw/donate")
                     },
                 )
                 SettingItem(

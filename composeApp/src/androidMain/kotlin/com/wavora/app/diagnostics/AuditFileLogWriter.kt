@@ -51,7 +51,7 @@ class AuditFileLogWriter(
     private val logFile: File =
         run {
             val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
-            File(logDir(context), "wavora-android-$ts.log").also { activeLogFile = it }
+            File(logDir(context), "aira-android-$ts.log").also { activeLogFile = it }
         }
 
     // autoFlush = true: si la app se va a background y el sistema la mata

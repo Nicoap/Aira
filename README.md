@@ -1,28 +1,18 @@
 <div align="center">
-  <img src="composeApp/appimage/wavora.png" alt="Wavora logo" width="140"/>
+  <img src="composeApp/appimage/wavora.png" alt="Aira logo" width="140"/>
 
-  # Wavora
+  # Aira
 
   **A free, open-source, cross-platform YouTube Music client — built with Kotlin Multiplatform & Compose.**
 
-  [![Version](https://img.shields.io/badge/version-1.1.0-00D4FF?style=flat-square)](https://github.com/Wavora-dev/Wavora/releases)
   [![License](https://img.shields.io/badge/license-GPL--3.0-blue?style=flat-square)](LICENSE)
   [![Kotlin](https://img.shields.io/badge/Kotlin-2.4.0-7F52FF?style=flat-square&logo=kotlin&logoColor=white)](https://kotlinlang.org)
   [![Compose Multiplatform](https://img.shields.io/badge/Compose%20Multiplatform-1.11.1-4285F4?style=flat-square&logo=jetpackcompose&logoColor=white)](https://www.jetbrains.com/lp/compose-multiplatform/)
-  [![Kotlin Multiplatform](https://img.shields.io/badge/Kotlin%20Multiplatform-Android%20%7C%20Desktop-7F52FF?style=flat-square)](https://kotlinlang.org/docs/multiplatform.html)
-  [![Platform: Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://github.com/Wavora-dev/Wavora/releases)
-  [![Platform: Desktop](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Wavora-dev/Wavora/releases)
-  [![GitHub Repo](https://img.shields.io/badge/GitHub-Wavora--dev%2FWavora-181717?style=flat-square&logo=github)](https://github.com/Wavora-dev/Wavora)
-  [![Stars](https://img.shields.io/github/stars/Wavora-dev/Wavora?style=flat-square&color=yellow)](https://github.com/Wavora-dev/Wavora/stargazers)
-  [![Forks](https://img.shields.io/github/forks/Wavora-dev/Wavora?style=flat-square)](https://github.com/Wavora-dev/Wavora/network/members)
-  [![Issues](https://img.shields.io/github/issues/Wavora-dev/Wavora?style=flat-square)](https://github.com/Wavora-dev/Wavora/issues)
+  [![Platform: Android](https://img.shields.io/badge/Android-8.0%2B-3DDC84?style=flat-square&logo=android&logoColor=white)](https://github.com/nicoqw/Aira/releases)
+  [![Platform: Desktop](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/nicoqw/Aira/releases)
+  [![GitHub Repo](https://img.shields.io/badge/GitHub-nicoqw%2FAira-181717?style=flat-square&logo=github)](https://github.com/nicoqw/Aira)
 
-  [![Android Downloads](https://img.shields.io/endpoint?url=https://wavora-badges.wavora-lyrics.workers.dev/badge/android&style=flat-square)](https://github.com/Wavora-dev/Wavora/releases)
-  [![Windows Downloads](https://img.shields.io/endpoint?url=https://wavora-badges.wavora-lyrics.workers.dev/badge/windows&style=flat-square)](https://github.com/Wavora-dev/Wavora/releases)
-  [![Android TV Downloads](https://img.shields.io/endpoint?url=https://wavora-badges.wavora-lyrics.workers.dev/badge/androidtv&style=flat-square)](https://github.com/Wavora-dev/Wavora/releases)
-  [![Total Downloads](https://img.shields.io/endpoint?url=https://wavora-badges.wavora-lyrics.workers.dev/badge/total&style=flat-square)](https://github.com/Wavora-dev/Wavora/releases)
-
-  [Releases](https://github.com/Wavora-dev/Wavora/releases) · [Report a bug](https://github.com/Wavora-dev/Wavora/issues) · [Español ↓](#-wavora-en-español)
+  [Releases](https://github.com/nicoqw/Aira/releases) · [Report a bug](https://github.com/nicoqw/Aira/issues) · [Español ↓](#-aira-en-español)
 
 </div>
 
@@ -34,19 +24,19 @@
 
 ## Hero
 
-Wavora is a music player that streams directly from YouTube Music — no ads, no subscription, no account required to start listening. It runs natively on **Android**, **Windows**, **macOS**, and **Linux** from a single Kotlin Multiplatform codebase, sharing virtually all of its business logic, data layer, and UI between every target.
+Aira is a music player that streams directly from YouTube Music — no ads, no subscription, no account required to start listening. It runs natively on **Android**, **Windows**, **macOS**, and **Linux** from a single Kotlin Multiplatform codebase, sharing virtually all of its business logic, data layer, and UI between every target.
 
-The project's philosophy is simple: **one shared brain, native everywhere.** Instead of a web wrapper or a Java-to-JS bridge, Wavora's playback engine, database, networking layer, and 20+ full screens of Compose UI are the *same Kotlin code* running against ExoPlayer/Media3 on Android and libVLC on desktop — with only the thin platform edges (`expect`/`actual`) written per target.
+The project's philosophy is simple: **one shared brain, native everywhere.** Instead of a web wrapper or a Java-to-JS bridge, Aira's playback engine, database, networking layer, and 20+ full screens of Compose UI are the *same Kotlin code* running against ExoPlayer/Media3 on Android and libVLC on desktop — with only the thin platform edges (`expect`/`actual`) written per target.
 
-Wavora's goal isn't to be "yet another YouTube Music wrapper." It exists to push a self-hosted, community-driven alternative to paid streaming: real crossfade with DJ-style mixing, a synced-lyrics ecosystem with AI translation, a genuinely native desktop app (not Electron), and a codebase that's continuously audited and hardened rather than left to bit-rot.
+Aira's goal isn't to be "yet another YouTube Music wrapper." It exists to push a self-hosted, community-driven alternative to paid streaming: real crossfade with DJ-style mixing, a synced-lyrics ecosystem with AI translation, a genuinely native desktop app (not Electron), and a codebase that's continuously audited and hardened rather than left to bit-rot.
 
-## Why Wavora?
+## Why Aira?
 
 **The problem:** most "free YouTube Music" clients are either Android-only, poorly maintained forks that break every few months, or Electron wrappers on desktop that eat gigabytes of RAM to play an MP3.
 
-**What Wavora does differently:**
+**What Aira does differently:**
 
-- **Genuinely native on every platform.** The desktop build isn't a browser in a box — it's a Compose Desktop application backed by libVLC through JNA/vlcj, with a real system tray, a floating always-on-top miniplayer window, and OS-level media integrations (macOS Now Playing Center, Windows protocol handler for `wavora://` deep links). The one deliberate exception: on Windows, logging into YouTube Music opens a real, lazily-loaded embedded Chromium browser (via [KCEF](https://github.com/DatL4g/KCEF)) purely to capture the session cookie — it's disposed right after a successful login, so it isn't a persistent Electron-style engine sitting in the background.
+- **Genuinely native on every platform.** The desktop build isn't a browser in a box — it's a Compose Desktop application backed by libVLC through JNA/vlcj, with a real system tray, a floating always-on-top miniplayer window, and OS-level media integrations (macOS Now Playing Center, Windows protocol handler for `aira://` deep links). The one deliberate exception: on Windows, logging into YouTube Music opens a real, lazily-loaded embedded Chromium browser (via [KCEF](https://github.com/DatL4g/KCEF)) purely to capture the session cookie — it's disposed right after a successful login, so it isn't a persistent Electron-style engine sitting in the background.
 - **A real crossfade engine**, not a fade-in/fade-out hack — equal-power volume curves, an optional biquad-filter DJ Mode, and BPM/key-aware AutoMix, implemented in parallel on both the ExoPlayer (Android) and VLC (Desktop) backends.
 - **A community lyrics ecosystem** with its own Cloudflare Workers backend, AI-powered translation, and a voting system — instead of only scraping a single third-party source.
 - **No telemetry by default**, an optional non-Sentry crash-reporting build flavor (`crashlytics-empty`), proxy support, and a Piped-instance fallback for restricted networks.
@@ -64,7 +54,7 @@ Wavora's goal isn't to be "yet another YouTube Music wrapper." It exists to push
 - Repeat (off / one / all), shuffle, and an endless queue (auto-radio once the queue ends)
 - Sleep timer (fixed minutes or "end of current song")
 - Skip-silence and SponsorBlock (automatic sponsor-segment skipping on music videos)
-- **Android**: optional toggle to keep playing through other apps' audio (ignores transient/permanent audio focus loss) — for when Instagram, a game, or any other app grabs the system's audio focus and you don't want Wavora to pause
+- **Android**: optional toggle to keep playing through other apps' audio (ignores transient/permanent audio focus loss) — for when Instagram, a game, or any other app grabs the system's audio focus and you don't want Aira to pause
 - **Android**: **Google Cast (Chromecast)** support — cast to any TV or Cast-ready speaker, with automatic switching between local and remote playback and crossfade disabled while casting
 - Loudness normalization across tracks
 - **Desktop**: built-in 10-band graphic equalizer (60 Hz–16 kHz) with preamp, 9 curated presets (Bass/Vocal/Treble Boost, V-Shape, Podcast, Rock, Pop, Electronic, Acoustic), two user-editable "Custom" slots, and a reset-to-default button — all persisted across restarts
@@ -74,7 +64,7 @@ Wavora's goal isn't to be "yet another YouTube Music wrapper." It exists to push
 - Playback state (track, queue, shuffle/repeat) is restored across app restarts
 
 ### 🎤 Lyrics
-- **Wavora community lyrics** — synced lyrics served by Wavora's own Cloudflare Workers backend, with an opt-in "help build the database" contribution flow
+- **Aira community lyrics** — synced lyrics served by Aira's own Cloudflare Workers backend, with an opt-in "help build the database" contribution flow
 - **LRCLIB** and **BetterLyrics** as additional open fallback providers
 - **Spotify** synced lyrics via the user's own `sp_dc` cookie
 - **YouTube** auto-generated captions as a last-resort fallback
@@ -126,7 +116,7 @@ Wavora's goal isn't to be "yet another YouTube Music wrapper." It exists to push
 - **Android TV** — separate build (own product flavor and APK) with a Leanback launcher entry and remote-control-friendly focus navigation across the app
 - **Desktop (Windows / macOS / Linux)** — standalone windowed app, floating draggable miniplayer window, full-screen player, custom title bar, scrollbars, VLC-based playback (libVLC)
   - macOS Now Playing Center + Remote Command Center (media keys, lock-screen widget)
-  - Windows custom protocol handler (`wavora://`) for deep links
+  - Windows custom protocol handler (`aira://`) for deep links
   - System tray integration
   - YouTube Music login on Windows via a lazily-loaded embedded Chromium browser (KCEF), just to capture the session cookie — no persistent browser engine left running afterward
 
@@ -164,14 +154,14 @@ for Library, which app updates don't wipe.
 
 ## What's new compared to SimpMusic
 
-Wavora started as a fork of [SimpMusic](https://github.com/maxrave-dev/SimpMusic) — the original Android YouTube Music client this project owes its playback and data foundations to. But over the course of development, the codebase went through a sustained audit-and-rewrite cycle rather than a simple rebrand, and a large share of the app has since been rewritten, replaced, or newly built.
+Aira started as a fork of [SimpMusic](https://github.com/maxrave-dev/SimpMusic) — the original Android YouTube Music client this project owes its playback and data foundations to. But over the course of development, the codebase went through a sustained audit-and-rewrite cycle rather than a simple rebrand, and a large share of the app has since been rewritten, replaced, or newly built.
 
 **What was inherited from SimpMusic:** the original architectural approach (Compose + Media3 + Room + Koin + a YouTube Music scraping layer), the core screen set, and the general product concept (ad-free YouTube Music streaming with downloads and a library).
 
 **What was rebuilt into a genuinely multiplatform app:**
 - A full **Kotlin Multiplatform / Compose Multiplatform desktop target** was added from scratch — Windows, macOS, and Linux, with a VLC-based playback backend (`core/media/media-jvm`) written in parallel to the Android ExoPlayer/Media3 backend (`core/media/media3`), behind a shared `PlayerSession`/`PlayerController` abstraction so the rest of the app (ViewModels, screens) talks to a single unified playback contract regardless of platform.
 - The **crossfade engine** (equal-power volume curves, DJ Mode's biquad filter sweep, and BPM/key-aware AutoMix) was implemented twice, independently, once per platform's native player.
-- The **lyrics backend** was migrated off a dead first-party API to a new Cloudflare Workers service (D1 + KV + Queues + a Durable Object), with a clean provider-registry architecture (`core/service/lyricsService`) so Wavora's own lyrics, LRCLIB, and BetterLyrics are pluggable fallbacks instead of hardcoded calls.
+- The **lyrics backend** was migrated off a dead first-party API to a new Cloudflare Workers service (D1 + KV + Queues + a Durable Object), with a clean provider-registry architecture (`core/service/lyricsService`) so Aira's own lyrics, LRCLIB, and BetterLyrics are pluggable fallbacks instead of hardcoded calls.
 - The monolithic ~2000-line `SharedViewModel` was split into focused, single-responsibility ViewModels (`PlayerViewModel`, `NowPlayingViewModel`, `AppViewModel`) coordinated by a thin backward-compatible `SharedViewModel` facade, so every existing screen kept working unchanged.
 - Discord Rich Presence, Spotify integration, and YouTube account login all gained **guided, in-app, step-by-step setup flows** (cookie copy helpers, connection diagnostics) instead of requiring manual browser DevTools work.
 - A from-scratch **onboarding flow**, skeleton loading states, retry-capable error states, and a consistent haptic-feedback layer were added across the UI.
@@ -187,13 +177,13 @@ Wavora started as a fork of [SimpMusic](https://github.com/maxrave-dev/SimpMusic
 - Typography and color-token duplication consolidated into single sources of truth
 - Room indices added for frequently-filtered columns (`liked`, `downloadState`, `totalPlayTime`, `inLibrary`)
 
-**What was newly added, with no SimpMusic equivalent:** the entire desktop application, the AI lyrics translation pipeline, the community lyrics voting system, SponsorBlock integration, backup/restore with scheduled auto-backup, analytics-style top tracks/artists/albums with date filtering, Discord/Spotify guided setup, and the `wavora://` deep-link protocol handler on Windows.
+**What was newly added, with no SimpMusic equivalent:** the entire desktop application, the AI lyrics translation pipeline, the community lyrics voting system, SponsorBlock integration, backup/restore with scheduled auto-backup, analytics-style top tracks/artists/albums with date filtering, Discord/Spotify guided setup, and the `aira://` deep-link protocol handler on Windows.
 
-None of this is meant to diminish SimpMusic — it's the foundation this project was built on, and its architectural choices (Compose, Media3, Koin, Room) are still visible throughout Wavora today. The goal of this section is simply to be transparent about how far the codebase has moved since the fork.
+None of this is meant to diminish SimpMusic — it's the foundation this project was built on, and its architectural choices (Compose, Media3, Koin, Room) are still visible throughout Aira today. The goal of this section is simply to be transparent about how far the codebase has moved since the fork.
 
 ## Architecture
 
-Wavora is a **Kotlin Multiplatform** project. Shared Kotlin code targets both `android` and `jvm` (desktop) from a single source tree, with platform-specific code isolated behind `expect`/`actual` declarations only where truly unavoidable (media playback backend, file pickers, clipboard, window chrome, etc.).
+Aira is a **Kotlin Multiplatform** project. Shared Kotlin code targets both `android` and `jvm` (desktop) from a single source tree, with platform-specific code isolated behind `expect`/`actual` declarations only where truly unavoidable (media playback backend, file pickers, clipboard, window chrome, etc.).
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -302,16 +292,16 @@ Wavora is a **Kotlin Multiplatform** project. Shared Kotlin code targets both `a
 ## Installation
 
 ### Android
-Download the latest `.apk` from [Releases](https://github.com/Wavora-dev/Wavora/releases). Requires **Android 8.0 (API 26) or newer**.
+Download the latest `.apk` from [Releases](https://github.com/nicoqw/Aira/releases). Requires **Android 8.0 (API 26) or newer**.
 
 ### Windows
-Download the `.msi` installer from [Releases](https://github.com/Wavora-dev/Wavora/releases). Requires [VLC](https://www.videolan.org/vlc/) (64-bit) installed on the system.
+Download the `.msi` installer from [Releases](https://github.com/nicoqw/Aira/releases). Requires [VLC](https://www.videolan.org/vlc/) (64-bit) installed on the system.
 
 ### macOS
-Download the `.dmg` from [Releases](https://github.com/Wavora-dev/Wavora/releases). Requires VLC installed.
+Download the `.dmg` from [Releases](https://github.com/nicoqw/Aira/releases). Requires VLC installed.
 
 ### Linux
-Download the `.AppImage` from [Releases](https://github.com/Wavora-dev/Wavora/releases), mark it executable, and run it. Requires VLC (`libvlc`) installed on the system.
+Download the `.AppImage` from [Releases](https://github.com/nicoqw/Aira/releases), mark it executable, and run it. Requires VLC (`libvlc`) installed on the system.
 
 ## Building
 
@@ -327,8 +317,8 @@ Open the project root — both IDEs will pick up the Kotlin Multiplatform + Comp
 ### From the command line
 
 ```bash
-git clone https://github.com/Wavora-dev/Wavora
-cd Wavora
+git clone https://github.com/nicoqw/Aira
+cd Aira
 
 # One-time: download and stage VLC's native libraries for the desktop target
 ./gradlew :composeApp:vlcSetup --no-configuration-cache
@@ -358,7 +348,7 @@ cd Wavora
 ## Project Structure
 
 ```
-Wavora/
+Aira/
 ├── androidApp/            Android entry point (Activity, widget, background workers)
 ├── desktopApp/             Desktop entry point (main(), Conveyor packaging config)
 ├── composeApp/             Shared Compose Multiplatform UI (screens, ViewModels, DI wiring)
@@ -377,7 +367,7 @@ Wavora/
 │   │   └── media-jvm-ui/    Desktop player UI adapters
 │   └── service/
 │       ├── kotlinYtmusicScraper/  YouTube Music API client
-│       ├── lyricsService/         Lyrics provider registry (Wavora / LRCLIB / BetterLyrics)
+│       ├── lyricsService/         Lyrics provider registry (Aira / LRCLIB / BetterLyrics)
 │       ├── aiService/              AI translation client (OpenAI/Gemini-compatible)
 │       ├── spotify/                Spotify cookie-based integration
 │       ├── kizzy/                  Discord Rich Presence WebSocket gateway client
@@ -416,7 +406,7 @@ Real, code-verified optimizations, not aspirational claims:
 
 - **No analytics or telemetry are collected by the app itself.**
 - Crash reporting is powered by [Sentry](https://sentry.io) and is **opt-out at the build level**: the `crashlytics-empty` module is a drop-in, no-op replacement for the Sentry-backed `crashlytics` module, for anyone who wants a build with zero outbound diagnostic traffic.
-- Login to YouTube, Discord, or Spotify is entirely **cookie/token-based and local** — Wavora does not run its own OAuth backend or proxy your credentials through a third-party server.
+- Login to YouTube, Discord, or Spotify is entirely **cookie/token-based and local** — Aira does not run its own OAuth backend or proxy your credentials through a third-party server.
 - HTTP/SOCKS5 **proxy support** (with authentication) is available for users on restricted or monitored networks.
 - An optional **Piped instance** can be configured as an alternative source for streaming data, for users who prefer not to hit YouTube's endpoints directly.
 - Contribution to the community lyrics database is **strictly opt-in** and disabled by default.
@@ -433,36 +423,38 @@ Sourced directly from `// TODO` markers currently present in the codebase — no
 
 ## Credits
 
-Wavora is built on top of [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) by **maxrave-dev**, licensed under GPL-3.0 — the original Android YouTube Music client this project's playback pipeline, data layer, and general architecture trace back to.
+Aira is a fork of [**Wavora**](https://github.com/Wavora-dev/Wavora) (GPL-3.0) — a free, open-source cross-platform YouTube Music client for Android and desktop whose playback engine, data layer and UI this project continues to build on. All upstream copyright notices are kept and the changes of this fork are documented in the commit history.
 
-Wavora would not be possible without the following open-source projects: **Jetpack Compose** & **Compose Multiplatform**, **Media3/ExoPlayer**, **VLC** & **vlcj**, **Koin**, **Ktor**, **Room**, **Coil**, **NewPipeExtractor**, **BravePipeExtractor**, **PipePipeExtractor**, **Kizzy**, **Sentry**, **Kermit**, **Haze**, **Compottie**, **KCEF** & **compose-webview-multiplatform** (embedded Chromium browser for YouTube login on Windows), and every other library listed under **Settings → Third-party libraries** inside the app itself, powered by AboutLibraries.
+Aira in turn builds on [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) by **maxrave-dev**, licensed under GPL-3.0 — the original Android YouTube Music client the playback pipeline and overall architecture trace back to.
+
+Aira would not be possible without the following open-source projects: **Jetpack Compose** & **Compose Multiplatform**, **Media3/ExoPlayer**, **VLC** & **vlcj**, **Koin**, **Ktor**, **Room**, **Coil**, **NewPipeExtractor**, **BravePipeExtractor**, **PipePipeExtractor**, **Kizzy**, **Sentry**, **Kermit**, **Haze**, **Compottie**, **KCEF** & **compose-webview-multiplatform** (embedded Chromium browser for YouTube login on Windows), and every other library listed under **Settings → Third-party libraries** inside the app itself, powered by AboutLibraries.
 
 ## License
 
-Wavora is licensed under the **GNU General Public License v3.0**. See [LICENSE](LICENSE) for the full text.
+Aira is licensed under the **GNU General Public License v3.0**, inherited from Wavora and SimpMusic. See [LICENSE](LICENSE) for the full text.
 
 ---
 ---
 
 <div align="center">
-  <sub id="-wavora-en-español">🇪🇸 Español</sub>
+  <sub id="-aira-en-español">🇪🇸 Español</sub>
 </div>
 
 ## Presentación
 
-Wavora es un reproductor de música que transmite directamente desde YouTube Music — sin publicidad, sin suscripción, y sin necesidad de cuenta para empezar a escuchar. Funciona de forma nativa en **Android**, **Windows**, **macOS** y **Linux** desde una única base de código en Kotlin Multiplatform, compartiendo prácticamente toda la lógica de negocio, la capa de datos y la interfaz entre cada plataforma.
+Aira es un reproductor de música que transmite directamente desde YouTube Music — sin publicidad, sin suscripción, y sin necesidad de cuenta para empezar a escuchar. Funciona de forma nativa en **Android**, **Windows**, **macOS** y **Linux** desde una única base de código en Kotlin Multiplatform, compartiendo prácticamente toda la lógica de negocio, la capa de datos y la interfaz entre cada plataforma.
 
 La filosofía del proyecto es simple: **un solo cerebro compartido, nativo en todos lados.** En lugar de un wrapper web o un puente Java-a-JS, el motor de reproducción, la base de datos, la capa de red y más de 20 pantallas completas hechas en Compose son *el mismo código Kotlin* corriendo sobre ExoPlayer/Media3 en Android y sobre libVLC en escritorio — con solo los bordes específicos de cada plataforma (`expect`/`actual`) escritos por separado cuando es estrictamente necesario.
 
-El objetivo de Wavora no es ser "otro wrapper más de YouTube Music". Existe para impulsar una alternativa autoalojada y guiada por la comunidad frente al streaming pago: crossfade real con mezcla estilo DJ, un ecosistema de letras sincronizadas con traducción por IA, una app de escritorio genuinamente nativa (no Electron), y una base de código que se audita y endurece de forma continua en vez de quedar abandonada.
+El objetivo de Aira no es ser "otro wrapper más de YouTube Music". Existe para impulsar una alternativa autoalojada y guiada por la comunidad frente al streaming pago: crossfade real con mezcla estilo DJ, un ecosistema de letras sincronizadas con traducción por IA, una app de escritorio genuinamente nativa (no Electron), y una base de código que se audita y endurece de forma continua en vez de quedar abandonada.
 
-## ¿Por qué Wavora?
+## ¿Por qué Aira?
 
 **El problema:** la mayoría de los clientes "gratuitos de YouTube Music" son o bien exclusivos de Android, forks mal mantenidos que se rompen cada pocos meses, o wrappers de Electron en escritorio que consumen gigabytes de RAM solo para reproducir un MP3.
 
-**Qué hace Wavora distinto:**
+**Qué hace Aira distinto:**
 
-- **Genuinamente nativo en cada plataforma.** La build de escritorio no es un navegador metido en una caja — es una aplicación de Compose Desktop respaldada por libVLC a través de JNA/vlcj, con una bandeja del sistema real, una ventana de miniplayer flotante siempre-encima, e integraciones nativas del sistema operativo (Now Playing Center en macOS, manejador de protocolo `wavora://` para deep links en Windows). La única excepción deliberada: en Windows, al iniciar sesión en YouTube Music se abre un navegador Chromium real embebido (vía [KCEF](https://github.com/DatL4g/KCEF)), cargado solo cuando hace falta, únicamente para capturar la cookie de sesión — se libera apenas el login es exitoso, así que no queda un motor tipo Electron corriendo en segundo plano.
+- **Genuinamente nativo en cada plataforma.** La build de escritorio no es un navegador metido en una caja — es una aplicación de Compose Desktop respaldada por libVLC a través de JNA/vlcj, con una bandeja del sistema real, una ventana de miniplayer flotante siempre-encima, e integraciones nativas del sistema operativo (Now Playing Center en macOS, manejador de protocolo `aira://` para deep links en Windows). La única excepción deliberada: en Windows, al iniciar sesión en YouTube Music se abre un navegador Chromium real embebido (vía [KCEF](https://github.com/DatL4g/KCEF)), cargado solo cuando hace falta, únicamente para capturar la cookie de sesión — se libera apenas el login es exitoso, así que no queda un motor tipo Electron corriendo en segundo plano.
 - **Un motor de crossfade real**, no un simple fundido de entrada/salida — curvas de volumen de potencia constante, un Modo DJ opcional con barrido de filtro biquad, y AutoMix consciente del BPM/tonalidad, implementado en paralelo tanto en el backend de ExoPlayer (Android) como en el de VLC (Escritorio).
 - **Un ecosistema de letras comunitario** con su propio backend en Cloudflare Workers, traducción impulsada por IA, y un sistema de votación — en lugar de depender de un único proveedor externo.
 - **Sin telemetría por defecto**, una variante de build sin Sentry (`crashlytics-empty`) para no enviar ningún reporte de errores, soporte de proxy, y una instancia Piped como alternativa en redes restringidas.
@@ -480,7 +472,7 @@ El objetivo de Wavora no es ser "otro wrapper más de YouTube Music". Existe par
 - Repetir (desactivado / una / todas), aleatorio, y cola infinita (radio automática al terminar la cola)
 - Timer de sueño (minutos fijos o "al terminar la canción actual")
 - Omitir silencios y SponsorBlock (salteo automático de segmentos de patrocinadores en videos musicales)
-- **Android**: interruptor opcional para seguir sonando aunque otra app reproduzca audio (ignora la pérdida de audio focus transitoria o permanente) — para cuando Instagram, un juego u otra app le pide el audio focus al sistema y no querés que Wavora se pause
+- **Android**: interruptor opcional para seguir sonando aunque otra app reproduzca audio (ignora la pérdida de audio focus transitoria o permanente) — para cuando Instagram, un juego u otra app le pide el audio focus al sistema y no querés que Aira se pause
 - **Android**: soporte de **Google Cast (Chromecast)** — transmití a cualquier TV o parlante compatible, con cambio automático entre reproducción local y remota, y crossfade desactivado mientras transmitís
 - Normalización de volumen entre canciones
 - **Escritorio**: ecualizador gráfico de 10 bandas (60 Hz–16 kHz) con preamplificación, 9 presets propios (Bass/Vocal/Treble Boost, V-Shape, Podcast, Rock, Pop, Electronic, Acoustic), dos ranuras "Custom" editables por el usuario, y un botón de restablecer — todo persistido entre reinicios
@@ -490,7 +482,7 @@ El objetivo de Wavora no es ser "otro wrapper más de YouTube Music". Existe par
 - El estado de reproducción (canción, cola, aleatorio/repetir) se restaura entre reinicios de la app
 
 ### 🎤 Letras
-- **Letras comunitarias de Wavora** — letras sincronizadas servidas por el propio backend de Wavora en Cloudflare Workers, con un flujo opcional de "ayudar a construir la base de datos"
+- **Letras comunitarias de Aira** — letras sincronizadas servidas por el propio backend de Aira en Cloudflare Workers, con un flujo opcional de "ayudar a construir la base de datos"
 - **LRCLIB** y **BetterLyrics** como proveedores adicionales de respaldo, abiertos
 - Letras sincronizadas de **Spotify** vía la cookie `sp_dc` propia del usuario
 - Subtítulos autogenerados de **YouTube** como último recurso
@@ -542,7 +534,7 @@ El objetivo de Wavora no es ser "otro wrapper más de YouTube Music". Existe par
 - **Android TV** — build separado (flavor y APK propios) con entrada en el launcher de Leanback y navegación por foco pensada para control remoto en toda la app
 - **Escritorio (Windows / macOS / Linux)** — app de ventana independiente, miniplayer flotante y arrastrable, reproductor en pantalla completa, barra de título personalizada, scrollbars, reproducción basada en VLC (libVLC)
   - Now Playing Center + Remote Command Center en macOS (teclas multimedia, widget de pantalla de bloqueo)
-  - Manejador de protocolo personalizado (`wavora://`) para deep links en Windows
+  - Manejador de protocolo personalizado (`aira://`) para deep links en Windows
   - Integración con la bandeja del sistema
   - Inicio de sesión de YouTube Music en Windows vía un navegador Chromium embebido (KCEF) que se carga solo cuando hace falta, únicamente para capturar la cookie de sesión — no queda ningún motor de navegador corriendo en segundo plano después
 
@@ -581,14 +573,14 @@ actualizaciones de la app no borran.
 
 ## Novedades respecto a SimpMusic
 
-Wavora comenzó como un fork de [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) — el cliente original de YouTube Music para Android al que este proyecto le debe sus bases de reproducción y capa de datos. Pero a lo largo del desarrollo, la base de código pasó por un ciclo sostenido de auditoría y reescritura en vez de un simple cambio de marca, y una parte importante de la app fue reescrita, reemplazada, o construida desde cero.
+Aira comenzó como un fork de [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) — el cliente original de YouTube Music para Android al que este proyecto le debe sus bases de reproducción y capa de datos. Pero a lo largo del desarrollo, la base de código pasó por un ciclo sostenido de auditoría y reescritura en vez de un simple cambio de marca, y una parte importante de la app fue reescrita, reemplazada, o construida desde cero.
 
 **Qué se heredó de SimpMusic:** el enfoque arquitectónico original (Compose + Media3 + Room + Koin + una capa de scraping de YouTube Music), el conjunto base de pantallas, y el concepto general de producto (streaming de YouTube Music sin publicidad, con descargas y biblioteca).
 
 **Qué se reconstruyó para volverlo una app genuinamente multiplataforma:**
 - Se agregó desde cero un **target completo de escritorio en Kotlin Multiplatform / Compose Multiplatform** — Windows, macOS y Linux, con un backend de reproducción basado en VLC (`core/media/media-jvm`) escrito en paralelo al backend de ExoPlayer/Media3 de Android (`core/media/media3`), detrás de una abstracción compartida `PlayerSession`/`PlayerController` para que el resto de la app (ViewModels, pantallas) hable con un único contrato de reproducción sin importar la plataforma.
 - El **motor de crossfade** (curvas de volumen de potencia constante, barrido de filtro biquad del Modo DJ, y AutoMix consciente del BPM/tonalidad) se implementó dos veces, de forma independiente, una por cada reproductor nativo de cada plataforma.
-- El **backend de letras** se migró de una API propia ya inactiva a un nuevo servicio en Cloudflare Workers (D1 + KV + Queues + un Durable Object), con una arquitectura limpia de registro de proveedores (`core/service/lyricsService`) para que las letras propias de Wavora, LRCLIB y BetterLyrics sean respaldos intercambiables en vez de llamadas hardcodeadas.
+- El **backend de letras** se migró de una API propia ya inactiva a un nuevo servicio en Cloudflare Workers (D1 + KV + Queues + un Durable Object), con una arquitectura limpia de registro de proveedores (`core/service/lyricsService`) para que las letras propias de Aira, LRCLIB y BetterLyrics sean respaldos intercambiables en vez de llamadas hardcodeadas.
 - El monolítico `SharedViewModel` de ~2000 líneas se dividió en ViewModels enfocados y con responsabilidad única (`PlayerViewModel`, `NowPlayingViewModel`, `AppViewModel`), coordinados por una fachada `SharedViewModel` delgada y retrocompatible, de modo que cada pantalla existente siguió funcionando sin cambios.
 - Discord Rich Presence, la integración con Spotify, y el login de cuenta de YouTube incorporaron **flujos de configuración guiados, paso a paso, dentro de la app** (ayudantes para copiar cookies, diagnóstico de conexión) en lugar de requerir trabajo manual con las DevTools del navegador.
 - Se agregó un **flujo de onboarding** construido desde cero, estados de carga tipo skeleton, estados de error con reintento, y una capa consistente de feedback háptico en toda la interfaz.
@@ -604,23 +596,23 @@ Wavora comenzó como un fork de [**SimpMusic**](https://github.com/maxrave-dev/S
 - Se consolidó la duplicación de tokens de tipografía y color en fuentes únicas de verdad
 - Se agregaron índices de Room para columnas frecuentemente filtradas (`liked`, `downloadState`, `totalPlayTime`, `inLibrary`)
 
-**Qué se agregó de cero, sin equivalente en SimpMusic:** toda la aplicación de escritorio, el pipeline de traducción de letras con IA, el sistema de votación de letras comunitarias, la integración de SponsorBlock, el backup/restauración con auto-backup programado, las analíticas de top canciones/artistas/álbumes con filtro por fecha, la configuración guiada de Discord/Spotify, y el manejador de protocolo de deep link `wavora://` en Windows.
+**Qué se agregó de cero, sin equivalente en SimpMusic:** toda la aplicación de escritorio, el pipeline de traducción de letras con IA, el sistema de votación de letras comunitarias, la integración de SponsorBlock, el backup/restauración con auto-backup programado, las analíticas de top canciones/artistas/álbumes con filtro por fecha, la configuración guiada de Discord/Spotify, y el manejador de protocolo de deep link `aira://` en Windows.
 
 Nada de esto busca desmerecer a SimpMusic — es la base sobre la que se construyó este proyecto, y sus decisiones arquitectónicas (Compose, Media3, Koin, Room) siguen siendo visibles en toda la app hoy. El objetivo de esta sección es simplemente ser transparente sobre cuánto avanzó la base de código desde el fork.
 
 ## Instalación
 
 ### Android
-Descargá el `.apk` más reciente desde [Releases](https://github.com/Wavora-dev/Wavora/releases). Requiere **Android 8.0 (API 26) o superior**.
+Descargá el `.apk` más reciente desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere **Android 8.0 (API 26) o superior**.
 
 ### Windows
-Descargá el instalador `.msi` desde [Releases](https://github.com/Wavora-dev/Wavora/releases). Requiere tener [VLC](https://www.videolan.org/vlc/) (64-bit) instalado en el sistema.
+Descargá el instalador `.msi` desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere tener [VLC](https://www.videolan.org/vlc/) (64-bit) instalado en el sistema.
 
 ### macOS
-Descargá el `.dmg` desde [Releases](https://github.com/Wavora-dev/Wavora/releases). Requiere VLC instalado.
+Descargá el `.dmg` desde [Releases](https://github.com/nicoqw/Aira/releases). Requiere VLC instalado.
 
 ### Linux
-Descargá el `.AppImage` desde [Releases](https://github.com/Wavora-dev/Wavora/releases), marcalo como ejecutable, y ejecutalo. Requiere VLC (`libvlc`) instalado en el sistema.
+Descargá el `.AppImage` desde [Releases](https://github.com/nicoqw/Aira/releases), marcalo como ejecutable, y ejecutalo. Requiere VLC (`libvlc`) instalado en el sistema.
 
 ## Compilación
 
@@ -636,8 +628,8 @@ Abrí la raíz del proyecto — ambos IDEs detectan automáticamente la configur
 ### Desde la línea de comandos
 
 ```bash
-git clone https://github.com/Wavora-dev/Wavora
-cd Wavora
+git clone https://github.com/nicoqw/Aira
+cd Aira
 
 # Una sola vez: descarga y prepara las librerías nativas de VLC para el target de escritorio
 ./gradlew :composeApp:vlcSetup --no-configuration-cache
@@ -691,7 +683,7 @@ Optimizaciones reales, verificadas en el código, no promesas:
 
 - **La app en sí no recolecta analíticas ni telemetría.**
 - El reporte de errores funciona con [Sentry](https://sentry.io) y es **opcional a nivel de build**: el módulo `crashlytics-empty` es un reemplazo directo, sin operación, del módulo `crashlytics` respaldado por Sentry, para quien quiera una build sin ningún tráfico de diagnóstico saliente.
-- El inicio de sesión en YouTube, Discord o Spotify es completamente **basado en cookies/tokens y local** — Wavora no corre su propio backend OAuth ni hace pasar tus credenciales por un servidor de terceros.
+- El inicio de sesión en YouTube, Discord o Spotify es completamente **basado en cookies/tokens y local** — Aira no corre su propio backend OAuth ni hace pasar tus credenciales por un servidor de terceros.
 - Hay **soporte de proxy** HTTP/SOCKS5 (con autenticación) disponible para usuarios en redes restringidas o monitoreadas.
 - Se puede configurar una **instancia de Piped** opcional como fuente alternativa de datos de streaming, para quienes prefieren no golpear directamente los endpoints de YouTube.
 - La contribución a la base de datos comunitaria de letras es **estrictamente opcional** y está desactivada por defecto.
@@ -708,10 +700,10 @@ Extraída directamente de los marcadores `// TODO` presentes hoy en el código �
 
 ## Créditos
 
-Wavora está construido sobre [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) de **maxrave-dev**, licenciado bajo GPL-3.0 — el cliente original de YouTube Music para Android del que este proyecto hereda su pipeline de reproducción, capa de datos, y arquitectura general.
+Aira está construido sobre [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) de **maxrave-dev**, licenciado bajo GPL-3.0 — el cliente original de YouTube Music para Android del que este proyecto hereda su pipeline de reproducción, capa de datos, y arquitectura general.
 
-Wavora no sería posible sin los siguientes proyectos de código abierto: **Jetpack Compose** y **Compose Multiplatform**, **Media3/ExoPlayer**, **VLC** y **vlcj**, **Koin**, **Ktor**, **Room**, **Coil**, **NewPipeExtractor**, **BravePipeExtractor**, **PipePipeExtractor**, **Kizzy**, **Sentry**, **Kermit**, **Haze**, **Compottie**, **KCEF** y **compose-webview-multiplatform** (navegador Chromium embebido para el login de YouTube en Windows), y todas las demás librerías listadas en **Ajustes → Librerías de terceros** dentro de la propia app, impulsado por AboutLibraries.
+Aira no sería posible sin los siguientes proyectos de código abierto: **Jetpack Compose** y **Compose Multiplatform**, **Media3/ExoPlayer**, **VLC** y **vlcj**, **Koin**, **Ktor**, **Room**, **Coil**, **NewPipeExtractor**, **BravePipeExtractor**, **PipePipeExtractor**, **Kizzy**, **Sentry**, **Kermit**, **Haze**, **Compottie**, **KCEF** y **compose-webview-multiplatform** (navegador Chromium embebido para el login de YouTube en Windows), y todas las demás librerías listadas en **Ajustes → Librerías de terceros** dentro de la propia app, impulsado por AboutLibraries.
 
 ## Licencia
 
-Wavora está licenciado bajo la **GNU General Public License v3.0**. Ver [LICENSE](LICENSE) para el texto completo.
+Aira está licenciado bajo la **GNU General Public License v3.0**. Ver [LICENSE](LICENSE) para el texto completo.

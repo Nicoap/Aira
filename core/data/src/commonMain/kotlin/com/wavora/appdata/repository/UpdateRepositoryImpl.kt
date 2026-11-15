@@ -85,7 +85,7 @@ internal class UpdateRepositoryImpl(
                                 body =
                                     $$"""
                                     ### Update via F-Droid, changelogs: 
-                                    - https://github.com/wavora-dev/Wavora/blob/main/fastlane/metadata/android/en-US/changelogs/$${latestVersion.versionCode}.txt
+                                    - https://github.com/nicoqw/Aira/blob/main/fastlane/metadata/android/en-US/changelogs/$${latestVersion.versionCode}.txt
                                     """.trimIndent(),
                             ),
                         ),

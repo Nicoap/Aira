@@ -41,7 +41,7 @@ fun ReviewDialog(
         confirmButton = {
             TextButton(onClick = {
                 onDoneReview.invoke()
-                uriHandler.openUri("https://github.com/wavora-dev/Wavora")
+                uriHandler.openUri("https://github.com/nicoqw/Aira")
             }) {
                 Text(
                     stringResource(Res.string.give_a_star),
@@ -88,12 +88,12 @@ fun ReviewDialog(
                     append(stringResource(Res.string.if_you_love_my_work_consider))
                     withLink(
                         LinkAnnotation.Url(
-                            "https://www.patreon.com/Wavora",
+                            "https://boosty.to/nicoqw/donate",
                             TextLinkStyles(style = SpanStyle(textDecoration = TextDecoration.Underline, color = seed)),
                         ) {
                             onDoneReview.invoke()
                             onDismissRequest.invoke()
-                            uriHandler.openUri("https://www.patreon.com/Wavora")
+                            uriHandler.openUri("https://boosty.to/nicoqw/donate")
                         },
                     ) {
                         append(stringResource(Res.string.buying_me_a_coffee))

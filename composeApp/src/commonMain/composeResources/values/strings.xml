@@ -27,7 +27,7 @@
     <string name="scrobbling">Scrobbling</string>
     <string name="scrobbling_not_available">Scrobbling is only available on the Desktop app for now.</string>
     <string name="scrobbling_lastfm">Last.fm</string>
-    <string name="scrobbling_lastfm_not_configured">This build of Wavora doesn\'t have Last.fm configured yet.</string>
+    <string name="scrobbling_lastfm_not_configured">Last.fm is not configured in this build. Register a free API account at last.fm/api/account/create, then put LASTFM_API_KEY and LASTFM_API_SECRET into local.properties (or the environment) and rebuild.</string>
     <string name="scrobbling_username">Username</string>
     <string name="scrobbling_password">Password</string>
     <string name="scrobbling_connect">Connect</string>
@@ -147,16 +147,16 @@
     <string name="about_us">About us</string>
     <string name="version">Version</string>
     <string name="github">Github</string>
-    <string name="wavora_dev">Wavora by wavora-dev</string>
+    <string name="wavora_dev">Aira by nicoqw</string>
     <string name="buy_me_a_coffee">Support the app</string>
     <string name="developer_blog">Developer Blog</string>
     <string name="developer_blog_tagline">Read dev notes, tutorials &amp; behind-the-scenes</string>
     <string name="join_discord_server">Join our Discord server</string>
     <string name="join_discord_server_subtitle">Chat with the community and get news first</string>
     <string name="follow_on_instagram">Follow us on Instagram</string>
-    <string name="follow_on_instagram_subtitle">@wavora.music</string>
+    <string name="follow_on_instagram_subtitle">@Aira.music</string>
     <string name="blog_promo_title">Something new from the dev</string>
-    <string name="blog_promo_message">Follow Wavora for updates — sharing the story behind Wavora, music-tech deep dives, and engineering notes. Give it a read if you're curious ✨</string>
+    <string name="blog_promo_message">Follow Aira for updates — sharing the story behind Aira, music-tech deep dives, and engineering notes. Give it a read if you're curious ✨</string>
     <string name="visit_blog">Visit blog</string>
     <string name="paypal">PayPal</string>
     <string name="title">Title</string>
@@ -176,7 +176,7 @@
     <string name="albums_inArtist">Albums</string>
     <string name="singles_inArtist">Singles</string>
     <string name="fans_might_also_like_inArtist">Fans might also like</string>
-    <string name="crash_log">Wavora crashed. Sorry for this problem.\nSend crash-log to developer</string>
+    <string name="crash_log">Aira crashed. Sorry for this problem.\nSend crash-log to developer</string>
     <string name="crash">Crash</string>
     <string name="send">Send</string>
     <string name="mail_subject">Report Crash</string>
@@ -237,12 +237,12 @@
     <string name="what_segments_will_be_skipped">What segments will be skipped</string>
     <string name="save">Save</string>
     <string name="saved">Saved</string>
-    <string name="sponsor_block_intro">SponsorBlock is a crowd-sourced system for skipping annoying parts of YouTube videos.\nMore information: https://sponsor.ajay.app/\nIn Wavora, SponsorBlock is only available when the device is online</string>
+    <string name="sponsor_block_intro">SponsorBlock is a crowd-sourced system for skipping annoying parts of YouTube videos.\nMore information: https://sponsor.ajay.app/\nIn Aira, SponsorBlock is only available when the device is online</string>
     <string name="skip_sponsor_part_of_video">Skip sponsor part of video</string>
     <string name="customactivityoncrash_error_activity_error_occurred_explanation">An unexpected error occurred. Sorry for the inconvenience.</string>
     <string name="customactivityoncrash_error_activity_restart_app">Restart app</string>
-    <string name="help_build_lyrics_database">Help Wavora lyrics build the lyrics database</string>
-    <string name="help_build_lyrics_database_description">Send your saved lyrics to Wavora lyrics's database</string>
+    <string name="help_build_lyrics_database">Help Aira lyrics build the lyrics database</string>
+    <string name="help_build_lyrics_database_description">Send your saved lyrics to Aira lyrics's database</string>
     <string name="customactivityoncrash_error_activity_close_app">Close app</string>
     <string name="customactivityoncrash_error_activity_error_details">Error details</string>
     <string name="customactivityoncrash_error_activity_error_details_title">Error details</string>
@@ -260,7 +260,7 @@
     <string name="sleep_timer_set_error">Please set the correct format time</string>
     <string name="sleep_timer_warning">Remove sleep timer?</string>
     <string name="yes">Yes</string>
-    <string name="notification_channel_name" translatable="false">Wavora Playback Notification</string>
+    <string name="notification_channel_name" translatable="false">Aira Playback Notification</string>
     <string name="welcome_back">Welcome back,</string>
     <string name="upload_your_listening_history_to_youtube_music_server_it_will_make_yt_music_recommendation_system_better_working_only_if_logged_in">Upload your listening history to YouTube Music server, it will make YT Music recommendation system better. Working only if logged in</string>
     <string name="send_back_listening_data_to_google">Send back listening data to Google</string>
@@ -279,7 +279,7 @@
     <string name="saved_to_local_playlist">Saved to local playlist</string>
     <string name="if_you_want_to_unsync_this_playlist_please_go_to_local_playlist">if you want to unsync this playlist, please go to local playlist</string>
     <string name="log_in_to_get_YouTube_playlist">Log in to get YouTube Playlist</string>
-    <string name="sync_playlist_warning">Wavora will create a YouTube Music Playlist automatically. Are you sure?</string>
+    <string name="sync_playlist_warning">Aira will create a YouTube Music Playlist automatically. Are you sure?</string>
     <string name="syncing">Syncing</string>
     <string name="unsync_playlist_warning">"Unsync this playlist? This playlist will not be removed from YouTube Music "</string>
     <string name="unsyncing">Unsyncing</string>
@@ -296,7 +296,7 @@
     <string name="email">Email</string>
     <string name="password">Password</string>
     <string name="please_enter_your_email_and_password">Please enter your email and password</string>
-    <string name="translation_language_message">Type language code (Eg: en) (2 letters). If you want to set same with Wavora's language, please make edit box empty.</string>
+    <string name="translation_language_message">Type language code (Eg: en) (2 letters). If you want to set same with Aira's language, please make edit box empty.</string>
     <string name="invalid_language_code">Invalid language code</string>
     <string name="lyrics_provider_youtube">Lyrics provided by YouTube</string>
     <string name="lyrics_provider_betterlyrics">Lyrics provided by BetterLyrics</string>
@@ -315,9 +315,9 @@
     <string name="older_first">Older First</string>
     <string name="newer_first">Newer First</string>
     <string name="added_date">Added date</string>
-    <string name="credit_app">Wavora is a free, open source music app that lets you stream from YouTube and YouTube Music — no ads, no tracking, no limits.\n\nFeatures include:\n - High quality audio streaming\n - Synced lyrics with AI translation\n - Crossfade &amp; DJ-style transitions\n - Discord Rich Presence\n - Offline playback &amp; caching\n - Android Auto support\n\nWavora is always free.\n\nMade with ❤️ by wavora-dev</string>
+    <string name="credit_app">Aira is a free, open source music app that lets you stream from YouTube and YouTube Music — no ads, no tracking, no limits.\n\nFeatures include:\n - High quality audio streaming\n - Synced lyrics with AI translation\n - Crossfade &amp; DJ-style transitions\n - Discord Rich Presence\n - Offline playback &amp; caching\n - Android Auto support\n\nAira is always free.\n\nMade with ❤️ by nicoqw.\n\nAira is based on Wavora (GPL-3.0): https://github.com/Wavora-dev/Wavora</string>
     <string name="issue_tracker">Issue Tracker</string>
-    <string name="copyright" translatable="false">©2025 wavora-dev</string>
+    <string name="copyright" translatable="false">©2025 nicoqw</string>
     <string name="featured_playlists">Featured Albums</string>
     <string name="podcasts" translatable="false">Podcasts</string>
     <string name="featured_inArtist">Featured on</string>
@@ -325,7 +325,7 @@
     <string name="play_video_for_video_track_instead_of_audio_only">Play video for video track instead of audio only</string>
     <string name="such_as_music_video_lyrics_video_podcasts_and_more">Such as Music Video, Lyrics Video, Podcasts, and more</string>
     <string name="ignore_audio_focus_loss">Keep playing when other apps play sound</string>
-    <string name="ignore_audio_focus_loss_subtitle">Wavora won\'t pause when Instagram, a game, or another app plays audio. Sound may overlap.</string>
+    <string name="ignore_audio_focus_loss_subtitle">Aira won\'t pause when Instagram, a game, or another app plays audio. Sound may overlap.</string>
     <string name="video_quality">Video Quality</string>
     <plurals name="n_song">
         <item quantity="one">%d song</item>
@@ -363,7 +363,7 @@
     <string name="enable_spotify_lyrics">Enable Spotify Lyrics</string>
     <string name="spotify_lyrícs_info">More lyrics without translation</string>
     <string name="enable_canvas">Enable Canvas</string>
-    <string name="canvas_info">Show Spotify Canvas in Wavora</string>
+    <string name="canvas_info">Show Spotify Canvas in Aira</string>
     <string name="spotify_lyrics_provider">Lyrics provided by Spotify</string>
     <string name="offline_mode">Offline mode</string>
     <string name="added_to_youtube_liked">Added to YouTube Liked</string>
@@ -394,7 +394,7 @@
     <string name="user_interface">Interface</string>
     <string name="translucent_bottom_navigation_bar">Translucent bottom navigation bar</string>
     <string name="you_can_see_the_content_below_the_bottom_bar">You can see the content below the bottom bar</string>
-    <string name="donation">Support Wavora's development on Patreon</string>
+    <string name="donation">Support Aira's development on Boosty</string>
     <string name="relax">Relax</string>
     <string name="sleep">Sleep</string>
     <string name="energize">Energize</string>
@@ -412,7 +412,7 @@
     <string name="loading">Loading</string>
     <string name="updating">Updating</string>
     <string name="go_to_log_in_page">Go to log in page</string>
-    <string name="log_in_warning">YouTube Music now requires you to log in to stream music, Piped Instance sometime can't work too. You should log in to YouTube to get better experience with Wavora.</string>
+    <string name="log_in_warning">YouTube Music now requires you to log in to stream music, Piped Instance sometime can't work too. You should log in to YouTube to get better experience with Aira.</string>
     <string name="spotify_canvas_cache">Spotify Canvas Cache</string>
     <string name="clear_canvas_cache">Clear canvas cache</string>
     <string name="proxy">Proxy</string>
@@ -458,16 +458,16 @@
     <string name="other_version">Other version</string>
     <string name="later">Later</string>
     <string name="give_a_star">Give a star</string>
-    <string name="enjoying_wavora">Enjoying Wavora</string>
-    <string name="if_you_enjoy_using_wavora_star_wavora_on_github_or_leave_a_review_on">If you enjoy using Wavora, star Wavora on GitHub or leave a review on</string>
+    <string name="enjoying_wavora">Enjoying Aira</string>
+    <string name="if_you_enjoy_using_wavora_star_wavora_on_github_or_leave_a_review_on">If you enjoy using Aira, star Aira on GitHub or leave a review on</string>
     <string name="if_you_love_my_work_consider">"If you love my work, consider "</string>
-    <string name="buying_me_a_coffee">supporting the app on Patreon.</string>
+    <string name="buying_me_a_coffee">supporting the app on Boosty.</string>
     <!-- AUDIT FIX: these two were the only hardcoded-English strings in the
          Cafecito donation dialog (App.kt) - the dialog's title and dismiss
          button already reused enjoying_wavora/later above, but the button
          label and body text had no resource at all. -->
-    <string name="support_wavora_button">Support Wavora</string>
-    <string name="wavora_free_forever_message">Wavora is free and always will be.\n\nIf you\'ve been enjoying it, consider supporting the app on Patreon — it helps keep development going and new features coming.</string>
+    <string name="support_wavora_button">Support Aira</string>
+    <string name="wavora_free_forever_message">Aira is free and always will be.\n\nIf you\'ve been enjoying it, consider supporting the app on Boosty — it helps keep development going and new features coming.</string>
     <string name="share_diagnostic_logs">Share diagnostic logs</string>
     <string name="share_diagnostic_logs_subtitle">Send this session\'s log file so a bug can be investigated</string>
     <string name="share_diagnostic_logs_failed">No log available to share yet</string>
@@ -524,14 +524,14 @@
     <string name="contributor_name">Contributor name</string>
     <string name="contributor_email">Contributor email</string>
     <string name="anonymous">Anonymous</string>
-    <string name="wavora_lyrics">Wavora Lyrics</string>
-    <string name="lyrics_provider_wavora">Lyrics provided by Wavora Lyrics</string>
+    <string name="wavora_lyrics">Aira Lyrics</string>
+    <string name="lyrics_provider_wavora">Lyrics provided by Aira Lyrics</string>
     <string name="backup_in_progress">Backup in progress</string>
     <string name="restore_in_progress">Restore in progress</string>
     <string name="backup_downloaded">Backup downloaded data</string>
     <string name="backup_downloaded_description">Backup all downloaded songs's data</string>
     <string name="auto_backup">Auto backup</string>
-    <string name="auto_backup_description">Automatically backup your data to Downloads/Wavora folder</string>
+    <string name="auto_backup_description">Automatically backup your data to Downloads/Aira folder</string>
     <string name="backup_frequency">Backup frequency</string>
     <string name="daily">Daily</string>
     <string name="weekly">Weekly</string>
@@ -632,7 +632,7 @@
     <string name="theme_secondary_text_color">Secondary text color (HEX)</string>
     <string name="theme_color_description">Enter a color as #RRGGBB, for example #A259FF.</string>
     <string name="reset_theme">Reset theme</string>
-    <string name="reset_theme_description">Restore the default dark theme and Wavora colors?</string>
+    <string name="reset_theme_description">Restore the default dark theme and Aira colors?</string>
     <string name="youtube_liked_music">YouTube Liked Music</string>
     <string name="keep_service_alive">Keep service alive</string>
     <string name="keep_service_alive_description">Keep music player service alive to avoid being killed by system</string>
@@ -662,7 +662,7 @@
     <string name="downvote">Downvote</string>
     <string name="vote_submitted">Thank you for voting this lyrics!</string>
     <string name="vote_error">Failed to submit</string>
-    <string name="open_app">Open Wavora</string>
+    <string name="open_app">Open Aira</string>
     <string name="close_miniplayer">Close Mini-player</string>
     <string name="open_miniplayer">Open Mini-player</string>
     <string name="toggle_desktop_miniplayer">Toggle floating mini player</string>
@@ -682,7 +682,7 @@
     <string name="added_to_liked_songs">Added to YouTube Music liked songs</string>
     <string name="add_to_liked_songs">Add to YouTube Music liked songs</string>
     <string name="song_info">Song info</string>
-    <string name="introducing_wavora_chart">Introducing Wavora Chart</string>
+    <string name="introducing_wavora_chart">Introducing Aira Chart</string>
     <string name="coming_soon">Coming soon</string>
     <string name="sort_playlist">Sort playlist</string>
     <string name="done">Done</string>
@@ -695,7 +695,7 @@
     <string name="quit_app">Quit app</string>
     <string name="local_tracking_title">Local tracking listening history</string>
     <string name="local_tracking_description">Log your listening history to local database</string>
-    <string name="wavora_charts">Wavora Charts</string>
+    <string name="wavora_charts">Aira Charts</string>
     <string name="crossfading">Crossfading</string>
     <string name="your_320kbps_url">Your 320kbps URL</string>
     <string name="your_320kbps_url_description">Leave empty to auto-choose a working URL from the uptime checker.</string>
@@ -715,20 +715,20 @@
     <string name="onboarding_next">Next</string>
     <string name="onboarding_get_started">Get Started</string>
     <string name="onboarding_page_indicator">Page %1$d of %2$d</string>
-    <string name="onboarding_page1_title">Welcome to Wavora</string>
+    <string name="onboarding_page1_title">Welcome to Aira</string>
     <string name="onboarding_page1_subtitle">Stream millions of songs from YouTube Music — free, and built around one thing: getting the details other players skip right.</string>
     <string name="onboarding_page2_title">Lyrics that just work</string>
-    <string name="onboarding_page2_subtitle">Wavora runs its own lyrics service. Synced lyrics download automatically while a song plays — no setup, no searching for LRC files.</string>
+    <string name="onboarding_page2_subtitle">Aira runs its own lyrics service. Synced lyrics download automatically while a song plays — no setup, no searching for LRC files.</string>
     <string name="onboarding_page3_title">Translations, made by the community</string>
-    <string name="onboarding_page3_subtitle">Read lyrics in your language, and help make them better: vote on translations or contribute your own — every vote improves Wavora for everyone.</string>
+    <string name="onboarding_page3_subtitle">Read lyrics in your language, and help make them better: vote on translations or contribute your own — every vote improves Aira for everyone.</string>
     <string name="onboarding_page4_title">Download &amp; listen offline</string>
     <string name="onboarding_page4_subtitle">Save songs, albums, and playlists to your device. No internet? No problem — your music, your way.</string>
     <string name="notification_primer_title">Stay in control from the notification shade</string>
-    <string name="notification_primer_description">Wavora can show playback controls — play, pause, skip — right in your notifications, so you can control your music without opening the app. We'll only ask Android for this once.</string>
+    <string name="notification_primer_description">Aira can show playback controls — play, pause, skip — right in your notifications, so you can control your music without opening the app. We'll only ask Android for this once.</string>
     <string name="notification_primer_allow">Allow</string>
     <string name="no_lyrics_for_track">No lyrics for this track</string>
     <string name="download_folder">Download folder</string>
-    <string name="download_folder_default">Default (.wavora/downloads in your user folder)</string>
+    <string name="download_folder_default">Default (.Aira/downloads in your user folder)</string>
     <string name="download_folder_reset">Reset download folder</string>
     <string name="download_folder_reset_hint">Go back to the default folder. Already downloaded tracks keep playing.</string>
     <string name="playback_failed">Couldn't play this track: %1$s</string>

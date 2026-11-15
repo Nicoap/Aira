@@ -852,7 +852,7 @@ fun App(
                                             // manual fallback as always.
                                             shouldShowUpdateDialog = false
                                             viewModel.showedUpdateDialog = false
-                                            openUrl("https://github.com/Wavora-dev/Wavora/releases")
+                                            openUrl("https://github.com/nicoqw/Aira/releases")
                                         }
                                     } else {
                                         // Android / Android TV.
@@ -882,7 +882,7 @@ fun App(
                                                     // manual fallback as before this change.
                                                     shouldShowUpdateDialog = false
                                                     viewModel.showedUpdateDialog = false
-                                                    openUrl("https://github.com/Wavora-dev/Wavora/releases")
+                                                    openUrl("https://github.com/nicoqw/Aira/releases")
                                                 }
                                             }
                                         }
@@ -1047,7 +1047,7 @@ fun App(
                             TextButton(
                                 onClick = {
                                     shouldShowCafecitoDialog = false
-                                    openUrl("https://www.patreon.com/Wavora")
+                                    openUrl("https://boosty.to/nicoqw/donate")
                                 },
                             ) {
                                 Text(
@@ -1081,7 +1081,7 @@ fun App(
                                 )
                                 Spacer(modifier = Modifier.height(8.dp))
                                 Text(
-                                    "www.patreon.com/Wavora",
+                                    "boosty.to/nicoqw/donate",
                                     style = LocalAppTypography.current.bodySmall.copy(
                                         color = Color(0xFF00D4FF),
                                         textDecoration = TextDecoration.Underline,

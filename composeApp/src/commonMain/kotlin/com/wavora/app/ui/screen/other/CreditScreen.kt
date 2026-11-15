@@ -161,7 +161,7 @@ fun CreditScreen(
             // GitHub button
             TextButton(
                 onClick = {
-                    openUrl("https://github.com/wavora-dev/Wavora")
+                    openUrl("https://github.com/nicoqw/Aira")
                 },
                 modifier =
                     Modifier
@@ -175,7 +175,7 @@ fun CreditScreen(
             // Issue tracker button
             TextButton(
                 onClick = {
-                    openUrl("https://github.com/wavora-dev/Wavora/issues")
+                    openUrl("https://github.com/nicoqw/Aira/issues")
                 },
                 modifier =
                     Modifier
@@ -189,7 +189,7 @@ fun CreditScreen(
             // Support the app button (Patreon)
             TextButton(
                 onClick = {
-                    openUrl("https://www.patreon.com/Wavora")
+                    openUrl("https://boosty.to/nicoqw/donate")
                 },
                 modifier =
                     Modifier

@@ -53,7 +53,7 @@ import java.net.URI
 // stale as new versions ship - it always resolves to whatever is newest
 // at the moment the user clicks it, regardless of which version this
 // particular copy of WavoraUpdater was bundled with.
-private const val MANUAL_DOWNLOAD_URL = "https://github.com/Wavora-dev/Wavora/releases/latest"
+private const val MANUAL_DOWNLOAD_URL = "https://github.com/nicoqw/Aira/releases/latest"
 
 // ===== Brand tokens (copied, not imported: wavoraUpdater deliberately does
 // not depend on :composeApp's theme module - see build.gradle.kts's doc on
@@ -74,7 +74,7 @@ private fun Stage.label(): String =
         Stage.EXTRACTING -> "Extracting..."
         Stage.INSTALLING -> "Installing..."
         Stage.CLEANING -> "Cleaning temporary files..."
-        Stage.LAUNCHING -> "Launching Wavora..."
+        Stage.LAUNCHING -> "Launching Aira..."
     }
 
 private fun parseArgs(argv: Array<String>): UpdaterArgs {
@@ -130,7 +130,7 @@ private fun runUpdaterApplication(args: Array<String>) =
         Window(
             onCloseRequest = ::exitApplication,
             state = windowState,
-            title = "Wavora",
+            title = "Aira",
             undecorated = true,
             transparent = true,
             resizable = false,
