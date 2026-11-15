@@ -39,6 +39,8 @@ on:
 
 permissions:
   contents: write
+  # нужно для чтения артефакта сборки при отправке в SignPath
+  actions: read
 
 concurrency:
   group: release-${{ github.ref }}
@@ -266,10 +268,62 @@ jobs:
         shell: pwsh
         run: Get-ChildItem desktopApp/build/compose/binaries/main/msi/*.msi | Format-Table Name,Length
 
+      # Подпись кода через SignPath (бесплатно для open-source проектов).
+      # Пока секретов нет — шаги подписи просто пропускаются, и в релиз уходит
+      # неподписанный MSI: пайплайн не ломается до одобрения заявки.
+      - name: Подготовить MSI к подписи
+        id: prepare-msi
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path unsigned-msi | Out-Null
+          $msi = Get-ChildItem 'desktopApp/build/compose/binaries/main/msi/*.msi' | Select-Object -First 1
+          if (-not $msi) { throw 'MSI не найден' }
+          Copy-Item $msi.FullName 'unsigned-msi\'
+          Write-Host "к подписи: $($msi.Name) ($([math]::Round($msi.Length / 1MB)) МБ)"
+
+      - name: Загрузить неподписанный MSI
+        id: upload-unsigned-msi
+        uses: actions/upload-artifact@v4
+        with:
+          name: aira-msi-unsigned
+          path: unsigned-msi/*.msi
+          archive: false
+          if-no-files-found: error
+
+      - name: Подписать MSI в SignPath
+        id: sign-msi
+        if: ${{ secrets.SIGNPATH_API_TOKEN != '' }}
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ secrets.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: aira
+          signing-policy-slug: release-signing
+          artifact-configuration-slug: msi-deep
+          github-artifact-id: ${{ steps.upload-unsigned-msi.outputs.artifact-id }}
+          wait-for-completion: true
+          output-artifact-directory: signed-msi
+          skip-decompress: true
+
+      - name: Выбрать MSI для релиза
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path release-msi | Out-Null
+          $signed = Get-ChildItem 'signed-msi' -Recurse -Filter *.msi -ErrorAction SilentlyContinue | Select-Object -First 1
+          if ($signed) {
+            Copy-Item $signed.FullName 'release-msi\'
+            $sig = Get-AuthenticodeSignature $signed.FullName
+            Write-Host "подписанный MSI: $($signed.Name), статус подписи: $($sig.Status), подписант: $($sig.SignerCertificate.Subject)"
+          } else {
+            $raw = Get-ChildItem 'desktopApp/build/compose/binaries/main/msi/*.msi' | Select-Object -First 1
+            Copy-Item $raw.FullName 'release-msi\'
+            Write-Host "ВНИМАНИЕ: секреты SignPath не заданы, релиз получит неподписанный $($raw.Name)"
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-msi
-          path: desktopApp/build/compose/binaries/main/msi/*.msi
+          path: release-msi/*.msi
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------

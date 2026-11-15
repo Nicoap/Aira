@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Конфигурация артефакта для SignPath: сборка msi-deep.
+
+  Подписываются ДВА файла за один запрос:
+    1) Aira.exe — лончер jpackage внутри MSI (именно его ругает Defender,
+       когда бинарник не подписан);
+    2) сам Aira-*.msi — чтобы Windows доверял установщику и SmartScreen
+       не показывал «неизвестный издатель».
+
+  Как подключить:
+    1. В SignPath откройте проект Aira → Artifact Configurations → New.
+    2. Slug: msi-deep (именно так он назван в .github/workflows/release.yml).
+    3. Вставьте это содержимое и сохраните.
+-->
+<artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
+  <msi-file path="*.msi">
+    <!-- лончер приложения внутри установщика -->
+    <pe-file path="Aira.exe">
+      <authenticode-sign />
+    </pe-file>
+    <!-- сам установщик -->
+    <authenticode-sign />
+  </msi-file>
+</artifact-configuration>
