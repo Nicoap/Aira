@@ -27,6 +27,7 @@ import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.LocalMinimumInteractiveComponentSize
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -163,14 +164,14 @@ fun ArtistScreen(
                                 Text(
                                     text = state.data.subscribers ?: stringResource(Res.string.unknown),
                                     style = LocalAppTypography.current.bodySmall,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     textAlign = TextAlign.Start,
                                     modifier = Modifier.weight(1f),
                                 )
                                 Text(
                                     text = state.data.playCount ?: stringResource(Res.string.unknown),
                                     style = LocalAppTypography.current.bodySmall,
-                                    color = Color.White,
+                                    color = MaterialTheme.colorScheme.onBackground,
                                     textAlign = TextAlign.End,
                                     modifier = Modifier.weight(1f),
                                 )
@@ -253,14 +254,14 @@ fun ArtistScreen(
                                             },
                                             colors =
                                                 ButtonDefaults.outlinedButtonColors().copy(
-                                                    contentColor = Color.White,
+                                                    contentColor = MaterialTheme.colorScheme.onBackground,
                                                     containerColor = Color.Transparent,
                                                 ),
                                         ) {
                                             if (isFollowed) {
-                                                Text(text = stringResource(Res.string.followed), color = Color.White)
+                                                Text(text = stringResource(Res.string.followed), color = MaterialTheme.colorScheme.onBackground)
                                             } else {
-                                                Text(text = stringResource(Res.string.follow), color = Color.White)
+                                                Text(text = stringResource(Res.string.follow), color = MaterialTheme.colorScheme.onBackground)
                                             }
                                         }
                                     }
@@ -290,7 +291,7 @@ fun ArtistScreen(
                                         ButtonDefaults
                                             .textButtonColors()
                                             .copy(
-                                                contentColor = Color.White,
+                                                contentColor = MaterialTheme.colorScheme.onBackground,
                                             ),
                                 ) {
                                     Row(
@@ -316,7 +317,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.popular),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f),
                                     )
                                     TextButton(
@@ -332,7 +333,7 @@ fun ArtistScreen(
                                             ButtonDefaults
                                                 .textButtonColors()
                                                 .copy(
-                                                    contentColor = Color.White,
+                                                    contentColor = MaterialTheme.colorScheme.onBackground,
                                                 ),
                                     ) {
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -388,7 +389,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.singles),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f),
                                     )
                                     TextButton(
@@ -409,7 +410,7 @@ fun ArtistScreen(
                                             ButtonDefaults
                                                 .textButtonColors()
                                                 .copy(
-                                                    contentColor = Color.White,
+                                                    contentColor = MaterialTheme.colorScheme.onBackground,
                                                 ),
                                     ) {
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -455,7 +456,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.albums),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f),
                                     )
                                     TextButton(
@@ -476,7 +477,7 @@ fun ArtistScreen(
                                             ButtonDefaults
                                                 .textButtonColors()
                                                 .copy(
-                                                    contentColor = Color.White,
+                                                    contentColor = MaterialTheme.colorScheme.onBackground,
                                                 ),
                                     ) {
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -522,7 +523,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.videos),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier = Modifier.weight(1f),
                                     )
                                     TextButton(
@@ -542,7 +543,7 @@ fun ArtistScreen(
                                             ButtonDefaults
                                                 .textButtonColors()
                                                 .copy(
-                                                    contentColor = Color.White,
+                                                    contentColor = MaterialTheme.colorScheme.onBackground,
                                                 ),
                                     ) {
                                         Text(stringResource(Res.string.more), style = LocalAppTypography.current.bodySmall)
@@ -609,7 +610,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.featured_inArtist),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier =
                                             Modifier
                                                 .weight(1f)
@@ -656,7 +657,7 @@ fun ArtistScreen(
                                     Text(
                                         text = stringResource(Res.string.related_artists),
                                         style = LocalAppTypography.current.labelMedium,
-                                        color = Color.White,
+                                        color = MaterialTheme.colorScheme.onBackground,
                                         modifier =
                                             Modifier
                                                 .weight(1f)
@@ -715,7 +716,7 @@ fun ArtistScreen(
                             Text(
                                 text = stringResource(Res.string.description),
                                 style = LocalAppTypography.current.labelMedium,
-                                color = Color.White,
+                                color = MaterialTheme.colorScheme.onBackground,
                                 modifier =
                                     Modifier
                                         .weight(1f)

@@ -22,12 +22,15 @@ import androidx.compose.ui.unit.dp
  * The parameters mirror [basicMarquee].
  */
 fun Modifier.hoverMarquee(
-    iterations: Int = 3,
+    // Параметр сохранён ради существующих вызовов, но игнорируется: прокрутка
+    // идёт всё время, пока курсор на элементе. С ограниченным числом проходов
+    // длинный заголовок проезжал пару раз и замирал обрезанным.
+    iterations: Int = Int.MAX_VALUE,
     animationMode: MarqueeAnimationMode = MarqueeAnimationMode.Immediately,
-    repeatDelayMillis: Int = 1200,
-    initialDelayMillis: Int = repeatDelayMillis,
+    repeatDelayMillis: Int = 600,
+    initialDelayMillis: Int = 0,
     spacing: MarqueeSpacing = MarqueeSpacing.fractionOfContainer(1f / 3f),
-    velocity: Dp = 30.dp,
+    velocity: Dp = 40.dp,
 ): Modifier =
     composed {
         val hoverSource = remember { MutableInteractionSource() }
@@ -35,7 +38,10 @@ fun Modifier.hoverMarquee(
         this.hoverable(hoverSource).then(
             if (hovered) {
                 Modifier.basicMarquee(
-                    iterations = iterations,
+                    // Крутимся всё время, пока курсор на элементе. Раньше стояло
+                    // `iterations = 3`: длинный заголовок проезжал три раза и замирал
+                    // обрезанным, поэтому дочитать его было невозможно.
+                    iterations = Int.MAX_VALUE,
                     animationMode = animationMode,
                     repeatDelayMillis = repeatDelayMillis,
                     initialDelayMillis = initialDelayMillis,

@@ -97,7 +97,6 @@ import com.wavora.app.ui.component.EndOfPage
 import com.wavora.app.ui.component.NowPlayingBottomSheet
 import com.wavora.app.ui.component.PlaylistFullWidthItems
 import com.wavora.app.ui.component.ShimmerSearchItem
-import com.wavora.app.ui.component.WavoraChartButton
 import com.wavora.app.ui.component.SongFullWidthItems
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
 import com.wavora.app.ui.navigation.destination.list.ArtistDestination
@@ -584,13 +583,6 @@ fun SearchScreen(
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth(),
                             )
-                            WavoraChartButton(
-                                modifier =
-                                    Modifier
-                                        .padding(top = 10.dp),
-                            ) {
-                                // uriHandler.openUri("https://chart.wavora.org") // Coming soon
-                            }
                         }
                     }
                 }

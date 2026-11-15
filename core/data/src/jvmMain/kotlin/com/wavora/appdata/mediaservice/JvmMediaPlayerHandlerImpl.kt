@@ -280,6 +280,9 @@ class JvmMediaPlayerHandlerImpl(
     private val prefetchedAt = ConcurrentHashMap<String, Long>()
     private var prefetchJob: Job? = null
 
+    // Сколько ждём готовности потока при восстановлении очереди, прежде чем делать seek.
+    private val RESTORE_READY_TIMEOUT_MS = 20_000L
+
     private val json =
         Json {
             ignoreUnknownKeys = true
@@ -2146,9 +2149,19 @@ class JvmMediaPlayerHandlerImpl(
         val unit =
             suspend {
                 if (dataStoreManager.saveRecentSongAndQueue.first() == TRUE) {
+                    // Ноль сразу после старта — это ещё не известная позиция, а не
+                    // «пользователь перемотал в начало». Такой ноль затирал точку
+                    // возврата, и следующий запуск начинал трек с нуля.
+                    val livePosition = player.contentPosition
+                    val position =
+                        if (livePosition > 0L) {
+                            livePosition
+                        } else {
+                            dataStoreManager.recentPosition.first().toLong()
+                        }
                     dataStoreManager.saveRecentSong(
                         nowPlayingState.value.songEntity?.videoId ?: "",
-                        player.contentPosition,
+                        position,
                     )
                     dataStoreManager.setPlaylistFromSaved(queueData.value.data.playlistName ?: "")
                     Logger.d(
@@ -2283,7 +2296,17 @@ class JvmMediaPlayerHandlerImpl(
                     loadJob?.join()
                     val savedPosition = dataStoreManager.recentPosition.first().toLong()
                     resetCrossfade()
-                    player.seekTo(index, savedPosition)
+                    if (savedPosition > 0L) {
+                        // libVLC проглатывает seek, сделанный до того, как поток открыт:
+                        // трек начинался с нуля, и при закрытии этот ноль сохранялся —
+                        // из-за этого «продолжить с места» переставало работать совсем.
+                        var waited = 0L
+                        while (waited < RESTORE_READY_TIMEOUT_MS && player.duration <= 0L) {
+                            delay(250L)
+                            waited += 250L
+                        }
+                        player.seekTo(index, savedPosition)
+                    }
                 }
             }
         }

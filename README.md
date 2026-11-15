@@ -12,7 +12,9 @@
   [![Platform: Desktop](https://img.shields.io/badge/Desktop-Windows%20%7C%20macOS%20%7C%20Linux-0078D4?style=flat-square&logo=windows&logoColor=white)](https://github.com/Nicoap/Aira/releases)
   [![GitHub Repo](https://img.shields.io/badge/GitHub-Nicoap%2FAira-181717?style=flat-square&logo=github)](https://github.com/Nicoap/Aira)
 
-  [Releases](https://github.com/Nicoap/Aira/releases) · [Report a bug](https://github.com/Nicoap/Aira/issues) · [Español ↓](#-aira-en-español)
+  [Releases](https://github.com/Nicoap/Aira/releases) · [Report a bug](https://github.com/Nicoap/Aira/issues)
+
+  [English](#english) · [Español](#-aira-en-español) · [Русский](#русский)
 
 </div>
 
@@ -21,6 +23,8 @@
 <div align="center">
   <sub>🇺🇸 English</sub>
 </div>
+
+<span id="english"></span>
 
 ## Hero
 
@@ -707,3 +711,72 @@ Aira no sería posible sin los siguientes proyectos de código abierto: **Jetpac
 ## Licencia
 
 Aira está licenciado bajo la **GNU General Public License v3.0**. Ver [LICENSE](LICENSE) para el texto completo.
+
+---
+
+<div align="center">
+  <sub id="русский">🇷🇺 Русский</sub>
+</div>
+
+## Aira
+
+**Бесплатный музыкальный клиент с открытым исходным кодом для YouTube Music — Kotlin Multiplatform и Compose.**
+
+[English](#english) · [Español](#-aira-en-español)
+
+### Что это
+
+Aira играет музыку напрямую из YouTube Music: без рекламы, без подписки, без обязательного аккаунта. Один и тот же код работает на **Android**, **Windows**, **macOS** и **Linux** — от общей бизнес-логики и слоя данных до самого интерфейса.
+
+Философия проекта простая: **один общий движок, нативно на каждой платформе.** Никаких веб-обёрток и мостов — движок воспроизведения, база данных, сеть и больше двадцати экранов на Compose написаны на том же Kotlin, что крутится поверх ExoPlayer/Media3 на Android и libVLC на десктопе. Пер-платформенными остаются только тонкие края (`expect`/`actual`).
+
+Aira не пытается быть «ещё одной обёрткой над YouTube Music». Задача — собрать самостоятельную альтернативу платным стримингам: настоящий кроссфейд с диджейским сведением, экосистему синхронизированных текстов с ИИ-переводом, по-настоящему нативный десктоп (а не Electron) и код, который регулярно проверяют и укрепляют.
+
+### Возможности
+
+- **Воспроизведение без рекламы** — поток берётся напрямую из YouTube Music.
+- **Кроссфейд и авто-микс** — треки сводятся по BPM и тональности, а не просто затухают.
+- **Синхронизированные тексты** — караоке-подсветка, перевод строки по нажатию, полноэкранный режим.
+- **Свои темы** — пять готовых палитр и своя: цвет фона, поверхности, текста и акцента подбирается пикером или пипеткой прямо с экрана.
+- **Динамический остров** — мини-плеер отдельным окном: компактная пилюля в покое, полная панель при наведении.
+- **Очередь и библиотека** — восстановление очереди между запусками, лайки, локальные плейлисты, скачивание треков.
+- **Эквалайзер, скорость воспроизведения, таймер сна, Discord Rich Presence, скробблинг в Last.fm.**
+- **Нативный десктоп** — иконка в трее, горячие клавиши, медиа-клавиши, отдельное окно мини-плеера.
+- **Честная приватность** — отчёты о сбоях (Sentry) отключаются на этапе сборки, телеметрии нет.
+
+### Скриншоты
+
+Скриншоты лежат в разделе [Screenshots](#screenshots) английской части документации.
+
+### Установка
+
+Готовые сборки — в разделе [Releases](https://github.com/Nicoap/Aira/releases): APK для Android, установщики и портативная сборка для Windows, сборки для macOS и Linux.
+
+### Сборка из исходников
+
+```bash
+# Android — APK debug/release
+./gradlew :androidApp:assembleDebug
+
+# Desktop — запуск без установки
+./gradlew :desktopApp:run
+
+# Desktop — нативные установщики (собираются на своей ОС)
+./gradlew :desktopApp:packageDistributionForCurrentOS
+```
+
+Для десктопа один раз нужно скачать и подготовить нативные библиотеки VLC (задача `:desktopApp:downloadVlcNatives`). Для скробблинга в Last.fm положите `LASTFM_API_KEY` и `LASTFM_API_SECRET` в `local.properties` или в переменные окружения — без них приложение работает, просто без Last.fm.
+
+### Производительность
+
+Десктопная сборка запускается с Serial GC и кучей 512 МБ: живых объектов в приложении немного, а служебные структуры G1 на такой куче только мешают. Тяжёлые анимации не крутятся в фоне — визуализатор и индикатор воспроизведения работают на дешёвом таймере, а не на кадровом такте. Кэш обложек ограничен по памяти и размеру, лишние окна (мини-плеер, встроенный браузер для входа) создаются только при первом использовании.
+
+### Участие
+
+Issues и pull requests приветствуются: [github.com/Nicoap/Aira/issues](https://github.com/Nicoap/Aira/issues). Перед крупным изменением лучше сначала открыть issue и обсудить подход.
+
+### Благодарности и лицензия
+
+Aira — форк [**Wavora**](https://github.com/Wavora-dev/Wavora) (GPL-3.0), которая, в свою очередь, выросла из [**SimpMusic**](https://github.com/maxrave-dev/SimpMusic) от **maxrave-dev**. Оригинальные уведомления об авторских правах сохранены, изменения этого форка видны в истории коммитов.
+
+Проект распространяется под **GNU General Public License v3.0** — полный текст в [LICENSE](LICENSE).
