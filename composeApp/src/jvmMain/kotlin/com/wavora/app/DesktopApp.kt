@@ -561,7 +561,7 @@ private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
                 exitApplication()
             }
         },
-        title = "Wavora",
+        title = "Aira",
         undecorated = true,
         transparent = true,
         resizable = false,

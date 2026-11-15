@@ -214,7 +214,7 @@ private fun LanguageSelectionStep(
             Spacer(Modifier.height(40.dp))
             Icon(
                 painter = painterResource(Res.drawable.mono),
-                contentDescription = "Wavora",
+                contentDescription = "Aira",
                 tint = Color.White.copy(alpha = 0.9f),
                 modifier = Modifier.size(40.dp),
             )
@@ -378,7 +378,7 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
             Spacer(Modifier.height(32.dp))
             Icon(
                 painter = painterResource(Res.drawable.mono),
-                contentDescription = "Wavora",
+                contentDescription = "Aira",
                 tint = Color.White.copy(alpha = 0.9f),
                 modifier = Modifier.size(40.dp),
             )

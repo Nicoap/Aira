@@ -1536,7 +1536,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val discordRpcButtonOneLabel: Flow<String> =
-        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_ONE_LABEL] ?: "Listen on Wavora" }
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_ONE_LABEL] ?: "Listen on Aira" }
 
     override suspend fun setDiscordRpcButtonOneLabel(label: String) {
         withContext(Dispatchers.IO) {
@@ -1563,7 +1563,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val discordRpcButtonTwoLabel: Flow<String> =
-        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_LABEL] ?: "Visit Wavora" }
+        settingsDataStore.data.map { it[DISCORD_RPC_BUTTON_TWO_LABEL] ?: "Visit Aira" }
 
     override suspend fun setDiscordRpcButtonTwoLabel(label: String) {
         withContext(Dispatchers.IO) {
@@ -1591,8 +1591,9 @@ internal class DataStoreManagerImpl(
 
     override val discordRpcSmallImageUrl: Flow<String> =
         settingsDataStore.data.map {
-            it[DISCORD_RPC_SMALL_IMAGE_URL]
-                ?: "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png"
+            // По умолчанию пусто: мини-картинкой служит лого приложения из ассетов
+            // Discord-приложения, а не внешняя ссылка.
+            it[DISCORD_RPC_SMALL_IMAGE_URL] ?: ""
         }
 
     override suspend fun setDiscordRpcSmallImageUrl(url: String) {

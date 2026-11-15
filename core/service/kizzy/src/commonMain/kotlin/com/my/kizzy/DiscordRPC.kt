@@ -7,13 +7,14 @@ import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 data class DiscordRpcSettings(
-    val buttonOneLabel: String = "Listen on Wavora",
+    val buttonOneLabel: String = "Listen on Aira",
     val buttonOneUrl: String = "https://music.youtube.com/watch?v={videoId}",
     val buttonOneEnabled: Boolean = true,
-    val buttonTwoLabel: String = "Visit Wavora",
+    val buttonTwoLabel: String = "Visit Aira",
     val buttonTwoUrl: String = "https://github.com/Nicoap/Aira",
     val buttonTwoEnabled: Boolean = true,
-    val smallImageUrl: String = "https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png",
+    // Пусто = лого приложения из ассетов Discord-приложения (ключ "aira"), без внешней картинки.
+    val smallImageUrl: String = "",
 )
 
 // Discord rejects the whole activity when name/details/state are shorter than 2 or longer than 128 chars,
@@ -78,15 +79,20 @@ class DiscordRPC(
         val stateLine = artists.takeIf { it.isNotBlank() }?.let { if (isPlaying) it else "⏸ $it" }
 
         setActivity(
-            name = rpcField(trackAndArtists.ifBlank { "Wavora" }),
+            name = rpcField(trackAndArtists.ifBlank { "Aira" }),
             details = title.takeIf { it.isNotBlank() }?.let(::rpcField),
             state = stateLine?.let(::rpcField),
             largeImage = song.thumbnails?.let { RpcImage.ExternalImage(it) },
-            smallImage = settings.smallImageUrl
-                .takeIf { it.isNotBlank() }
-                ?.let { RpcImage.ExternalImage(it) },
+            smallImage =
+                if (settings.smallImageUrl.isBlank()) {
+                    // Лого приложения: ассет "aira" в Discord-приложении. Если его нет,
+                    // Discord просто не покажет картинку — лучше, чем нота-эмодзи.
+                    RpcImage.DiscordImage("aira")
+                } else {
+                    RpcImage.ExternalImage(settings.smallImageUrl)
+                },
             largeText = album?.let(::rpcField),
-            smallText = "Wavora",
+            smallText = "Aira",
             buttons = buildList {
                 val buttonOneUrl = settings.buttonOneUrl.replace("{videoId}", song.videoId)
                 if (settings.buttonOneEnabled && settings.buttonOneLabel.isNotBlank() && buttonOneUrl.isNotBlank()) {

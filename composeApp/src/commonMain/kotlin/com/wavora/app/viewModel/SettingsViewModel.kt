@@ -184,20 +184,20 @@ class SettingsViewModel(
     val richPresenceEnabled: StateFlow<Boolean> = _richPresenceEnabled
     private val _mediaPreloadCount = MutableStateFlow(2)
     val mediaPreloadCount: StateFlow<Int> = _mediaPreloadCount
-    private val _discordRpcButtonOneLabel = MutableStateFlow("Listen on Wavora")
+    private val _discordRpcButtonOneLabel = MutableStateFlow("Listen on Aira")
     val discordRpcButtonOneLabel: StateFlow<String> = _discordRpcButtonOneLabel
     private val _discordRpcButtonOneEnabled = MutableStateFlow(true)
     val discordRpcButtonOneEnabled: StateFlow<Boolean> = _discordRpcButtonOneEnabled
     private val _discordRpcButtonOneUrl = MutableStateFlow("https://music.youtube.com/watch?v={videoId}")
     val discordRpcButtonOneUrl: StateFlow<String> = _discordRpcButtonOneUrl
-    private val _discordRpcButtonTwoLabel = MutableStateFlow("Visit Wavora")
+    private val _discordRpcButtonTwoLabel = MutableStateFlow("Visit Aira")
     val discordRpcButtonTwoLabel: StateFlow<String> = _discordRpcButtonTwoLabel
     private val _discordRpcButtonTwoEnabled = MutableStateFlow(true)
     val discordRpcButtonTwoEnabled: StateFlow<Boolean> = _discordRpcButtonTwoEnabled
     private val _discordRpcButtonTwoUrl = MutableStateFlow("https://github.com/Nicoap/Aira")
     val discordRpcButtonTwoUrl: StateFlow<String> = _discordRpcButtonTwoUrl
     private val _discordRpcSmallImageUrl =
-        MutableStateFlow("https://raw.githubusercontent.com/jdecked/twemoji/main/assets/72x72/1f3b5.png")
+        MutableStateFlow("")
     val discordRpcSmallImageUrl: StateFlow<String> = _discordRpcSmallImageUrl
     private val _themeMode = MutableStateFlow(DataStoreManager.THEME_MODE_DARK)
     val themeMode: StateFlow<String> = _themeMode

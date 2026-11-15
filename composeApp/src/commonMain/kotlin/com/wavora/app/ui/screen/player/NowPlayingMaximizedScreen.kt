@@ -451,7 +451,7 @@ private fun PanelHeader(
             )
             Spacer(Modifier.width(WavoraSpace.sm))
             Text(
-                text = "Wavora",
+                text = "Aira",
                 style = LocalAppTypography.current.bodyMedium.copy(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold),
             )
         }

@@ -349,7 +349,7 @@ private fun CompactIslandContent(
         IslandCover(thumbnail, 22.dp, 6.dp)
         Spacer(Modifier.width(9.dp))
         Text(
-            text = if (hasTrack) title else "Wavora",
+            text = if (hasTrack) title else "Aira",
             modifier = Modifier.weight(1f),
             color = LocalIslandPalette.current.text,
             fontSize = 12.sp,
