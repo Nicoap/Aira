@@ -315,7 +315,7 @@
     <string name="older_first">Older First</string>
     <string name="newer_first">Newer First</string>
     <string name="added_date">Added date</string>
-    <string name="credit_app">Aira is a free, open source music app that lets you stream from YouTube and YouTube Music — no ads, no tracking, no limits.\n\nFeatures include:\n - High quality audio streaming\n - Synced lyrics with AI translation\n - Crossfade &amp; DJ-style transitions\n - Discord Rich Presence\n - Offline playback &amp; caching\n - Android Auto support\n\nAira is always free.\n\nMade with ❤️ by Nicoap.\n\nAira is based on Wavora (GPL-3.0): https://github.com/Wavora-dev/Wavora</string>
+    <string name="credit_app">Aira is a free, open source music app that lets you stream from YouTube and YouTube Music — no ads, no tracking, no limits.\n\nFeatures include:\n - High quality audio streaming\n - Synced lyrics with AI translation\n - Crossfade &amp; DJ-style transitions\n - Discord Rich Presence\n - Offline playback &amp; caching\n - Android Auto support\n\nAira is always free.\n\nMade with ❤️ by Nicoap.\n\nAira is based on Wavora (GPL-3.0).</string>
     <string name="issue_tracker">Issue Tracker</string>
     <string name="copyright" translatable="false">©2025 nicoqw</string>
     <string name="featured_playlists">Featured Albums</string>
