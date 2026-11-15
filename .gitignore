@@ -50,3 +50,9 @@ sentry.properties
 # IDE / Kotlin build output inside modules (bin/, not just build/)
 **/bin/
 
+# Локальные рабочие заметки и инструменты, которым не место в публичном репозитории
+docs/FORK_HANDOFF.md
+skills-lock.json
+.vscode/
+fastlane/
+

@@ -84,8 +84,8 @@ internal class UpdateRepositoryImpl(
                                 releaseTime = null,
                                 body =
                                     $$"""
-                                    ### Update via F-Droid, changelogs: 
-                                    - https://github.com/Nicoap/Aira/blob/main/fastlane/metadata/android/en-US/changelogs/$${latestVersion.versionCode}.txt
+                                    ### Обновление через F-Droid, список изменений: 
+                                    - https://github.com/Nicoap/Aira/releases
                                     """.trimIndent(),
                             ),
                         ),
