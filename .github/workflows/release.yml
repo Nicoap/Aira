@@ -1,30 +1,29 @@
 name: Release
 
 # =============================================================================
-# Wavora — Release oficial (Android + Windows/Mac/Linux Desktop vía Conveyor)
+# Aira — release (Android APK + Windows MSI)
 # =============================================================================
 #
-# Disparadores:
-#   - push de un tag "v*.*.*"  → release real, publicado, dispara auto-update
-#   - workflow_dispatch        → para probar el pipeline sin necesidad de tag
+# Триггеры:
+#   - push тега "v*.*.*"  → настоящий релиз, публикуется в GitHub Releases
+#   - workflow_dispatch   → прогон пайплайна без тега (берёт version-name)
 #
-# Qué hace:
-#   1) job "android"  → compila y firma los APK release (mismo signingConfig
-#      que ya existe en androidApp/build.gradle.kts, alimentado por Secrets).
-#   2) job "desktop"  → vlcSetupAll + writeConveyorConfig + `conveyor make
-#      site` (Windows .msix/.appinstaller/.exe + Mac .zip) + AppImage Linux.
-#   3) job "publish"  → junta ambos resultados y crea UN solo GitHub Release
-#      con todos los assets, para que `site.base-url` (que conveyor.conf
-#      resuelve a releases/latest/download/...) encuentre todo en un único
-#      lugar.
+# Что собирается:
+#   android → подписанные release-APK (keystore из секретов репозитория)
+#   desktop → Windows MSI через jpackage (тот же путь, что и локально:
+#             gradlew :desktopApp:packageMsi)
+#   publish → один GitHub Release со всеми ассетами
 #
-# Antes de correr esto en serio, cargar estos Secrets en
-# Settings → Secrets and variables → Actions:
-#   CONVEYOR_SIGNING_KEY            (root key de Conveyor, ver instrucciones)
-#   WAVORA_KEYSTORE_BASE64          (wavora.jks codificado en base64)
-#   WAVORA_RELEASE_KEYSTORE_PASSWORD
-#   WAVORA_RELEASE_KEY_ALIAS
-#   WAVORA_RELEASE_KEY_PASSWORD
+# Conveyor в CI больше не используется: это сторонний коммерческий продукт,
+# он требовал отдельную лицензию и signing key. MSI от jpackage ставится
+# обычным кликом и не требует ни сертификата, ни аккаунта.
+#
+# Секреты репозитория:
+#   WAVORA_KEYSTORE_BASE64            — release-keystore в base64
+#   WAVORA_RELEASE_KEYSTORE_PASSWORD  — пароль хранилища
+#   WAVORA_RELEASE_KEY_ALIAS          — алиас ключа
+#   WAVORA_RELEASE_KEY_PASSWORD       — пароль ключа
+#   SENTRY_DSN, SENTRY_AUTH_TOKEN     — необязательные
 # =============================================================================
 
 on:
@@ -34,7 +33,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: "Tag a releasear (ej: v1.1.2). Si se deja vacío, se usa la versión de gradle/libs.versions.toml con prefijo v."
+        description: "Тег для релиза (пример: v1.0.0). Пусто — версия из gradle/libs.versions.toml с префиксом v."
         required: false
         type: string
 
@@ -45,15 +44,9 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 
-env:
-  # Versión fija del CLI de Conveyor. Antes de subir esto a producción,
-  # confirmar que sigue siendo la última estable en https://conveyor.hydraulic.dev/latest/
-  # (o la que corresponda a conveyor.compatibility-level = 21 en conveyor.conf).
-  CONVEYOR_VERSION: "22.0"
-
 jobs:
   # ---------------------------------------------------------------------------
-  # Resuelve el tag/versión una sola vez y lo comparte con los demás jobs.
+  # Определяет тег и версию один раз и отдаёт их остальным задачам.
   # ---------------------------------------------------------------------------
   resolve-version:
     runs-on: ubuntu-latest
@@ -63,7 +56,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Resolver tag y versión
+      - name: Резолв тега и версии
         id: resolve
         shell: bash
         run: |
@@ -85,20 +78,18 @@ jobs:
           BASE_TAG_VERSION="${TAG_VERSION%%-*}"
           BASE_VERSION_NAME="${VERSION_NAME%%-*}"
           if [ "$BASE_TAG_VERSION" != "$BASE_VERSION_NAME" ]; then
-            echo "::error::El tag ($TAG) no coincide con version-name en gradle/libs.versions.toml ($VERSION_NAME)."
-            echo "::error::Actualizá libs.versions.toml y volvé a taguear, o corré workflow_dispatch sin 'tag' para usar la versión del repo."
+            echo "::error::Тег ($TAG) не совпадает с version-name в gradle/libs.versions.toml ($VERSION_NAME)."
+            echo "::error::Обнови libs.versions.toml и перетегируй, либо запусти workflow_dispatch без 'tag', чтобы взять версию из репозитория."
             exit 1
           fi
 
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "version=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "Release: $TAG (version-name=$VERSION_NAME)"
+          echo "Релиз: $TAG (version-name=$VERSION_NAME)"
 
   # ---------------------------------------------------------------------------
-  # Android — mismo signingConfig ya cableado en androidApp/build.gradle.kts,
-  # solo que ahora alimentado por Secrets en vez de variables de entorno
-  # locales. El resultado es BIT A BIT el mismo tipo de firma (apksigner v2/v3)
-  # que ya usás manualmente: AGP invoca la misma librería apksig por debajo.
+  # Android — тот же signingConfig, что уже есть в androidApp/build.gradle.kts,
+  # только пароли приходят из секретов, а не из локальных переменных окружения.
   # ---------------------------------------------------------------------------
   android:
     runs-on: ubuntu-latest
@@ -119,89 +110,67 @@ jobs:
         with:
           packages: "platform-tools"
 
-      - name: Instalar platform/build-tools API 37
-        # compileSdk del proyecto es 37 (ver androidApp/build.gradle.kts).
-        #
-        # Historial (para no repetir el ciclo): en algún momento bajamos esto a 36
-        # porque el índice de sdkmanager no tenía 'platforms;android-37' publicado
-        # todavía. Pero un run real de `checkReleaseAarMetadata` con compileSdk=36
-        # mostró 14 dependencias — TODAS pineadas a mano en
-        # gradle/libs.versions.toml (material3-expressive 1.5.0-alpha21, core-ktx
-        # 1.19.0, y foundation/animation/ui 1.12.0-alpha03 que arrastra
-        # composeMultiplatform 1.11.1) — que ya EXIGEN compileSdk 37 para
-        # compilar. No es un capricho de tooling: sin 37, el proyecto directamente
-        # no compila con las versiones de Compose que se están usando a propósito.
-        # Por eso esto vuelve a ser mandatorio (no best-effort): si sdkmanager no
-        # tiene 'platforms;android-37' todavía, el build TIENE que fallar acá, con
-        # un mensaje claro, en vez de arrastrar el problema hasta
-        # checkReleaseAarMetadata con 14 issues confusos.
-        #
-        # Si esto vuelve a fallar con "Failed to find package
-        # 'platforms;android-37'": no hay nada para arreglar en este repo, hay que
-        # esperar a que Google lo publique en el índice — o, si no se puede
-        # esperar, bajar material3-expressive/core-ktx/composeMultiplatform en
-        # gradle/libs.versions.toml a versiones que todavía soporten compileSdk 36
-        # (implica perder Material3 Expressive y features nuevas de esas libs).
+      - name: Установить platform/build-tools API 37
+        # compileSdk проекта — 37 (см. androidApp/build.gradle.kts): зависимости,
+        # зафиксированные в libs.versions.toml (material3-expressive 1.5.0-alpha21,
+        # core-ktx 1.19.0, foundation/animation/ui 1.12.0-alpha03), требуют именно
+        # его, поэтому шаг обязательный: без платформы сборка должна упасть здесь,
+        # а не на checkReleaseAarMetadata с 14 непонятными ошибками.
         shell: bash
         run: |
           set -euo pipefail
           SDK_ROOT="${ANDROID_SDK_ROOT:-$ANDROID_HOME}"
           SDKMANAGER=$(find "$SDK_ROOT/cmdline-tools" -maxdepth 3 -name sdkmanager -path "*/bin/*" | sort -r | head -n1)
           if [ -z "$SDKMANAGER" ]; then
-            echo "::error::No se encontró sdkmanager bajo $SDK_ROOT/cmdline-tools"
+            echo "::error::sdkmanager не найден в $SDK_ROOT/cmdline-tools"
             exit 1
           fi
 
-          echo "Instalando platforms;android-37 build-tools;37.0.0..."
-          # Ver nota de PIPESTATUS más abajo en el repo / commits anteriores: NO usar
-          # `if ! yes | sdkmanager ...; then` (pipefail hace que el SIGPIPE de `yes`
-          # tape el resultado real de sdkmanager) y NO usar `|| true` (pisa
-          # PIPESTATUS). Se desactiva `-e`, se corre el pipe, se captura
-          # PIPESTATUS[1] al toque, y se reactiva `-e`.
+          echo "Устанавливаю platforms;android-37 build-tools;37.0.0..."
+          # Не используем `if ! yes | sdkmanager ...`: pipefail превращает SIGPIPE
+          # от `yes` в ошибку и маскирует реальный код возврата sdkmanager.
           set +e
           yes | "$SDKMANAGER" --sdk_root="$SDK_ROOT" --channel=3 \
             "platforms;android-37" "build-tools;37.0.0"
           SDKMANAGER_37_EXIT=${PIPESTATUS[1]}
           set -e
           if [ "$SDKMANAGER_37_EXIT" -ne 0 ]; then
-            echo "::error::Google todavía no publicó 'platforms;android-37' en el índice de sdkmanager. El proyecto NO compila contra 36 (ver checkReleaseAarMetadata: material3-expressive 1.5.0-alpha21 / core-ktx 1.19.0 / composeMultiplatform 1.11.1 lo exigen). Esperar a que lo publiquen, o bajar esas versiones en gradle/libs.versions.toml."
+            echo "::error::Google ещё не опубликовал 'platforms;android-37' в индексе sdkmanager, а проект без него не собирается."
             exit 1
           fi
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Dar permisos de ejecución a gradlew
+      - name: Права на запуск gradlew
         run: chmod +x gradlew
 
-      - name: Decodificar keystore
+      - name: Раскодировать keystore
         shell: bash
         run: |
           set -euo pipefail
-          KS_PATH="${RUNNER_TEMP}/wavora-release.jks"
+          KS_PATH="${RUNNER_TEMP}/aira-release.jks"
           echo "${{ secrets.WAVORA_KEYSTORE_BASE64 }}" | base64 -d > "$KS_PATH"
-          # Verificación temprana: si el secret está mal cargado, fallar acá
-          # con un mensaje claro en vez de un error críptico de Gradle/AGP.
+          # Ранняя проверка: если секрет загружен неверно, падаем здесь с
+          # понятным сообщением, а не с криптическим стектрейсом Gradle.
           keytool -list -keystore "$KS_PATH" \
             -storepass "${{ secrets.WAVORA_RELEASE_KEYSTORE_PASSWORD }}" > /dev/null
           echo "WAVORA_RELEASE_KEYSTORE_PATH=$KS_PATH" >> "$GITHUB_ENV"
 
-      - name: Build APKs release (firmados por Gradle/AGP con el mismo apksig que apksigner)
+      - name: Собрать release-APK
         env:
           WAVORA_RELEASE_KEYSTORE_PASSWORD: ${{ secrets.WAVORA_RELEASE_KEYSTORE_PASSWORD }}
           WAVORA_RELEASE_KEY_ALIAS: ${{ secrets.WAVORA_RELEASE_KEY_ALIAS }}
           WAVORA_RELEASE_KEY_PASSWORD: ${{ secrets.WAVORA_RELEASE_KEY_PASSWORD }}
-          # Sentry es OPCIONAL. Si no cargás estos dos secrets, el build sale
-          # igual (isFullBuild=false → sin crash reporting, sin fallar nada).
-          # Para activarlo: cargá SENTRY_DSN y SENTRY_AUTH_TOKEN como Secrets
-          # y cambiá FULL_BUILD a "true" acá abajo.
+          # Sentry опционален: без этих секретов сборка проходит, просто без
+          # crash-репортинга.
           SENTRY_DSN: ${{ secrets.SENTRY_DSN }}
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           FULL_BUILD=true
           ./gradlew androidApp:assembleRelease --no-configuration-cache -PisFullBuild=$FULL_BUILD
 
-      - name: Verificar firmas y renombrar APKs para el release
+      - name: Проверить подписи и переименовать APK
         shell: bash
         run: |
           set -euo pipefail
@@ -211,16 +180,16 @@ jobs:
           BUILD_TOOLS="$ANDROID_HOME/build-tools/37.0.0"
 
           declare -A NAME_MAP=(
-            ["arm64-v8a"]="Wavora-arm64.apk"
-            ["armeabi-v7a"]="Wavora-armeabi-v7a.apk"
-            ["x86_64"]="Wavora-x86_64.apk"
-            ["universal"]="Wavora-universal.apk"
+            ["arm64-v8a"]="Aira-arm64.apk"
+            ["armeabi-v7a"]="Aira-armeabi-v7a.apk"
+            ["x86_64"]="Aira-x86_64.apk"
+            ["universal"]="Aira-universal.apk"
           )
 
           for abi in arm64-v8a armeabi-v7a x86_64 universal; do
             apk=$(find "$SRC" -iname "*${abi}*release.apk" ! -iname "*unsigned*" | head -n1)
             if [ -z "$apk" ]; then
-              echo "::warning::No se encontró APK para $abi, se omite."
+              echo "::warning::APK для $abi не найден, пропускаю."
               continue
             fi
             "$BUILD_TOOLS/apksigner" verify --verbose "$apk"
@@ -237,14 +206,11 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Desktop — Conveyor `make site` (Windows msix/appinstaller/exe + Mac zip)
-  # corriendo TODO en un runner Linux (soportado oficialmente por Conveyor;
-  # el propio conveyor.conf ya trae vlcSetupAll pensado para esto). El
-  # AppImage de Linux se genera aparte (Conveyor 2.0 no lo genera nativamente)
-  # y se agrega a la misma carpeta de salida.
+  # Desktop — Windows MSI через jpackage (gradlew :desktopApp:packageMsi).
+  # Никакого Conveyor: без лицензий, signing key и MSIX-инфраструктуры.
   # ---------------------------------------------------------------------------
   desktop:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
     needs: resolve-version
     steps:
       - uses: actions/checkout@v4
@@ -260,182 +226,28 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
 
-      - name: Dar permisos de ejecución a gradlew
-        run: chmod +x gradlew
+      - name: VLC natives (Windows x64)
+        shell: pwsh
+        run: ./gradlew.bat :composeApp:vlcSetupWindowsX64Ci --no-configuration-cache
 
-      - name: Instalar Conveyor CLI
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsSL -o /tmp/conveyor.tar.gz \
-            "https://downloads.hydraulic.dev/conveyor/conveyor-${CONVEYOR_VERSION}-linux-amd64.tar.gz"
-          sudo mkdir -p /opt/conveyor
-          sudo tar -xzf /tmp/conveyor.tar.gz -C /opt/conveyor
-          # No asumimos la profundidad exacta del árbol dentro del tarball:
-          # buscamos el binario real y symlinkeamos ESE path.
-          CONVEYOR_BIN=$(find /opt/conveyor -maxdepth 4 -type f -name conveyor -perm -u+x | head -n1)
-          if [ -z "$CONVEYOR_BIN" ]; then
-            CONVEYOR_BIN=$(find /opt/conveyor -maxdepth 4 -type f -name conveyor | head -n1)
-            [ -n "$CONVEYOR_BIN" ] && sudo chmod +x "$CONVEYOR_BIN"
-          fi
-          if [ -z "$CONVEYOR_BIN" ]; then
-            echo "::error::No se encontró el binario 'conveyor' dentro del tarball descargado."
-            find /opt/conveyor -maxdepth 4
-            exit 1
-          fi
-          sudo ln -sf "$CONVEYOR_BIN" /usr/local/bin/conveyor
-          conveyor --version
+      - name: Собрать MSI
+        shell: pwsh
+        run: ./gradlew.bat :desktopApp:packageMsi --no-configuration-cache --console=plain
 
-      - name: Configurar signing key de Conveyor (persistente entre releases)
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p "$HOME/.config/hydraulic/conveyor"
-          # defaults.conf se mergea automáticamente en TODOS los builds de
-          # Conveyor (tanto el `conveyor make site` de abajo como el que
-          # invoca internamente la tarea de Gradle para el AppImage), así
-          # que la key queda disponible sin tener que pasar -f/-K en cada
-          # invocación. Es la MISMA key en cada release — así el MSIX
-          # mantiene la misma identidad de Publisher y las actualizaciones
-          # in-place (ForceUpdateFromAnyVersion) siguen funcionando.
-          printf 'app.signing-key = "%s"\n' "${CONVEYOR_SIGNING_KEY}" > "$HOME/.config/hydraulic/conveyor/defaults.conf"
-        env:
-          CONVEYOR_SIGNING_KEY: ${{ secrets.CONVEYOR_SIGNING_KEY }}
-
-      # WINDOWS-ONLY POR AHORA (pedido explícito): solo interesa poder iterar sobre
-      # la distribución de Windows sin que un problema de Mac/Linux (como el
-      # StartupWMClass de más abajo) bloquee el release. Para volver a compilar las
-      # 3 plataformas: cambiar esto a `vlcSetupAll` de nuevo.
-      - name: VLC natives (Windows x64 solamente)
-        run: ./gradlew :composeApp:vlcSetupWindowsX64Ci --no-configuration-cache
-
-      - name: Generar desktopApp/generated.conveyor.conf (ProGuard + Conveyor)
-        run: ./gradlew :desktopApp:writeConveyorConfig --no-configuration-cache
-
-      # WINDOWS-ONLY POR AHORA: mismo comando que se usa en local
-      # (`conveyor -Kapp.machines=windows.amd64 make site`). `-K` sobreescribe
-      # `app.machines` de conveyor.conf solo para esta invocación — no hace falta
-      # tocar conveyor.conf para volver a las 3 plataformas más adelante, alcanza
-      # con sacar el `-Kapp.machines=windows.amd64` de esta línea.
-      - name: conveyor make site (Windows solamente)
-        run: conveyor --agree-to-license=1 -Kapp.machines=windows.amd64 make site
-
-      # DESHABILITADO mientras el release es Windows-only (ver arriba). Este paso
-      # invoca su propio `conveyor ... -Kapp.machines=linux.amd64.glibc make
-      # linux-app` por dentro, independiente del `-K` de arriba, así que si algún
-      # día vuelve a fallar algo de Linux/Mac, es acá donde hay que mirar primero.
-      # Para reactivar: descomentar este step Y el `find ... -iname "*.AppImage"`
-      # del step "Juntar todo en output/" de abajo.
-      # - name: AppImage Linux (conveyor make linux-app + appimagetool wrap)
-      #   run: ./gradlew :desktopApp:buildLinuxAppImage --no-configuration-cache
-
-      - name: Juntar todo en output/
-        shell: bash
-        run: |
-          set -euo pipefail
-          # find ... -iname "*.AppImage" -exec cp {} output/ \;  # ver nota arriba (Windows-only)
-          echo "--- Contenido final de output/ ---"
-          ls -la output/
-
-      # Sanity-check: the .appinstaller Conveyor generated must be valid XML
-      # before we ever publish it. This does NOT catch broken URLs (the
-      # release doesn't exist yet at this point, so releases/latest/download
-      # can't resolve — see the separate post-publish verification job
-      # below), but it does catch a malformed/truncated manifest early.
-      - name: Validar que el .appinstaller sea XML válido
-        shell: bash
-        run: |
-          set -euo pipefail
-          APPINSTALLER=$(find output -maxdepth 1 -iname "*.appinstaller" | head -n1)
-          if [ -z "$APPINSTALLER" ]; then
-            echo "::error::conveyor make site no generó ningún .appinstaller en output/."
-            exit 1
-          fi
-          echo "Validando $APPINSTALLER ..."
-          python3 -c "import xml.dom.minidom as m, sys; m.parse(sys.argv[1])" "$APPINSTALLER"
-          echo "OK: XML válido."
-
-      # Los archivos sueltos en output/ (.msix, .appinstaller, install.ps1
-      # generado por Conveyor, wavora.crt, wavora.exe, etc.) tienen que
-      # quedar SUELTOS en la raíz del Release para que el auto-updater de
-      # Windows (vía .appinstaller) los encuentre por nombre exacto en
-      # releases/latest/download/<archivo>.
-      #
-      # Para la PRIMERA instalación armamos ADEMÁS un .zip de conveniencia,
-      # AppwavoraWindows.zip, con SOLO estos 8 archivos:
-      #   - install-wavora.bat  (repo: scripts/windows/install-wavora.bat)
-      #   - install.ps1         (repo: scripts/windows/install.ps1 — NO el
-      #                           install.ps1 que genera Conveyor. El nuestro
-      #                           instala todo 100% local/offline, sin pasar
-      #                           por el mecanismo de red del .appinstaller,
-      #                           que es la pieza que venía fallando con
-      #                           0x80190194 / 0x80073CF0 / 0x800B0109.)
-      #   - uninstall-wavora.bat (repo: scripts/windows/uninstall-wavora.bat)
-      #   - uninstall.ps1        (repo: scripts/windows/uninstall.ps1)
-      #   - wavora.crt          (generado por Conveyor en output/)
-      #   - wavora.exe          (generado por Conveyor en output/)
-      #   - wavora.ico          (repo: composeApp/icon/circle_app_icon.ico —
-      #                           usado por install.ps1 SOLO para setear el
-      #                           IconLocation del acceso directo de escritorio;
-      #                           sin esto el .lnk hereda el icono generico de
-      #                           explorer.exe. Ver AUDIT NOTE en install.ps1.)
-      #   - el .msix            (generado por Conveyor en output/)
-      # El auto-updater NO usa este zip para nada — es puramente para el
-      # primer download manual desde la página de Releases.
-      - name: Armar AppwavoraWindows.zip (primera instalación)
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          MSIX=$(find output -maxdepth 1 -iname "*.msix" | head -n1)
-          if [ -z "$MSIX" ]; then
-            echo "::error::No se encontró ningún .msix en output/."
-            exit 1
-          fi
-          for f in output/wavora.crt output/wavora.exe; do
-            if [ ! -f "$f" ]; then
-              echo "::error::Falta $f en output/ — revisar la config de Conveyor (¿cambió algún nombre de archivo generado?)."
-              exit 1
-            fi
-          done
-
-          BUNDLE_DIR="$(mktemp -d)/AppwavoraWindows"
-          mkdir -p "$BUNDLE_DIR"
-          cp scripts/windows/install-wavora.bat "$BUNDLE_DIR/"
-          cp scripts/windows/install.ps1 "$BUNDLE_DIR/"
-          cp scripts/windows/uninstall-wavora.bat "$BUNDLE_DIR/"
-          cp scripts/windows/uninstall.ps1 "$BUNDLE_DIR/"
-          cp output/wavora.crt "$BUNDLE_DIR/"
-          cp output/wavora.exe "$BUNDLE_DIR/"
-          cp composeApp/icon/circle_app_icon.ico "$BUNDLE_DIR/wavora.ico"
-          cp "$MSIX" "$BUNDLE_DIR/"
-
-          echo "--- Contenido de AppwavoraWindows.zip ---"
-          ls -la "$BUNDLE_DIR"
-
-          (cd "$(dirname "$BUNDLE_DIR")" && zip -r -q "$OLDPWD/output/AppwavoraWindows.zip" "AppwavoraWindows")
-          echo "--- Zip armado ---"
-          unzip -l output/AppwavoraWindows.zip
-
-          # No publicamos el install.ps1 que genera Conveyor junto a los
-          # assets sueltos del Release: dejarlo ahí, con el mismo nombre que
-          # el nuestro pero comportamiento distinto (uno local, otro basado
-          # en red), es una trampa para cualquiera que lo baje suelto en vez
-          # de bajar el zip. Solo dejamos suelto lo que el auto-updater
-          # realmente necesita (.msix, .appinstaller, wavora.exe).
-          rm -f output/install.ps1
+      - name: Список собранных установщиков
+        shell: pwsh
+        run: Get-ChildItem desktopApp/build/compose/binaries/main/msi/*.msi | Format-Table Name,Length
 
       - uses: actions/upload-artifact@v4
         with:
-          name: desktop-site
-          path: output/**
+          name: desktop-msi
+          path: desktopApp/build/compose/binaries/main/msi/*.msi
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Publish — un solo GitHub Release con TODOS los assets (Android + Desktop).
-  # No-draft, no-prerelease: tiene que quedar como "latest" inmediatamente
-  # para que `site.base-url` (releases/latest/download/...) resuelva y el
-  # updater de Windows/Mac encuentre la nueva versión.
+  # Publish — один GitHub Release со всеми ассетами (APK + MSI).
+  # non-draft, non-prerelease: сразу становится "latest", чтобы автообновление
+  # и ссылки releases/latest/download/... работали.
   # ---------------------------------------------------------------------------
   publish:
     runs-on: ubuntu-latest
@@ -448,124 +260,54 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: desktop-site
+          name: desktop-msi
           path: release-assets/desktop
 
-      - name: Publicar GitHub Release
+      - name: Опубликовать GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ needs.resolve-version.outputs.tag }}
-          name: Wavora ${{ needs.resolve-version.outputs.version }}
+          name: Aira ${{ needs.resolve-version.outputs.version }}
           draft: false
           prerelease: false
-          generate_release_notes: true
+          generate_release_notes: false
           fail_on_unmatched_files: true
           body: |
-            ## Cómo instalar
+            ## Aira ${{ needs.resolve-version.outputs.version }}
 
-            **Windows:** 📥 [Descargar AppwavoraWindows.zip](https://github.com/wavora-dev/Wavora/releases/latest/download/AppwavoraWindows.zip) — descomprimilo en cualquier carpeta, y ejecutá `install-wavora.bat`. Te va a pedir permiso de administrador una sola vez (para confiar en el certificado) — de ahí en más la app se actualiza sola, no hace falta repetir esto nunca más.
+            **Windows:** скачай `Aira-${{ needs.resolve-version.outputs.version }}.msi` и запусти — обычный установщик, ставится без сертификатов и без прав администратора сверх обычного.
 
-            **Android:** descargá el `.apk` que corresponda a tu dispositivo. Si no estás seguro cuál, usá `Wavora-universal.apk`.
+            **Android:** скачай APK под своё устройство; если не уверен — `Aira-universal.apk`.
 
             ---
+
+            Изменения — в истории коммитов: https://github.com/Nicoap/Aira/commits/main
           files: |
-            release-assets/android/Wavora-arm64.apk
             release-assets/android/*.apk
-            release-assets/desktop/**
+            release-assets/desktop/*.msi
 
   # ---------------------------------------------------------------------------
-  # Verify — corre DESPUÉS de publicar, porque releases/latest/download/...
-  # recién existe una vez que el Release está publicado (chicken-and-egg: no
-  # se puede validar esa URL antes). Descarga el .appinstaller REAL desde la
-  # URL REAL que va a usar cualquier usuario, lo parsea, y hace HEAD a cada
-  # URI que contiene. Si algo devuelve != 200 (el 0x80190194 / 404 que
-  # rompía la instalación), este job falla el workflow en vez de dejar el
-  # Release publicado con un instalador roto.
+  # Verify — после публикации проверяем, что ассеты реально скачиваются по
+  # тем URL, которые увидит пользователь (releases/latest/download/...).
   # ---------------------------------------------------------------------------
   verify:
     runs-on: ubuntu-latest
-    needs: [publish]
+    needs: [publish, resolve-version]
     steps:
-      - name: Descargar y validar el .appinstaller publicado
+      - name: Скачать опубликованные ассеты
         shell: bash
         run: |
           set -euo pipefail
-          BASE="https://github.com/wavora-dev/Wavora/releases/latest/download"
-          APPINSTALLER_URL="$BASE/wavora.appinstaller"
+          BASE="https://github.com/Nicoap/Aira/releases/download/${{ needs.resolve-version.outputs.tag }}"
+          VERSION="${{ needs.resolve-version.outputs.version }}"
 
-          echo "Descargando $APPINSTALLER_URL ..."
-          HTTP_CODE=$(curl -sL -o appinstaller.xml -w "%{http_code}" "$APPINSTALLER_URL")
-          if [ "$HTTP_CODE" != "200" ]; then
-            echo "::error::GET $APPINSTALLER_URL devolvió HTTP $HTTP_CODE — este es exactamente el 0x80190194 que ve el usuario. Revisar app.site.base-url en conveyor.conf y el nombre real que Conveyor le dio al .appinstaller en output/."
-            exit 1
-          fi
-
-          echo "--- Contenido ---"
-          cat appinstaller.xml
-          echo ""
-          python3 -c "import xml.dom.minidom as m; m.parse('appinstaller.xml')"
-          echo "XML válido."
-
-          # Extraer todos los atributos Uri="..." del manifest (MainBundle/
-          # MainPackage/Dependencies/UpdateUris) y verificar que cada uno
-          # resuelve con HTTP 200, EXACTAMENTE con el nombre de archivo que
-          # el .appinstaller pide (sensible a mayúsculas/minúsculas y a
-          # guiones vs puntos: wavora vs Wavora, x64 vs .x64 vs -x64).
-          python3 - << 'PYEOF'
-          import re, sys, subprocess
-
-          with open("appinstaller.xml", encoding="utf-8") as f:
-              content = f.read()
-
-          uris = sorted(set(re.findall(r'Uri="([^"]+)"', content)))
-          if not uris:
-              print("::error::No se encontró ningún atributo Uri= dentro del .appinstaller — ¿formato inesperado?")
-              sys.exit(1)
-
-          failed = False
-          for uri in uris:
-              if not uri.startswith("http"):
-                  continue
-              code = subprocess.run(
-                  ["curl", "-s", "-o", "/dev/null", "-w", "%{http_code}", "-L", "-I", uri],
-                  capture_output=True, text=True,
-              ).stdout.strip()
-              status = "OK" if code == "200" else "FAIL"
-              print(f"[{status}] {code}  {uri}")
-              if code != "200":
-                  failed = True
-
-          if failed:
-              print("::error::Al menos una URL referenciada por el .appinstaller no resuelve con 200. La instalación/actualización vía App Installer va a fallar para los usuarios.")
-              sys.exit(1)
-          PYEOF
-
-          echo ""
-          echo "Todas las URLs del .appinstaller resuelven correctamente."
-
-      - name: Validar que AppwavoraWindows.zip tiene exactamente los 8 archivos esperados
-        shell: bash
-        run: |
-          set -euo pipefail
-          URL="https://github.com/wavora-dev/Wavora/releases/latest/download/AppwavoraWindows.zip"
-          curl -sL -o bundle.zip -w "%{http_code}\n" "$URL" | { read code; if [ "$code" != "200" ]; then echo "::error::GET $URL devolvió HTTP $code"; exit 1; fi; }
-
-          ACTUAL=$(unzip -Z1 bundle.zip | sort)
-          EXPECTED=$(printf "AppwavoraWindows/install-wavora.bat\nAppwavoraWindows/install.ps1\nAppwavoraWindows/uninstall-wavora.bat\nAppwavoraWindows/uninstall.ps1\nAppwavoraWindows/wavora.crt\nAppwavoraWindows/wavora.exe\nAppwavoraWindows/wavora.ico\n" | sort)
-
-          echo "--- Contenido real ---"
-          echo "$ACTUAL"
-
-          MSIX_COUNT=$(echo "$ACTUAL" | grep -c '\.msix$' || true)
-          if [ "$MSIX_COUNT" != "1" ]; then
-            echo "::error::Se esperaba exactamente 1 .msix dentro del zip, se encontraron $MSIX_COUNT."
-            exit 1
-          fi
-
-          NON_MSIX=$(echo "$ACTUAL" | grep -v '\.msix$' | grep -v '/$' | sort)
-          if [ "$NON_MSIX" != "$EXPECTED" ]; then
-            echo "::error::El contenido de AppwavoraWindows.zip no coincide con lo esperado (install-wavora.bat, install.ps1, uninstall-wavora.bat, uninstall.ps1, wavora.crt, wavora.exe, wavora.ico, *.msix)."
-            diff <(echo "$EXPECTED") <(echo "$NON_MSIX") || true
-            exit 1
-          fi
-          echo "OK: AppwavoraWindows.zip contiene exactamente los 8 archivos esperados."
+          for asset in "Aira-${VERSION}.msi" "Aira-universal.apk"; do
+            URL="$BASE/$asset"
+            CODE=$(curl -sL -o /dev/null -w "%{http_code}" -I "$URL")
+            echo "[$CODE] $URL"
+            if [ "$CODE" != "200" ]; then
+              echo "::error::GET $URL вернул HTTP $CODE — ассет не опубликован или назван иначе."
+              exit 1
+            fi
+          done
+          echo "Все ассеты релиза доступны."
