@@ -300,7 +300,7 @@ compose.desktop {
             }
             targetFormats(*listTarget.toTypedArray())
             modules("jdk.unsupported", "jdk.httpserver")
-            packageName = "Wavora"
+            packageName = "Aira"
             macOS {
                 val formatedDate =
                     Instant.now().let {
