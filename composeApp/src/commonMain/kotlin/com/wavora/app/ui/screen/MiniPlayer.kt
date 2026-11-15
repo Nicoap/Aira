@@ -39,8 +39,6 @@ import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import com.wavora.app.ui.component.SimpleTooltip
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -116,6 +114,7 @@ import com.wavora.app.ui.component.ExplicitBadge
 import com.wavora.app.ui.component.HeartCheckBox
 import com.wavora.app.ui.component.PlayPauseButton
 import com.wavora.app.ui.component.PlayerControlLayout
+import com.wavora.app.ui.component.onScrollWheel
 import com.wavora.app.ui.component.liquidGlass
 import com.wavora.app.ui.theme.transparent
 import com.wavora.app.ui.theme.typo
@@ -879,14 +878,10 @@ fun MiniPlayer(
                         Modifier
                             .fillMaxHeight()
                             .align(Alignment.CenterEnd)
-                            .onPointerEvent(PointerEventType.Scroll) { event ->
+                            .onScrollWheel { dy ->
                                 // Mouse wheel over the right-hand controls: 5% volume per notch.
-                                val dy = event.changes.firstOrNull()?.scrollDelta?.y ?: 0f
-                                if (dy != 0f) {
-                                    val v = (controllerState.volume - dy * 0.05f).coerceIn(0f, 1f)
-                                    sharedViewModel.onUIEvent(UIEvent.UpdateVolume(v))
-                                    event.changes.forEach { it.consume() }
-                                }
+                                val v = (controllerState.volume - dy * 0.05f).coerceIn(0f, 1f)
+                                sharedViewModel.onUIEvent(UIEvent.UpdateVolume(v))
                             },
                         verticalAlignment = Alignment.CenterVertically,
                     ) {

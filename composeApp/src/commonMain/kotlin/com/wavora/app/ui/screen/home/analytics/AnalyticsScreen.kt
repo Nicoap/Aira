@@ -48,8 +48,6 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.input.pointer.PointerEventType
-import androidx.compose.ui.input.pointer.onPointerEvent
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextDecoration
@@ -81,6 +79,7 @@ import com.wavora.app.ui.component.FiveImagesComponent
 import com.wavora.app.ui.component.ImageData
 import com.wavora.app.ui.component.NowPlayingBottomSheet
 import com.wavora.app.ui.component.SongFullWidthItems
+import com.wavora.app.ui.component.onHoverMove
 import com.wavora.app.ui.navigation.destination.home.RecentlySongsDestination
 import com.wavora.app.ui.navigation.destination.library.LibraryDynamicPlaylistDestination
 import com.wavora.app.ui.navigation.destination.list.AlbumDestination
@@ -979,15 +978,17 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
                 Modifier
                     .padding(top = 10.dp)
                     .size(gridWidth, gridHeight)
-                    .onPointerEvent(PointerEventType.Move) { event ->
-                        val offset = event.changes.firstOrNull()?.position ?: return@onPointerEvent
-                        val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
-                        val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
-                        val date = gridStart.plus(DatePeriod(days = column * rows + row))
-                        hovered =
-                            activityByDate[date]
-                                ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
-                    }.onPointerEvent(PointerEventType.Exit) { hovered = null }
+                    .onHoverMove(
+                        onMove = { offset ->
+                            val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
+                            val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
+                            val date = gridStart.plus(DatePeriod(days = column * rows + row))
+                            hovered =
+                                activityByDate[date]
+                                    ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
+                        },
+                        onExit = { hovered = null },
+                    )
                     .drawBehind {
                         for (column in 0 until columns) {
                             for (row in 0 until rows) {
