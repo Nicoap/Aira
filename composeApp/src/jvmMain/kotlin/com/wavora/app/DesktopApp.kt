@@ -558,6 +558,24 @@ private fun centeredOnActiveScreen(windowSize: androidx.compose.ui.unit.Dp): and
  *   aplicación de verdad y se suelta `alwaysOnTop` para que minimizar
  *   funcione — así el usuario nunca queda atrapado sin poder salir.
  */
+/**
+ * Отдаёт окну набор иконок для панели задач.
+ *
+ * WHY: Windows показывает в панели задач иконку, взятую из AWT-окна, и при одном
+ * 512-пиксельном размере часто рисует пустую заглушку. Набор 16…256 px закрывает
+ * все масштабы и HiDPI.
+ */
+private fun java.awt.Window.applyAiraTaskbarIcon(bytes: ByteArray) {
+    val base =
+        runCatching {
+            javax.imageio.ImageIO.read(java.io.ByteArrayInputStream(bytes))
+        }.getOrNull() ?: return
+    iconImages =
+        listOf(16, 24, 32, 48, 64, 128, 256).map { size ->
+            base.getScaledInstance(size, size, java.awt.Image.SCALE_SMOOTH)
+        }
+}
+
 @androidx.compose.runtime.Composable
 private fun androidx.compose.ui.window.ApplicationScope.SplashWindow(
     visible: Boolean,
@@ -766,6 +784,16 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
             // Wait for a few real frames, then mark this launch as healthy.
             repeat(3) { androidx.compose.runtime.withFrameNanos { } }
             RenderGuard.confirmRendered()
+        }
+        // Панель задач Windows берёт иконку из AWT-окна, но одного размера ей мало: без
+        // набора 16…256 px она рисует пустую заглушку. Отдаём окну все нужные размеры.
+        var taskbarIconBytes by remember { mutableStateOf<ByteArray?>(null) }
+        LaunchedEffect(Unit) {
+            taskbarIconBytes =
+                runCatching { Res.readBytes("drawable/circle_app_icon.png") }.getOrNull()
+        }
+        LaunchedEffect(taskbarIconBytes) {
+            taskbarIconBytes?.let { window.applyAiraTaskbarIcon(it) }
         }
         // Native window behaviour on Windows: Snap / Win+arrows / edge resize / title-bar drag and
         // double-click (see WindowsWindowFrame). No-op elsewhere or with WAVORA_NATIVE_FRAME=0.
