@@ -3,6 +3,7 @@ package com.wavora.app.ui.screen.player
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import com.wavora.app.ui.component.coverGlow
 import com.wavora.app.ui.component.hoverMarquee
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.animateScrollBy
@@ -280,11 +281,14 @@ fun NowPlayingPanel(
         )
     }
 
+    // Light from the cover: the panel takes the colour of the artwork that is playing.
+    val coverAccent = com.wavora.app.ui.component.rememberCoverAccent(screenData.thumbnailURL)
     Column(
         modifier =
             Modifier
                 .fillMaxSize()
-                .background(MaterialTheme.colorScheme.background),
+                .background(MaterialTheme.colorScheme.background)
+                .coverGlow(coverAccent),
     ) {
         PanelHeader(
             compact = compact,

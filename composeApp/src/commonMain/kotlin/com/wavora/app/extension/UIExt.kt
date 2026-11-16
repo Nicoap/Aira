@@ -180,7 +180,7 @@ fun Modifier.artworkGlow(
  * The album palette colour is a dark swatch (DarkVibrant/DarkMuted) that turns into a muddy grey haze on a
  * light page. Keep only its hue and rebuild the glow colour for the current theme; near-greyscale covers stay grey.
  */
-private fun glowAccent(
+internal fun glowAccent(
     source: Color,
     light: Boolean,
 ): Color {
