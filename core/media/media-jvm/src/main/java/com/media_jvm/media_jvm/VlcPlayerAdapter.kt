@@ -752,6 +752,9 @@ class VlcPlayerAdapter(
     // track still plays instead of stopping with a misleading "check your internet" error.
     private val audioOnlyFallbackIds: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
 
+    // Tracks whose HLS stream keeps ending at once: they are played from the muxed progressive link instead.
+    private val muxedFallbackIds: MutableSet<String> = java.util.concurrent.ConcurrentHashMap.newKeySet()
+
     private fun isNearTrackEnd(): Boolean {
         val duration = cachedDuration
         return duration > 0 && cachedPosition >= duration - 10_000L
@@ -797,6 +800,21 @@ class VlcPlayerAdapter(
             "Stream ended early for " + videoId + " at " + position + "/" + duration + " ms - reopening (" +
                 prematureEndCount + "/" + MAX_PREMATURE_END_RETRIES + ")",
         )
+        // A stream that never started will not start on the next try either, so change the source at once:
+        // first drop the (most fragile) video variant, then leave HLS for the muxed progressive link.
+        val neverStarted = position < 5_000L
+        val failingItem = playlist.getOrNull(localCurrentMediaItemIndex)
+        if (failingItem != null &&
+            failingItem.isVideo() &&
+            videoId !in audioOnlyFallbackIds &&
+            dataStoreManager.watchVideoInsteadOfPlayingAudio.first() == DataStoreManager.TRUE
+        ) {
+            audioOnlyFallbackIds.add(videoId)
+            Logger.w(TAG, "Video ended early for $videoId - falling back to audio only")
+        } else if (neverStarted || prematureEndCount >= 2) {
+            muxedFallbackIds.add(videoId)
+            Logger.w(TAG, "HLS keeps ending early for $videoId - switching to the muxed progressive stream")
+        }
         return try {
             streamRepository.invalidateFormat(videoId)
             streamRepository.invalidateFormat("${MERGING_DATA_TYPE.VIDEO}$videoId")
@@ -3811,6 +3829,21 @@ class VlcPlayerAdapter(
         // только ~1 МиБ, после чего сервер отвечает 403 и VLC зацикливает последнюю секунду.
         // Поэтому прямо отдаём её ТОЛЬКО когда сервер согласен отдать файл целиком, иначе
         // молча падаем на HLS-манифест ниже — он надёжен в любом случае.
+        if (videoId in muxedFallbackIds) {
+            var mux = streamRepository.getNewFormat("Mux$videoId").lastOrNull()
+            if (mux == null || mux.expiredTime.isBefore(now())) {
+                streamRepository
+                    .getStream(dataStoreManager, videoId, isDownloading = false, isVideo = false)
+                    .lastOrNull()
+                mux = streamRepository.getNewFormat("Mux$videoId").lastOrNull()
+            }
+            val muxUrl = mux?.audioUrl
+            if (!muxUrl.isNullOrEmpty() && !muxUrl.isHlsLink() && isProgressiveUsable(muxUrl)) {
+                Logger.w("Stream", "Muxed progressive stream (itag 18) after HLS failed to start")
+                return PlayableSource(isVideo = shouldFindVideo, url = muxUrl, audioSlaveUrl = null)
+            }
+            Logger.w("Stream", "Muxed progressive stream is not available for $videoId")
+        }
         if (dataStoreManager.directStreamEnabled.first()) {
             val row = streamRepository.getNewFormat(videoId).lastOrNull()
             val rawAudio =

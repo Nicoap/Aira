@@ -301,6 +301,25 @@ internal class StreamRepositoryImpl(
                             )
                         }
                     }
+                    // The muxed progressive link (itag 18, usually from the ANDROID client) is served in full
+                    // even where HLS fails to start and the web-client links are cut off after ~1 MiB, so it is
+                    // kept in a row of its own as the last-resort source for the player.
+                    if (!muxed) {
+                        formatList
+                            .find { it.itag == 18 }
+                            ?.url
+                            ?.takeIf { !youTube.isManifestUrl(it) }
+                            ?.let { muxUrl ->
+                                insertNewFormat(
+                                    newFormat.copy(
+                                        videoId = "Mux$videoId",
+                                        itag = 18,
+                                        audioUrl = muxUrl,
+                                        videoUrl = muxUrl,
+                                    ),
+                                )
+                            }
+                    }
                     if (data.first != null) {
                         emit(
                             if (muxed) {
