@@ -763,4 +763,8 @@
     <string name="heatmap_no_plays">Нет прослушиваний</string>
     <string name="heatmap_less">Меньше</string>
     <string name="heatmap_more">Больше</string>
+    <string name="login_manual">Вручную</string>
+    <string name="login_hint_youtube">Войдите в аккаунт YouTube Music в окне ниже. Оно закроется само, как только вход будет выполнен. Если страница не работает, нажмите «Вручную».</string>
+    <string name="login_hint_spotify">Войдите в Spotify в окне ниже. Оно закроется само, как только вход будет выполнен. Данные входа сохраняются на этом устройстве.</string>
+    <string name="login_hint_discord">Войдите в Discord в окне ниже, чтобы в вашем профиле показывалось, что вы слушаете. Окно закроется само, как только вход будет выполнен.</string>
 </resources>

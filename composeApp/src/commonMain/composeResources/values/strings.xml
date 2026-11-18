@@ -764,4 +764,8 @@
     <string name="heatmap_no_plays">No plays</string>
     <string name="heatmap_less">Less</string>
     <string name="heatmap_more">More</string>
+    <string name="login_manual">Enter manually</string>
+    <string name="login_hint_youtube">Sign in to your YouTube Music account in the window below. It closes by itself as soon as you are signed in. If the page does not work, use "Enter manually".</string>
+    <string name="login_hint_spotify">Sign in to Spotify in the window below. It closes by itself as soon as you are signed in. The sign-in data is kept on this device.</string>
+    <string name="login_hint_discord">Sign in to Discord in the window below to show what you are listening to in your profile. It closes by itself as soon as you are signed in.</string>
 </resources>

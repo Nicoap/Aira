@@ -53,6 +53,8 @@ import org.koin.compose.viewmodel.koinViewModel
 import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.baseline_arrow_back_ios_new_24
 import wavora.composeapp.generated.resources.log_in_to_spotify
+import wavora.composeapp.generated.resources.login_hint_spotify
+import wavora.composeapp.generated.resources.login_manual
 import wavora.composeapp.generated.resources.login_success
 import com.wavora.app.ui.theme.LocalAppTypography
 
@@ -111,6 +113,7 @@ fun SpotifyLoginScreen(
                         innerPadding.calculateTopPadding() + 64.dp,
                     ),
             )
+            LoginHint(stringResource(Res.string.login_hint_spotify), state)
             // WebView for Spotify login
             PlatformWebView(
                 state,
@@ -121,6 +124,7 @@ fun SpotifyLoginScreen(
                             showCookiesBottomSheet = true
                         },
                         containerColor = Color(0xFF40D96A),
+                        contentColor = Color.Black,
                         modifier =
                             Modifier
                                 .align(
@@ -168,8 +172,8 @@ fun SpotifyLoginScreen(
                 }?.let { cookie ->
                     val cookies =
                         cookie.split("; ").map {
-                            val (key, value) = it.split("=")
-                            key to value
+                            val parts = it.split("=", limit = 2)
+                            parts[0] to parts.getOrElse(1) { "" }
                         }
                     viewModel.setFullSpotifyCookies(cookies)
                 }
@@ -212,20 +216,13 @@ fun SpotifyLoginScreen(
                 }
             },
             actions = {
-                IconButton(
-                    onClick = {
-                        devLoginSheet = true
-                    },
-                ) {
-                    Icon(
-                        Icons.Default.LogoDev,
-                        "Developer Mode",
-                    )
+                androidx.compose.material3.TextButton(onClick = { devLoginSheet = true }) {
+                    Text(stringResource(Res.string.login_manual))
                 }
             },
             colors =
                 TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 ),
         )
     }

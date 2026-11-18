@@ -53,6 +53,8 @@ import wavora.composeapp.generated.resources.Res
 import wavora.composeapp.generated.resources.baseline_arrow_back_ios_new_24
 import wavora.composeapp.generated.resources.log_in
 import wavora.composeapp.generated.resources.login_failed
+import wavora.composeapp.generated.resources.login_hint_youtube
+import wavora.composeapp.generated.resources.login_manual
 import wavora.composeapp.generated.resources.login_success
 import com.wavora.app.ui.theme.LocalAppTypography
 
@@ -109,6 +111,7 @@ fun LoginScreen(
                         innerPadding.calculateTopPadding() + 64.dp,
                     ),
             )
+            LoginHint(stringResource(Res.string.login_hint_youtube), state)
             // WebView for YouTube Music login
             PlatformWebView(
                 state,
@@ -195,20 +198,13 @@ fun LoginScreen(
                 }
             },
             actions = {
-                IconButton(
-                    onClick = {
-                        devLoginSheet = true
-                    },
-                ) {
-                    Icon(
-                        Icons.Default.LogoDev,
-                        "Developer Mode",
-                    )
+                androidx.compose.material3.TextButton(onClick = { devLoginSheet = true }) {
+                    Text(stringResource(Res.string.login_manual))
                 }
             },
             colors =
                 TopAppBarDefaults.topAppBarColors(
-                    containerColor = Color.Transparent,
+                    containerColor = androidx.compose.material3.MaterialTheme.colorScheme.surface,
                 ),
         )
     }
