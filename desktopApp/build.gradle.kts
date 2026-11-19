@@ -6,9 +6,6 @@ import org.gradle.jvm.toolchain.JvmVendorSpec
 import org.jetbrains.compose.desktop.application.dsl.TargetFormat
 import org.jetbrains.compose.desktop.application.tasks.AbstractJPackageTask
 import java.net.URI
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 
 // desktopApp — JVM application module for Wavora Desktop.
 //
@@ -302,15 +299,14 @@ compose.desktop {
             modules("jdk.unsupported", "jdk.httpserver")
             packageName = "Aira"
             macOS {
-                val formatedDate =
-                    Instant.now().let {
-                        DateTimeFormatter
-                            .ofPattern("yyyy.MM.dd")
-                            .withZone(ZoneId.of("UTC"))
-                            .format(it)
-                    }
                 includeAllModules = true
-                packageVersion = formatedDate
+                // jpackage требует числовую версию (CFBundleVersion), поэтому дата
+                // здесь не годится: приложение обновляется по версии, а не по дню
+                // сборки. Берём version-name без суффиксов.
+                packageVersion =
+                    libs.versions.version.name
+                        .get()
+                        .substringBefore('-')
                 iconFile.set(rootDir.resolve("composeApp/icon/circle_app_icon.icns"))
                 val macExtraPlistKeys =
                     """

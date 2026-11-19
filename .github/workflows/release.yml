@@ -331,13 +331,90 @@ jobs:
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
-  # Publish — один GitHub Release со всеми ассетами (APK + MSI).
+  # macOS — DMG через jpackage. macos-14 — это arm64-раннер, поэтому берём
+  # VLC-срез под arm64 (`vlcSetupMacArmCi`).
+  # ---------------------------------------------------------------------------
+  desktop-macos:
+    runs-on: macos-14
+    needs: resolve-version
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: VLC natives (macOS arm64)
+        run: ./gradlew :composeApp:vlcSetupMacArmCi --no-configuration-cache
+
+      - name: Собрать DMG
+        run: ./gradlew :desktopApp:packageDmg --no-configuration-cache --console=plain
+
+      - name: Список собранных образов
+        run: ls -lh desktopApp/build/compose/binaries/main/dmg/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-dmg
+          path: desktopApp/build/compose/binaries/main/dmg/*.dmg
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Linux — AppImage через jpackage. fakeroot нужен самому jpackage.
+  # ---------------------------------------------------------------------------
+  desktop-linux:
+    runs-on: ubuntu-latest
+    needs: resolve-version
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: gradle/actions/wrapper-validation@v4
+
+      - name: Setup JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Зависимости AppImage
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y fakeroot
+          sudo apt-get install -y libfuse2 || sudo apt-get install -y libfuse2t64 || true
+
+      - name: VLC natives (Linux x64)
+        run: ./gradlew :composeApp:vlcSetupLinuxCi --no-configuration-cache
+
+      - name: Собрать AppImage
+        run: ./gradlew :desktopApp:packageAppImage --no-configuration-cache --console=plain
+
+      - name: Список собранных образов
+        run: ls -lh desktopApp/build/compose/binaries/main/appimage/
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: desktop-appimage
+          path: desktopApp/build/compose/binaries/main/appimage/*.AppImage
+          if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Publish — один GitHub Release со всеми ассетами (APK + MSI + DMG + AppImage).
   # non-draft, non-prerelease: сразу становится "latest", чтобы автообновление
   # и ссылки releases/latest/download/... работали.
   # ---------------------------------------------------------------------------
   publish:
     runs-on: ubuntu-latest
-    needs: [resolve-version, android, desktop]
+    needs: [resolve-version, android, desktop, desktop-macos, desktop-linux]
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -348,6 +425,16 @@ jobs:
         with:
           name: desktop-msi
           path: release-assets/desktop
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-dmg
+          path: release-assets/macos
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: desktop-appimage
+          path: release-assets/linux
 
       - name: Опубликовать GitHub Release
         uses: softprops/action-gh-release@v2
@@ -363,6 +450,10 @@ jobs:
 
             **Windows:** скачай `Aira-${{ needs.resolve-version.outputs.version }}.msi` и запусти — обычный установщик, ставится без сертификатов и без прав администратора сверх обычного.
 
+            **macOS:** скачай `.dmg` (сборка под Apple Silicon). Сборка не подписана сертификатом Apple, поэтому при первом запуске: правый клик по приложению → «Открыть», либо `xattr -dr com.apple.quarantine /Applications/Aira.app`.
+
+            **Linux:** скачай `.AppImage`, затем `chmod +x Aira-*.AppImage` и запусти.
+
             **Android:** скачай APK под своё устройство; если не уверен — `Aira-universal.apk`.
 
             ---
@@ -371,6 +462,8 @@ jobs:
           files: |
             release-assets/android/*.apk
             release-assets/desktop/*.msi
+            release-assets/macos/*.dmg
+            release-assets/linux/*.AppImage
 
   # ---------------------------------------------------------------------------
   # Verify — после публикации проверяем через API, что все ассеты релиза
@@ -413,4 +506,19 @@ jobs:
             fi
             echo "OK: $asset ($SIZE байт)"
           done
+
+          # macOS/Linux: точное имя генерирует jpackage, поэтому проверяем по
+          # расширению, а не по шаблону Aira-<version>.
+          for suffix in ".dmg" ".AppImage"; do
+            ASSET=$(echo "$JSON" | jq -r --arg s "$suffix" \
+              '[.assets[] | select(.name | endswith($s))][0].name // empty')
+            SIZE=$(echo "$JSON" | jq -r --arg s "$suffix" \
+              '[.assets[] | select(.name | endswith($s))][0].size // 0')
+            if [ -z "$ASSET" ] || [ "$SIZE" -lt 1000000 ]; then
+              echo "::error::Не найден ассет с расширением $suffix (size=${SIZE:-0})."
+              exit 1
+            fi
+            echo "OK: $ASSET ($SIZE байт)"
+          done
+
           echo "Все ассеты релиза на месте."
