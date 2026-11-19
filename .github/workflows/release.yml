@@ -335,7 +335,7 @@ jobs:
   # VLC-срез под arm64 (`vlcSetupMacArmCi`).
   # ---------------------------------------------------------------------------
   desktop-macos:
-    runs-on: macos-14
+    runs-on: macos-latest
     needs: resolve-version
     steps:
       - uses: actions/checkout@v4
@@ -357,13 +357,15 @@ jobs:
       - name: Собрать DMG
         run: ./gradlew :desktopApp:packageDmg --no-configuration-cache --console=plain
 
+      # jpackage кладёт DMG в каталог, имя которого зависит от версии плагина,
+      # поэтому ищем по маске, а не по жёсткому пути.
       - name: Список собранных образов
-        run: ls -lh desktopApp/build/compose/binaries/main/dmg/
+        run: find desktopApp/build/compose/binaries -name '*.dmg' -exec ls -lh {} +
 
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-dmg
-          path: desktopApp/build/compose/binaries/main/dmg/*.dmg
+          path: desktopApp/build/compose/binaries/**/*.dmg
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -399,12 +401,12 @@ jobs:
         run: ./gradlew :desktopApp:packageAppImage --no-configuration-cache --console=plain
 
       - name: Список собранных образов
-        run: ls -lh desktopApp/build/compose/binaries/main/appimage/
+        run: find desktopApp/build/compose/binaries -name '*.AppImage' -exec ls -lh {} +
 
       - uses: actions/upload-artifact@v4
         with:
           name: desktop-appimage
-          path: desktopApp/build/compose/binaries/main/appimage/*.AppImage
+          path: desktopApp/build/compose/binaries/**/*.AppImage
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------

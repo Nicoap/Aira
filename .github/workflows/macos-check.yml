@@ -1,0 +1,20 @@
+name: macOS runner check
+
+# Временная проверка: доступны ли macOS-раннеры в этом аккаунте.
+# Запуск вручную: Actions → macOS runner check → Run workflow.
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: macos-latest
+    steps:
+      - name: Информация о раннере
+        run: |
+          sw_vers
+          uname -m
+          xcodebuild -version || true
