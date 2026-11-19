@@ -110,7 +110,7 @@ internal class SimpleMediaService :
                 MEDIA_NOTIFICATION.NOTIFICATION_CHANNEL_ID,
                 R.string.notification_channel_name,
             ).apply {
-                setSmallIcon(R.drawable.ic_notification_w)
+                setSmallIcon(R.drawable.ic_notification_aira)
             },
         )
 
@@ -207,7 +207,7 @@ internal class SimpleMediaService :
                     ).setMediaDescriptionAdapter(DefaultMediaDescriptionAdapter(mediaSession?.sessionActivity))
                     .build()
             playerNotificationManager.setPlayer(player)
-            playerNotificationManager.setSmallIcon(R.drawable.ic_notification_w)
+            playerNotificationManager.setSmallIcon(R.drawable.ic_notification_aira)
             mediaSession?.platformToken?.let { playerNotificationManager.setMediaSessionToken(it) }
             }
         }

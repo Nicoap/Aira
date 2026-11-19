@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Звезда Aira без фона: фон прозрачный, foreground оставляет safe zone маски. -->
     <background android:drawable="@android:color/transparent"/>
-    <foreground android:drawable="@drawable/app_icon"/>
+    <foreground android:drawable="@drawable/ic_launcher_star"/>
+    <monochrome android:drawable="@drawable/monochrome"/>
 </adaptive-icon>

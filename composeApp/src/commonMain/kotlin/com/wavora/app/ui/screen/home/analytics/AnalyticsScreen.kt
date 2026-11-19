@@ -1,6 +1,7 @@
 package com.wavora.app.ui.screen.home.analytics
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -93,6 +94,7 @@ import com.wavora.app.viewModel.AnalyticsUiState
 import com.wavora.app.viewModel.AnalyticsViewModel
 import com.wavora.app.viewModel.SharedViewModel
 import dev.chrisbanes.haze.materials.ExperimentalHazeMaterialsApi
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.map
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDate
@@ -134,6 +136,7 @@ import wavora.composeapp.generated.resources.your_top_tracks
 import com.wavora.app.ui.theme.LocalAppTypography
 import com.wavora.app.expect.ui.VerticalScrollBar
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.rememberScrollState
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalHazeMaterialsApi::class)
 @Composable
@@ -153,6 +156,12 @@ fun AnalyticsScreen(
     // перезапуска приложения.
     LaunchedEffect(Unit) {
         analyticsViewModel.refreshDailyActivity()
+        // Держим тепловую карту свежей, пока экран открыт: иначе новый день
+        // появляется только после перезапуска приложения.
+        while (true) {
+            delay(60_000)
+            analyticsViewModel.refreshDailyActivity()
+        }
     }
 
     var currentItem by remember {
@@ -922,13 +931,19 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
 @Composable
 private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>) {
     val gap = 3.dp
-    val columns = 53
     val rows = 7
 
     val activityByDate = remember(days) { days.associateBy { it.date } }
     val firstDate = days.first().date
     // Сетка начинается с понедельника той недели, в которую попадает первый день.
     val gridStart = firstDate.minus(DatePeriod(days = firstDate.dayOfWeek.isoDayNumber - 1))
+    // WHY: колонок ровно столько, сколько нужно, чтобы дойти до сегодняшнего дня.
+    // Раньше было жёстко 53, а сетка отсчитывалась от понедельника первой недели —
+    // из-за этого последние 1-6 дней (вплоть до сегодня) не рисовались вообще,
+    // и карта выглядела «застрявшей» на середине месяца.
+    val leadDays = firstDate.dayOfWeek.isoDayNumber - 1
+    val totalCells = days.size + leadDays
+    val columns = (totalCells + rows - 1) / rows
     // Пороги уровней считаются по фактическому разбросу: один рекордный день
     // больше не делает все остальные дни бледными.
     val thresholds = remember(days) { heatThresholds(days) }
@@ -977,9 +992,10 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
                     .padding(top = 4.dp)
                     .fillMaxWidth(),
         )
-        // WHY: размер ячейки вычисляется от доступной ширины, поэтому сетка
-        // 53 недели всегда влезает в окно и растёт вместе с ним (раньше был
-        // жёсткий 12.dp и на узком окне карта обрезалась).
+        // WHY: на десктопе сетка растягивается по ширине окна, а на телефоне
+        // 53 недели физически не влезают — поэтому ниже минимальный размер
+        // ячейки (9.dp), а сама сетка прокручивается по горизонтали и стартует
+        // прокрученной к сегодняшнему дню.
         BoxWithConstraints(
             modifier =
                 Modifier
@@ -987,49 +1003,64 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
                     .fillMaxWidth(),
             contentAlignment = Alignment.Center,
         ) {
-            val cell = ((maxWidth - gap * (columns - 1)) / columns).coerceIn(4.dp, 16.dp)
+            val cell = ((maxWidth - gap * (columns - 1)) / columns).coerceIn(9.dp, 16.dp)
             val gridWidth = cell * columns + gap * (columns - 1)
             val gridHeight = cell * rows + gap * (rows - 1)
             val stepPx = with(density) { (cell + gap).toPx() }
             val gapPx = with(density) { gap.toPx() }
+            val scrollState = rememberScrollState()
+
+            // Показываем правый край сетки — там сегодняшний день.
+            LaunchedEffect(gridWidth, scrollState.maxValue) {
+                scrollState.scrollTo(scrollState.maxValue)
+            }
 
             Box(
                 modifier =
                     Modifier
-                        .size(gridWidth, gridHeight)
-                        .onHoverMove(
-                            onMove = { offset ->
-                                val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
-                                val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
-                                val date = gridStart.plus(DatePeriod(days = column * rows + row))
-                                hovered =
-                                    activityByDate[date]
-                                        ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
-                            },
-                            onExit = { hovered = null },
-                        )
-                        .drawBehind {
-                            val cellPx = (size.width - gapPx * (columns - 1)) / columns
-                            for (column in 0 until columns) {
-                                for (row in 0 until rows) {
+                        .fillMaxWidth()
+                        .horizontalScroll(scrollState),
+            ) {
+                Box(
+                    modifier =
+                        Modifier
+                            .size(gridWidth, gridHeight)
+                            .onHoverMove(
+                                onMove = { offset ->
+                                    val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
+                                    val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
                                     val date = gridStart.plus(DatePeriod(days = column * rows + row))
-                                    val plays = activityByDate[date]?.plays ?: 0
-                                    val level = heatLevel(plays, thresholds)
-                                    val color =
-                                        if (level <= 0f) {
-                                            emptyColor
-                                        } else {
-                                            accent.copy(alpha = level)
-                                        }
-                                    drawRect(
-                                        color = color,
-                                        topLeft = Offset(column * (cellPx + gapPx), row * (cellPx + gapPx)),
-                                        size = Size(cellPx, cellPx),
-                                    )
+                                    hovered =
+                                        activityByDate[date]
+                                            ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
+                                },
+                                onExit = { hovered = null },
+                            )
+                            .drawBehind {
+                                val cellPx = (size.width - gapPx * (columns - 1)) / columns
+                                for (column in 0 until columns) {
+                                    for (row in 0 until rows) {
+                                        val index = column * rows + row
+                                        if (index >= totalCells) continue
+                                        val date = gridStart.plus(DatePeriod(days = index))
+                                        val plays = activityByDate[date]?.plays ?: 0
+                                        val level = heatLevel(plays, thresholds)
+                                        val color =
+                                            if (level <= 0f) {
+                                                emptyColor
+                                            } else {
+                                                accent.copy(alpha = level)
+                                            }
+                                        drawRect(
+                                            color = color,
+                                            topLeft = Offset(column * (cellPx + gapPx), row * (cellPx + gapPx)),
+                                            size = Size(cellPx, cellPx),
+                                        )
+                                    }
                                 }
-                            }
-                        },
-            )
+                            },
+                )
+            }
         }
         Row(
             modifier = Modifier.padding(top = 8.dp),
