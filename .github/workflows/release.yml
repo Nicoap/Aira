@@ -364,7 +364,7 @@ jobs:
       - name: Собрать DMG в корень
         run: |
           set -euo pipefail
-          find desktopApp/build/compose/binaries -name '*.dmg' -exec cp -v {} ./ +
+          while IFS= read -r dmg; do cp -v "$dmg" .; done < <(find desktopApp/build/compose/binaries -name '*.dmg')
           ls -lh ./*.dmg
 
       - uses: actions/upload-artifact@v4
