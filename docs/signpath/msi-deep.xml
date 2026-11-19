@@ -8,6 +8,11 @@
     2) сам Aira-*.msi — чтобы Windows доверял установщику и SmartScreen
        не показывал «неизвестный издатель».
 
+  Атрибут product-name — требование SignPath Foundation: подписываемые
+  бинарники обязаны иметь проверяемое имя продукта, совпадающее с именем
+  проекта (jpackage берёт его из `packageName = "Aira"` в
+  desktopApp/build.gradle.kts).
+
   Как подключить:
     1. В SignPath откройте проект Aira → Artifact Configurations → New.
     2. Slug: msi-deep (именно так он назван в .github/workflows/release.yml).
@@ -16,7 +21,7 @@
 <artifact-configuration xmlns="http://signpath.io/artifact-configuration/v1">
   <msi-file path="*.msi">
     <!-- лончер приложения внутри установщика -->
-    <pe-file path="Aira.exe">
+    <pe-file path="Aira.exe" product-name="Aira">
       <authenticode-sign />
     </pe-file>
     <!-- сам установщик -->

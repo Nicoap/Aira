@@ -393,6 +393,19 @@ Real, code-verified optimizations, not aspirational claims:
 - Contribution to the community lyrics database is **strictly opt-in** and disabled by default.
 - The self-hosted lyrics backend (Cloudflare Workers) only receives lyrics-related requests (fetch/vote/contribute) — it is a separate project from the app itself and does not proxy general YouTube Music traffic.
 
+## Code signing policy
+
+Free code signing provided by [SignPath.io](https://about.signpath.io), certificate by [SignPath Foundation](https://signpath.org).
+
+Windows releases (the `.msi` installer and the `Aira.exe` launcher inside it) are built on GitHub-hosted runners by [`.github/workflows/release.yml`](.github/workflows/release.yml) and signed through SignPath. Every signing request is approved by a project member before the signature is issued.
+
+- Committers and reviewers: [Nicoap](https://github.com/Nicoap) (repository owner)
+- Approvers: [Nicoap](https://github.com/Nicoap)
+
+Privacy: this program will not transfer any information to other networked systems unless specifically requested by the user or the person installing or operating it. See [Privacy](#privacy) for the full breakdown, including the optional Sentry crash reports and the opt-in lyrics contribution.
+
+Full policy, including what is and is not signed and how to verify a signature: [`docs/CODE_SIGNING_POLICY.md`](docs/CODE_SIGNING_POLICY.md).
+
 ## Roadmap
 
 Sourced directly from `// TODO` markers currently present in the codebase — nothing here is invented:
