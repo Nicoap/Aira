@@ -2971,23 +2971,22 @@ class JvmMediaPlayerHandlerImpl(
 
     private fun reorderShuffledQueue(list: List<GenericMediaItem>) {
         val listTrack = queueData.value.data.listTracks
-        Logger.d(TAG, "Reordering shuffled queue: SIZE ${list.size}, TITLE ${list.map { it.mediaId }}")
-        list
-            .mapNotNull {
-                listTrack.firstOrNull { track -> track.videoId == it.mediaId }
-            }.let { sorted ->
-                Logger.d(TAG, "Reordered shuffled queue: SIZE ${sorted.size}, TITLE ${sorted.map { it.title }}")
-                Logger.d(TAG, "Original queue: SIZE ${listTrack.size}, TITLE ${listTrack.map { it.title }}")
-                if (sorted.size != listTrack.size) return
-                _queueData.update {
-                    it.copy(
-                        data =
-                            it.data.copy(
-                                listTracks = sorted,
-                            ),
-                    )
-                }
-            }
+        // Restoring a long queue reports the playlist once per added item. The old code searched the queue for
+        // every item (n squared) and logged every title each time, which was most of the start-up CPU time.
+        if (list.size == listTrack.size && list.indices.all { list[it].mediaId == listTrack[it].videoId }) return
+        // asReversed: on duplicate ids the first occurrence wins, as it did with firstOrNull
+        val byId = listTrack.asReversed().associateBy { it.videoId }
+        val sorted = list.mapNotNull { byId[it.mediaId] }
+        Logger.d(TAG, "Reordering shuffled queue: ${list.size} in the player, ${listTrack.size} in the queue, ${sorted.size} matched")
+        if (sorted.size != listTrack.size) return
+        _queueData.update {
+            it.copy(
+                data =
+                    it.data.copy(
+                        listTracks = sorted,
+                    ),
+            )
+        }
     }
 
     /**
