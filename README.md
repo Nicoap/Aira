@@ -385,6 +385,9 @@ Real, code-verified optimizations, not aspirational claims:
 
 ## Privacy
 
+The full privacy policy, including every destination the app can talk to, is in
+[docs/PRIVACY.md](docs/PRIVACY.md).
+
 - **No analytics or telemetry are collected by the app itself.**
 - Crash reporting is powered by [Sentry](https://sentry.io) and is **opt-out at the build level**: the `crashlytics-empty` module is a drop-in, no-op replacement for the Sentry-backed `crashlytics` module, for anyone who wants a build with zero outbound diagnostic traffic.
 - Login to YouTube, Discord, or Spotify is entirely **cookie/token-based and local** — Aira does not run its own OAuth backend or proxy your credentials through a third-party server.
