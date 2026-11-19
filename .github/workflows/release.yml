@@ -397,16 +397,25 @@ jobs:
       - name: VLC natives (Linux x64)
         run: ./gradlew :composeApp:vlcSetupLinuxCi --no-configuration-cache
 
-      - name: Собрать AppImage
+      - name: Собрать Linux-дистрибутив
         run: ./gradlew :desktopApp:packageAppImage --no-configuration-cache --console=plain
 
-      - name: Список собранных образов
-        run: find desktopApp/build/compose/binaries -name '*.AppImage' -exec ls -lh {} +
+      # jpackage на Linux выдаёт распакованный образ приложения в
+      # desktopApp/build/compose/binaries/main/app — однофайловый .AppImage он
+      # не собирает, поэтому упаковываем каталог в переносимый tar.gz.
+      - name: Упаковать в tar.gz
+        run: |
+          set -euo pipefail
+          APP_DIR="desktopApp/build/compose/binaries/main/app"
+          test -d "$APP_DIR" || { echo "::error::нет каталога $APP_DIR"; exit 1; }
+          ls -lh "$APP_DIR"
+          tar -czf "Aira-${{ needs.resolve-version.outputs.version }}-linux-x64.tar.gz" -C "$APP_DIR" .
+          ls -lh Aira-*-linux-x64.tar.gz
 
       - uses: actions/upload-artifact@v4
         with:
-          name: desktop-appimage
-          path: desktopApp/build/compose/binaries/**/*.AppImage
+          name: desktop-linux
+          path: Aira-*-linux-x64.tar.gz
           if-no-files-found: error
 
   # ---------------------------------------------------------------------------
@@ -435,7 +444,7 @@ jobs:
 
       - uses: actions/download-artifact@v4
         with:
-          name: desktop-appimage
+          name: desktop-linux
           path: release-assets/linux
 
       - name: Опубликовать GitHub Release
@@ -454,7 +463,7 @@ jobs:
 
             **macOS:** скачай `.dmg` (сборка под Apple Silicon). Сборка не подписана сертификатом Apple, поэтому при первом запуске: правый клик по приложению → «Открыть», либо `xattr -dr com.apple.quarantine /Applications/Aira.app`.
 
-            **Linux:** скачай `.AppImage`, затем `chmod +x Aira-*.AppImage` и запусти.
+            **Linux:** скачай `.tar.gz`, распакуй (`tar -xzf Aira-*-linux-x64.tar.gz`) и запусти `bin/Aira` из полученного каталога.
 
             **Android:** скачай APK под своё устройство; если не уверен — `Aira-universal.apk`.
 
@@ -465,7 +474,7 @@ jobs:
             release-assets/android/*.apk
             release-assets/desktop/*.msi
             release-assets/macos/*.dmg
-            release-assets/linux/*.AppImage
+            release-assets/linux/*.tar.gz
 
   # ---------------------------------------------------------------------------
   # Verify — после публикации проверяем через API, что все ассеты релиза
@@ -511,7 +520,7 @@ jobs:
 
           # macOS/Linux: точное имя генерирует jpackage, поэтому проверяем по
           # расширению, а не по шаблону Aira-<version>.
-          for suffix in ".dmg" ".AppImage"; do
+          for suffix in ".dmg" ".tar.gz"; do
             ASSET=$(echo "$JSON" | jq -r --arg s "$suffix" \
               '[.assets[] | select(.name | endswith($s))][0].name // empty')
             SIZE=$(echo "$JSON" | jq -r --arg s "$suffix" \
