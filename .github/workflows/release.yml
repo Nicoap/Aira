@@ -182,7 +182,11 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
         run: |
           FULL_BUILD=true
-          ./gradlew androidApp:assembleRelease --no-configuration-cache -PisFullBuild=$FULL_BUILD
+          # --stacktrace: упаковка APK иногда падает внутри
+          # IncrementalSplitterRunnable без единой строки причины, и без
+          # стектрейса в логе нечего читать.
+          ./gradlew androidApp:assembleRelease --no-configuration-cache \
+            -PisFullBuild=$FULL_BUILD --stacktrace
 
       - name: Проверить подписи и переименовать APK
         shell: bash
