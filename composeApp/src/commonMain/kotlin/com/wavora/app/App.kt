@@ -58,7 +58,6 @@ import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.window.core.layout.WindowSizeClass.Companion.WIDTH_DP_MEDIUM_LOWER_BOUND
-import coil3.toUri
 import com.wavora.domain.model.player.GenericMediaItem
 import com.wavora.domain.manager.DataStoreManager
 import com.wavora.domain.manager.DataStoreManager.Values.TRUE
@@ -259,23 +258,24 @@ fun App(
         val data = intent.data
         Logger.d("MainActivity", "onCreate: $data")
         if (data != null) {
-            if (data == "wavora://notification".toUri()) {
+            if (data.host == "notification" && (data.scheme == "aira" || data.scheme == "wavora")) {
                 viewModel.setIntent(null)
                 navController.navigate(
                     NotificationDestination,
                 )
-            } else if (data.host == "wavora.org" || data.scheme == "wavora") {
+            } else if (data.host == "wavora.org" || data.scheme == "aira" || data.scheme == "wavora") {
                 // https://wavora.org/app/watch?v=VIDEO_ID
                 // https://wavora.org/app/playlist?list=PLAYLIST_ID
                 // https://wavora.org/app/channel/CHANNEL_ID
-                // wavora://watch?v=VIDEO_ID  (host="watch", no path)
-                // wavora://playlist?list=PLAYLIST_ID
-                // wavora://channel/CHANNEL_ID
+                // aira://watch?v=VIDEO_ID  (host="watch", no path)
+                // aira://playlist?list=PLAYLIST_ID
+                // aira://channel/CHANNEL_ID
                 val segments = data.pathSegments
                 // For wavora.org: segments = ["app", "watch"] → appPath = segments[1]
-                // For wavora://: host IS the appPath (e.g. host="watch"), segments = []
+                // For aira://: host IS the appPath (e.g. host="watch"), segments = []
+                val isAppScheme = data.scheme == "aira" || data.scheme == "wavora"
                 val appPath =
-                    if (data.scheme == "wavora") {
+                    if (isAppScheme) {
                         data.host
                     } else {
                         segments.getOrNull(1)
@@ -302,10 +302,10 @@ fun App(
                     }
 
                     "channel", "c" -> {
-                        // wavora://channel/UCxxx → segments = ["UCxxx"]
+                        // aira://channel/UCxxx → segments = ["UCxxx"]
                         // wavora.org/app/channel/UCxxx → segments = ["app", "channel", "UCxxx"]
                         val artistId =
-                            if (data.scheme == "wavora") {
+                            if (isAppScheme) {
                                 segments.firstOrNull()
                             } else {
                                 segments.getOrNull(2)

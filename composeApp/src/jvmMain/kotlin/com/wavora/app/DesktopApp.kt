@@ -220,7 +220,8 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     // Note: macOS does NOT pass URI as args — it uses Apple Events via setOpenURIHandler
     val deepLinkArg =
         args.firstOrNull()?.takeIf { arg ->
-            arg.startsWith("wavora://") || arg.startsWith("http://") || arg.startsWith("https://")
+            arg.startsWith("aira://") || arg.startsWith("wavora://") ||
+                arg.startsWith("http://") || arg.startsWith("https://")
         }
     // Single-instance guard — MUST run before startKoin. The DataStore Koin
     // singleton is `createdAtStart`, so a second Windows instance would touch
@@ -403,7 +404,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
                             getKoin().get<PlayerSessionAdapter>().reportError(error)
                         }
 
-                        // Register wavora:// protocol handler on Windows (HKCU, no admin needed)
+                        // Register aira:// protocol handler on Windows (HKCU, no admin needed)
                         com.wavora.app.diagnostics.StartupTiming.begin("WindowsProtocolRegistrar.register()")
                         WindowsProtocolRegistrar.register()
                         com.wavora.app.diagnostics.StartupTiming.end("WindowsProtocolRegistrar.register()")

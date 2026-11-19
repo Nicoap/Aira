@@ -331,6 +331,7 @@ compose.desktop {
                             <string>com.wavora.app.deeplink</string>
                             <key>CFBundleURLSchemes</key>
                             <array>
+                                <string>aira</string>
                                 <string>wavora</string>
                             </array>
                         </dict>

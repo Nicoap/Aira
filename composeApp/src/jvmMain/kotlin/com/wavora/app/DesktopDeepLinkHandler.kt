@@ -14,18 +14,21 @@ import java.io.File
  * and the first instance reads it on restore.
  *
  * Supported URI patterns:
- * - wavora://open-app?url=<encoded_url>  (redirected from website)
- * - wavora://watch?v=VIDEO_ID            (direct scheme)
- * - wavora://playlist?list=PLAYLIST_ID   (direct scheme)
- * - wavora://channel/CHANNEL_ID          (direct scheme)
- * - wavora://album?id=ALBUM_ID           (direct scheme)
+ * - aira://open-app?url=<encoded_url>   (redirected from website)
+ * - aira://watch?v=VIDEO_ID             (direct scheme)
+ * - aira://playlist?list=PLAYLIST_ID    (direct scheme)
+ * - aira://channel/CHANNEL_ID           (direct scheme)
+ * - aira://album?id=ALBUM_ID            (direct scheme)
  * - https://wavora.org/app/...            (web URL passed via args)
+ *
+ * The legacy `wavora://` scheme is still accepted so links issued before the
+ * rename keep working.
  */
 object DesktopDeepLinkHandler {
     private const val TAG = "DesktopDeepLinkHandler"
 
     private val pendingUriFile: File by lazy {
-        File(System.getProperty("java.io.tmpdir"), "wavora_pending_deeplink.txt")
+        File(System.getProperty("java.io.tmpdir"), "aira_pending_deeplink.txt")
     }
 
     private var cached: String? = null
@@ -103,33 +106,34 @@ object DesktopDeepLinkHandler {
      */
     private fun parseToIntent(uri: String): GenericIntent {
         val parsed = Uri.parse(uri)
+        val isAppScheme = parsed.scheme == "aira" || parsed.scheme == "wavora"
 
         val actualUri = when {
-            // wavora://open-app?url=<encoded_url>
-            parsed.scheme == "wavora" && parsed.host == "open-app" -> {
+            // aira://open-app?url=<encoded_url>
+            isAppScheme && parsed.host == "open-app" -> {
                 val urlParam = parsed.getQueryParameter("url")
                 if (urlParam != null) {
                     Logger.d(TAG, "Extracted URL from open-app: $urlParam")
                     Uri.parse(urlParam)
                 } else {
-                    // wavora://open-app without params → just open the app, no navigation
+                    // aira://open-app without params → just open the app, no navigation
                     Logger.d(TAG, "open-app without URL param, just opening app")
                     null
                 }
             }
 
-            // wavora://watch?v=xxx → https://wavora.org/app/watch?v=xxx
-            // wavora://playlist?list=xxx → https://wavora.org/app/playlist?list=xxx
-            // wavora://channel/UCxxx → https://wavora.org/app/channel/UCxxx
-            // wavora://album?id=xxx → https://wavora.org/app/album?id=xxx
-            parsed.scheme == "wavora" && parsed.host != null -> {
+            // aira://watch?v=xxx → https://wavora.org/app/watch?v=xxx
+            // aira://playlist?list=xxx → https://wavora.org/app/playlist?list=xxx
+            // aira://channel/UCxxx → https://wavora.org/app/channel/UCxxx
+            // aira://album?id=xxx → https://wavora.org/app/album?id=xxx
+            isAppScheme && parsed.host != null -> {
                 val host = parsed.host!!
                 val query = parsed.query?.let { "?$it" } ?: ""
                 val pathSuffix = parsed.pathSegments.joinToString("/").let {
                     if (it.isNotEmpty()) "/$it" else ""
                 }
                 val convertedUrl = "https://wavora.org/app/$host$pathSuffix$query"
-                Logger.d(TAG, "Converted wavora:// to: $convertedUrl")
+                Logger.d(TAG, "Converted ${parsed.scheme}:// to: $convertedUrl")
                 Uri.parse(convertedUrl)
             }
 

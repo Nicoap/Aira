@@ -33,7 +33,7 @@ object NotificationHandler {
         //  No back-stack when launched
         val action = Intent(context, MainActivity::class.java)
         action.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        action.data = "wavora://notification".toUri()
+        action.data = "aira://notification".toUri()
         val pendingIntent =
             PendingIntent.getActivity(
                 context,
@@ -77,7 +77,7 @@ object NotificationHandler {
         val builder =
             NotificationCompat
                 .Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification_w)
+                .setSmallIcon(R.drawable.ic_notification_aira)
                 .setContentTitle(noti.name)
                 .setContentText(
                     if (noti.single.isNotEmpty()) {

@@ -3,6 +3,7 @@ package com.wavora.app.ui.screen.home.analytics
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -146,6 +147,13 @@ fun AnalyticsScreen(
     val screenSizeInfo = getScreenSizeInfo()
     val uiState by analyticsViewModel.analyticsUIState.collectAsStateWithLifecycle()
     val playingTrack by sharedViewModel.nowPlayingState.map { it?.track?.videoId }.collectAsState(null)
+
+    // Окно тепловой карты считается от текущей даты, поэтому при каждом входе
+    // на экран данные перезапрашиваются: иначе новые дни не появлялись без
+    // перезапуска приложения.
+    LaunchedEffect(Unit) {
+        analyticsViewModel.refreshDailyActivity()
+    }
 
     var currentItem by remember {
         mutableStateOf<SongEntity?>(null)
@@ -913,7 +921,6 @@ VerticalScrollBar(modifier = Modifier.align(Alignment.CenterEnd), scrollState = 
 @OptIn(ExperimentalComposeUiApi::class)
 @Composable
 private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>) {
-    val cell = 12.dp
     val gap = 3.dp
     val columns = 53
     val rows = 7
@@ -922,18 +929,15 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
     val firstDate = days.first().date
     // Сетка начинается с понедельника той недели, в которую попадает первый день.
     val gridStart = firstDate.minus(DatePeriod(days = firstDate.dayOfWeek.isoDayNumber - 1))
-    val maxPlays = (days.maxOfOrNull { it.plays } ?: 0).coerceAtLeast(1)
+    // Пороги уровней считаются по фактическому разбросу: один рекордный день
+    // больше не делает все остальные дни бледными.
+    val thresholds = remember(days) { heatThresholds(days) }
 
     var hovered by remember { mutableStateOf<AnalyticsUiState.DailyActivity?>(null) }
 
     val emptyColor = MaterialTheme.colorScheme.surfaceVariant
     val accent = MaterialTheme.colorScheme.primary
     val density = LocalDensity.current
-    val stepPx = with(density) { (cell + gap).toPx() }
-    val cellPx = with(density) { cell.toPx() }
-    val gapPx = with(density) { gap.toPx() }
-    val gridWidth = cell * columns + gap * (columns - 1)
-    val gridHeight = cell * rows + gap * (rows - 1)
 
     Column(
         modifier =
@@ -973,43 +977,60 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
                     .padding(top = 4.dp)
                     .fillMaxWidth(),
         )
-        Box(
+        // WHY: размер ячейки вычисляется от доступной ширины, поэтому сетка
+        // 53 недели всегда влезает в окно и растёт вместе с ним (раньше был
+        // жёсткий 12.dp и на узком окне карта обрезалась).
+        BoxWithConstraints(
             modifier =
                 Modifier
                     .padding(top = 10.dp)
-                    .size(gridWidth, gridHeight)
-                    .onHoverMove(
-                        onMove = { offset ->
-                            val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
-                            val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
-                            val date = gridStart.plus(DatePeriod(days = column * rows + row))
-                            hovered =
-                                activityByDate[date]
-                                    ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
-                        },
-                        onExit = { hovered = null },
-                    )
-                    .drawBehind {
-                        for (column in 0 until columns) {
-                            for (row in 0 until rows) {
+                    .fillMaxWidth(),
+            contentAlignment = Alignment.Center,
+        ) {
+            val cell = ((maxWidth - gap * (columns - 1)) / columns).coerceIn(4.dp, 16.dp)
+            val gridWidth = cell * columns + gap * (columns - 1)
+            val gridHeight = cell * rows + gap * (rows - 1)
+            val stepPx = with(density) { (cell + gap).toPx() }
+            val gapPx = with(density) { gap.toPx() }
+
+            Box(
+                modifier =
+                    Modifier
+                        .size(gridWidth, gridHeight)
+                        .onHoverMove(
+                            onMove = { offset ->
+                                val column = (offset.x / stepPx).toInt().coerceIn(0, columns - 1)
+                                val row = (offset.y / stepPx).toInt().coerceIn(0, rows - 1)
                                 val date = gridStart.plus(DatePeriod(days = column * rows + row))
-                                val plays = activityByDate[date]?.plays ?: 0
-                                val level = heatLevel(plays, maxPlays)
-                                val color =
-                                    if (level <= 0f) {
-                                        emptyColor
-                                    } else {
-                                        accent.copy(alpha = level)
-                                    }
-                                drawRect(
-                                    color = color,
-                                    topLeft = Offset(column * (cellPx + gapPx), row * (cellPx + gapPx)),
-                                    size = Size(cellPx, cellPx),
-                                )
+                                hovered =
+                                    activityByDate[date]
+                                        ?: AnalyticsUiState.DailyActivity(date = date, plays = 0, seconds = 0L)
+                            },
+                            onExit = { hovered = null },
+                        )
+                        .drawBehind {
+                            val cellPx = (size.width - gapPx * (columns - 1)) / columns
+                            for (column in 0 until columns) {
+                                for (row in 0 until rows) {
+                                    val date = gridStart.plus(DatePeriod(days = column * rows + row))
+                                    val plays = activityByDate[date]?.plays ?: 0
+                                    val level = heatLevel(plays, thresholds)
+                                    val color =
+                                        if (level <= 0f) {
+                                            emptyColor
+                                        } else {
+                                            accent.copy(alpha = level)
+                                        }
+                                    drawRect(
+                                        color = color,
+                                        topLeft = Offset(column * (cellPx + gapPx), row * (cellPx + gapPx)),
+                                        size = Size(cellPx, cellPx),
+                                    )
+                                }
                             }
-                        }
-                    },
-        )
+                        },
+            )
+        }
         Row(
             modifier = Modifier.padding(top = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
@@ -1024,7 +1045,7 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
                     modifier =
                         Modifier
                             .padding(horizontal = 2.dp)
-                            .size(cell)
+                            .size(12.dp)
                             .background(if (level <= 0f) emptyColor else accent.copy(alpha = level)),
                 )
             }
@@ -1037,17 +1058,28 @@ private fun ListeningActivityHeatmap(days: List<AnalyticsUiState.DailyActivity>)
     }
 }
 
+/**
+ * Три границы уровней по квантилям активных дней (25 %, 50 %, 75 %).
+ * Пустая история трактуется как «любое прослушивание — максимальный уровень».
+ */
+private fun heatThresholds(days: List<AnalyticsUiState.DailyActivity>): List<Int> {
+    val values = days.map { it.plays }.filter { it > 0 }.sorted()
+    if (values.isEmpty()) return listOf(1, 1, 1)
+    return listOf(0.25f, 0.5f, 0.75f).map { quantile ->
+        values[((values.size - 1) * quantile).toInt().coerceIn(0, values.lastIndex)].coerceAtLeast(1)
+    }
+}
+
 /** Пять уровней интенсивности, как у GitHub: от пустого дня до самого активного. */
 private fun heatLevel(
     plays: Int,
-    maxPlays: Int,
+    thresholds: List<Int>,
 ): Float {
     if (plays <= 0) return 0f
-    val ratio = plays.toFloat() / maxPlays.coerceAtLeast(1)
     return when {
-        ratio <= 0.25f -> 0.25f
-        ratio <= 0.5f -> 0.45f
-        ratio <= 0.75f -> 0.7f
+        plays <= thresholds[0] -> 0.25f
+        plays <= thresholds[1] -> 0.45f
+        plays <= thresholds[2] -> 0.7f
         else -> 1f
     }
 }

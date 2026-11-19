@@ -50,7 +50,6 @@ class AnalyticsViewModel(
         getArtistCount()
         getTotalListenTime()
         getRecentlyRecord()
-        getDailyActivity()
         viewModelScope.launch {
             val saved = dataStoreManager.getString(ANALYTICS_DAY_RANGE_KEY).firstOrNull()
             val dayRange = saved?.let {
@@ -58,6 +57,7 @@ class AnalyticsViewModel(
             } ?: AnalyticsUiState.DayRange.LAST_7_DAYS
             _analyticsUIState.update { it.copy(dayRange = dayRange) }
             getDataForDayRange(dayRange)
+            refreshDailyActivity()
         }
     }
 
@@ -75,8 +75,12 @@ class AnalyticsViewModel(
      * успело проиграть 20 %, поэтому почти ничего не попадало в базу. Теперь события
      * пишутся накопленным временем, а здесь они один раз группируются по дням —
      * один запрос в БД на весь диапазон вместо запроса на каждый день.
+     *
+     * Вызывается при создании ViewModel и повторно с экрана статистики: окно
+     * считается от текущей даты, поэтому новые дни появляются без перезапуска
+     * приложения.
      */
-    private fun getDailyActivity() {
+    fun refreshDailyActivity() {
         viewModelScope.launch {
             val zone = TimeZone.currentSystemDefault()
             val today = now().date

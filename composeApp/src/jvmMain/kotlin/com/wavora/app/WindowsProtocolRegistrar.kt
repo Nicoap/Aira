@@ -5,12 +5,12 @@ import com.sun.jna.platform.win32.WinReg
 import com.wavora.logger.Logger
 
 /**
- * Registers the "wavora://" custom URI protocol handler in Windows Registry
+ * Registers the "aira://" custom URI protocol handler in Windows Registry
  * under HKEY_CURRENT_USER (no admin rights required).
  *
  * Registry structure:
  * ```
- * HKCU\Software\Classes\wavora
+ * HKCU\Software\Classes\aira
  *     (Default) = "URL:Aira Protocol"
  *     URL Protocol = ""
  *     \DefaultIcon
@@ -19,14 +19,18 @@ import com.wavora.logger.Logger
  *         (Default) = "\"<exe_path>\" \"%1\""
  * ```
  *
+ * The legacy `wavora` key from pre-1.0.2 builds is removed on registration.
+ *
  * Writes go through Advapi32 (JNA) directly instead of spawning
  * `cmd.exe /c reg add`, so no console window flashes on startup.
  */
 object WindowsProtocolRegistrar {
     private const val TAG = "WindowsProtocolRegistrar"
-    private const val SCHEME = "wavora"
+    private const val SCHEME = "aira"
+    private const val LEGACY_SCHEME = "wavora"
     private const val REG_ROOT = "Software\\Classes\\$SCHEME"
     private const val COMMAND_KEY = "$REG_ROOT\\shell\\open\\command"
+    private const val LEGACY_ROOT = "Software\\Classes\\$LEGACY_SCHEME"
 
     /** Launcher names to look for next to the bundled runtime, newest first. */
     private val EXE_CANDIDATES = listOf("Aira.exe", "Wavora.exe")
@@ -50,10 +54,11 @@ object WindowsProtocolRegistrar {
         try {
             if (isAlreadyRegistered(exePath)) {
                 Logger.d(TAG, "Protocol handler already registered with correct path")
+                removeLegacyKey()
                 return
             }
 
-            Logger.d(TAG, "Registering wavora:// protocol handler -> $exePath")
+            Logger.d(TAG, "$SCHEME:// protocol handler -> $exePath")
 
             // Main key with protocol description
             setString(REG_ROOT, "", "URL:Aira Protocol")
@@ -65,9 +70,23 @@ object WindowsProtocolRegistrar {
             // shell\open\command
             setString(COMMAND_KEY, "", "\"$exePath\" \"%1\"")
 
+            removeLegacyKey()
+
             Logger.d(TAG, "Protocol handler registered successfully")
         } catch (e: Exception) {
             Logger.e(TAG, "Failed to register protocol handler: ${e.message}")
+        }
+    }
+
+    /** Drops the `wavora://` handler left behind by earlier builds. */
+    private fun removeLegacyKey() {
+        try {
+            if (Advapi32Util.registryKeyExists(WinReg.HKEY_CURRENT_USER, LEGACY_ROOT)) {
+                Advapi32Util.registryDeleteKey(WinReg.HKEY_CURRENT_USER, LEGACY_ROOT)
+                Logger.d(TAG, "Removed legacy $LEGACY_SCHEME:// protocol handler")
+            }
+        } catch (e: Exception) {
+            Logger.e(TAG, "Failed to remove legacy protocol handler: ${e.message}")
         }
     }
 
