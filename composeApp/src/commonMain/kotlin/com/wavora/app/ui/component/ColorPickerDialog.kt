@@ -62,7 +62,7 @@ fun ColorPickerDialog(
     onDismiss: () -> Unit,
     onConfirm: (String) -> Unit,
 ) {
-    val startColor = remember(initialHex) { parseHexColor(initialHex) ?: Color(0xFFA259FF) }
+    val startColor = remember(initialHex) { parseHexColor(initialHex) ?: Color(0xFFFDC5E2) }
     val startHsv = remember(startColor) { startColor.toHsv() }
     var hue by remember { mutableFloatStateOf(startHsv[0]) }
     var saturation by remember { mutableFloatStateOf(startHsv[1]) }

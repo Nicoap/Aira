@@ -95,7 +95,7 @@ fun MiniPlayerWindow(
 
     val dataStoreManager: DataStoreManager = koinInject()
     val themeMode by dataStoreManager.themeMode.collectAsState(DataStoreManager.THEME_MODE_DARK)
-    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsState("#A259FF")
+    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsState("#FDC5E2")
     val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsState("auto")
     val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsState("auto")
     val themeTextColor by dataStoreManager.themeTextColor.collectAsState("auto")

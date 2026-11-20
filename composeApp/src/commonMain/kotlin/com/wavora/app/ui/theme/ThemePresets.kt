@@ -41,7 +41,7 @@ val WavoraThemePresets =
             background = "#0B0B0B",
             surface = "#131313",
             text = "#F2F2F2",
-            primary = "#A259FF",
+            primary = "#FDC5E2",
         ),
         WavoraThemePreset(
             id = "midnight",

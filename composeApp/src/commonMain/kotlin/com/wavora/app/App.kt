@@ -28,6 +28,7 @@ import androidx.compose.material.icons.automirrored.rounded.ArrowForwardIos
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -196,7 +197,7 @@ fun App(
     val isTranslucentBottomBar by viewModel.getTranslucentBottomBar().collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val isLiquidGlassEnabled by viewModel.getEnableLiquidGlass().collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val themeMode by themeSettings.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
-    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
+    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsStateWithLifecycle("#FDC5E2")
     val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsStateWithLifecycle("auto")
     val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsStateWithLifecycle("auto")
     val themeTextColor by themeSettings.themeTextColor.collectAsStateWithLifecycle("auto")
@@ -1053,7 +1054,7 @@ fun App(
                                 Text(
                                     "💜 " + stringResource(Res.string.support_wavora_button),
                                     style = LocalAppTypography.current.bodySmall.copy(
-                                        color = Color(0xFFA259FF),
+                                        color = MaterialTheme.colorScheme.primary,
                                         fontWeight = FontWeight.Bold,
                                     ),
                                 )
@@ -1083,7 +1084,7 @@ fun App(
                                 Text(
                                     "boosty.to/nicoqw/donate",
                                     style = LocalAppTypography.current.bodySmall.copy(
-                                        color = Color(0xFF00D4FF),
+                                        color = MaterialTheme.colorScheme.primary,
                                         textDecoration = TextDecoration.Underline,
                                     ),
                                 )

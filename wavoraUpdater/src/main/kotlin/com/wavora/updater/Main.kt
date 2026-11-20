@@ -60,9 +60,9 @@ private const val MANUAL_DOWNLOAD_URL = "https://github.com/Nicoap/Aira/releases
 // why this module stays standalone). Keep in sync by eye if the palette in
 // composeApp/src/commonMain/kotlin/com/wavora/app/ui/theme/Color.kt changes. =====
 private val wavoraBackground = Color(0xFF0B0B0F)
-private val wavoraPrimary = Color(0xFFA259FF)
-private val wavoraGradientMid = Color(0xFF6A5CFF)
-private val wavoraGradientEnd = Color(0xFF00D4FF)
+private val wavoraPrimary = Color(0xFFFDC5E2)
+private val wavoraGradientMid = Color(0xFFEFA8D8)
+private val wavoraGradientEnd = Color(0xFFC9A7FF)
 private val wavoraTextSecondary = Color(0xFFB3B3C6)
 private val wavoraBorder = Color(0xFF1F1F2E)
 

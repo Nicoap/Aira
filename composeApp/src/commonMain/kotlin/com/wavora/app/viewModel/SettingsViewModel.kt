@@ -201,7 +201,7 @@ class SettingsViewModel(
     val discordRpcSmallImageUrl: StateFlow<String> = _discordRpcSmallImageUrl
     private val _themeMode = MutableStateFlow(DataStoreManager.THEME_MODE_DARK)
     val themeMode: StateFlow<String> = _themeMode
-    private val _themePrimaryColor = MutableStateFlow("#A259FF")
+    private val _themePrimaryColor = MutableStateFlow("#FDC5E2")
     val themePrimaryColor: StateFlow<String> = _themePrimaryColor
     private val _themeBackgroundColor = MutableStateFlow("auto")
     val themeBackgroundColor: StateFlow<String> = _themeBackgroundColor

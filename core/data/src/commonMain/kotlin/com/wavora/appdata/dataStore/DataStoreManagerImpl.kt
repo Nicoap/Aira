@@ -1625,7 +1625,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val themePrimaryColor: Flow<String> =
-        settingsDataStore.data.map { it[THEME_PRIMARY_COLOR] ?: "#A259FF" }
+        settingsDataStore.data.map { it[THEME_PRIMARY_COLOR] ?: "#FDC5E2" }
 
     override suspend fun setThemePrimaryColor(color: String) {
         withContext(Dispatchers.IO) {

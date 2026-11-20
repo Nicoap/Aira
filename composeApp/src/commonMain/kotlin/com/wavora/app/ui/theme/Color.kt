@@ -4,9 +4,11 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
 
-// ===== Wavora Brand Colors — source of truth =====
-val wavoraPrimary = Color(0xFFA259FF)       // Electric Purple — main accent
-val wavoraSecondary = Color(0xFF00D4FF)     // Neon Cyan — secondary accent / active state
+// ===== Aira Brand Colors — source of truth =====
+// Палитра взята с самой иконки: розовая звезда на тёмно-синем. Пурпур и неон-циан
+// остались от Wavora и больше не используются ни как акцент, ни как дефолт темы.
+val wavoraPrimary = Color(0xFFFDC5E2)       // Aira Pink — main accent
+val wavoraSecondary = Color(0xFFFF8FBF)     // Deeper Pink — active/secondary state
 val wavoraAccentDark = Color(0xFF1A0B2E)
 val wavoraBackground: Color get() = WavoraTone.ground
 val wavoraSurface: Color get() = WavoraTone.surface1
@@ -14,9 +16,9 @@ val wavoraBorder: Color get() = WavoraTone.hairline
 val wavoraTextPrimary = Color(0xFFFFFFFF)
 val wavoraTextSecondary = Color(0xFFB3B3B3)
 val wavoraTextDisabled = Color(0xFF6B6B6B)
-val wavoraGradientStart = Color(0xFFA259FF)
-val wavoraGradientMid = Color(0xFF6A5CFF)
-val wavoraGradientEnd = Color(0xFF00D4FF)
+val wavoraGradientStart = Color(0xFFFDC5E2)
+val wavoraGradientMid = Color(0xFFEFA8D8)
+val wavoraGradientEnd = Color(0xFFC9A7FF)
 
 // ===== Material Theme aliases (reference brand tokens) =====
 val md_theme_dark_primary = wavoraPrimary

@@ -63,7 +63,7 @@ fun MiniPlayerRoot(
     val timeline by sharedViewModel.timeline.collectAsStateWithLifecycle()
     val dataStoreManager: DataStoreManager = koinInject()
     val themeMode by dataStoreManager.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
-    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#A259FF")
+    val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#FDC5E2")
     val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("auto")
     val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("auto")
     val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("auto")

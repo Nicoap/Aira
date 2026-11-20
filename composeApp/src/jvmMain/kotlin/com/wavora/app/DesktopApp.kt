@@ -271,7 +271,7 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
     Logger.d(TAG, "===== DIAGNOSTICO ARRANQUE DE PROCESO - PUNTO 3: justo antes de application{} / crear ventana principal =====")
     application {
         var appReady by remember { mutableStateOf<AppReady?>(null) }
-        var splashPrimaryColor by remember { mutableStateOf("#A259FF") }
+        var splashPrimaryColor by remember { mutableStateOf("#FDC5E2") }
         // Полная палитра для сплэша: иначе окно рисовалось на дефолтном тёмном фоне
         // и не совпадало с выбранной темой (пользователь видел «чужое» окно).
         var splashBackgroundColor by remember { mutableStateOf("auto") }
@@ -643,7 +643,7 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
 ) {
     val themeSettings = remember { getKoin().get<DataStoreManager>() }
     val themeMode by themeSettings.themeMode.collectAsState(DataStoreManager.THEME_MODE_DARK)
-    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsState("#A259FF")
+    val themePrimaryColor by themeSettings.themePrimaryColor.collectAsState("#FDC5E2")
     val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsState("auto")
     val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsState("auto")
     val themeTextColor by themeSettings.themeTextColor.collectAsState("auto")
