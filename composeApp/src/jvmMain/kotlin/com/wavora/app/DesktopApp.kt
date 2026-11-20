@@ -649,7 +649,7 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
     val themeTextColor by themeSettings.themeTextColor.collectAsState("#F2F2F2")
     val themeSecondaryTextColor by themeSettings.themeSecondaryTextColor.collectAsState("auto")
     // Main Window - restore saved size and position
-    val windowPrefs = java.util.prefs.Preferences.userRoot().node("Wavora/MainWindow")
+    val windowPrefs = java.util.prefs.Preferences.userRoot().node("Aira/MainWindow")
     val savedWidth = windowPrefs.getFloat("width", 1280f)
     val savedHeight = windowPrefs.getFloat("height", 780f)
     val savedX = windowPrefs.getInt("x", -1)

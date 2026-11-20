@@ -51,7 +51,7 @@ fun MiniPlayerWindow(
     sharedViewModel: SharedViewModel,
     onCloseRequest: () -> Unit,
 ) {
-    val prefs = remember { Preferences.userRoot().node("Wavora/MiniPlayer") }
+    val prefs = remember { Preferences.userRoot().node("Aira/MiniPlayer") }
     var expandOnHover by remember { mutableStateOf(prefs.getBoolean(PREF_EXPAND_ON_HOVER, true)) }
     var expanded by remember { mutableStateOf(false) }
     var hovering by remember { mutableStateOf(false) }

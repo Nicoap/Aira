@@ -310,8 +310,8 @@ class VlcPlayerAdapter(
         fun vlcLogArgs(name: String): List<String> =
             try {
                 val dir =
-                    System.getenv("LOCALAPPDATA")?.let { java.io.File(it, "Wavora/logs") }
-                        ?: java.io.File(System.getProperty("user.home"), ".wavora/logs")
+                    System.getenv("LOCALAPPDATA")?.let { java.io.File(it, "Aira/logs") }
+                        ?: java.io.File(System.getProperty("user.home"), ".aira/logs")
                 dir.mkdirs()
                 listOf(
                     "--file-logging",

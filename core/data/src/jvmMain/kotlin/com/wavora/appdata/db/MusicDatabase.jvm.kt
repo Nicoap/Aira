@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 import com.wavora.common.DB_NAME
-import com.wavora.appdata.io.getHomeFolderPath
+import com.wavora.appdata.io.appHomeFolder
 import com.wavora.logger.Logger
 import java.io.File
 
@@ -45,6 +45,6 @@ actual fun getDatabaseBuilder(
 }
 
 actual fun getDatabasePath(): String {
-    val dbFile = File(getHomeFolderPath(listOf(".wavora", "db")), DB_NAME)
+    val dbFile = File(File(appHomeFolder(), "db"), DB_NAME)
     return dbFile.absolutePath
 }

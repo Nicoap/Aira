@@ -2,6 +2,7 @@ package com.wavora.app.expect
 
 import com.sun.jna.platform.win32.Shell32
 import com.sun.jna.platform.win32.WinUser
+import com.wavora.appdata.io.localAppFolder
 import com.wavora.logger.Logger
 import dev.hydraulic.conveyor.control.SoftwareUpdateController
 import java.io.File
@@ -145,7 +146,7 @@ private fun tryConveyorUpdate(versionName: String): Boolean {
  * files is always safe, no waiting/locking concerns apply here at all.
  */
 private fun ensureUpdaterInstalled(): File {
-    val updaterDir = File(System.getenv("LOCALAPPDATA") ?: error("LOCALAPPDATA not set"), "Wavora/Updater")
+    val updaterDir = File(localAppFolder(), "Updater")
     val versionMarker = File(updaterDir, "updater-version.txt")
     val installedVersion = versionMarker.takeIf { it.exists() }?.readText()?.trim()?.toIntOrNull() ?: -1
 

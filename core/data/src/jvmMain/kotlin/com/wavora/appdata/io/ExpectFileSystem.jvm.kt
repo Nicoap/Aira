@@ -8,4 +8,4 @@ actual fun fileSystem(): FileSystem {
     return FileSystem.SYSTEM
 }
 
-actual fun fileDir(): String = File(getHomeFolderPath(listOf(".wavora"))).absolutePath
+actual fun fileDir(): String = appHomeFolder().absolutePath

@@ -2,6 +2,7 @@ package com.wavora.app.diagnostics
 
 import co.touchlab.kermit.LogWriter
 import co.touchlab.kermit.Severity
+import com.wavora.appdata.io.localAppFolder
 import java.io.File
 import java.io.FileOutputStream
 import java.io.OutputStreamWriter
@@ -45,8 +46,7 @@ class AuditFileLogWriter : LogWriter() {
         )
 
         val logDir: File by lazy {
-            val base = System.getenv("LOCALAPPDATA")?.let { File(it, "Wavora/logs") }
-                ?: File(System.getProperty("user.home"), ".wavora/logs")
+            val base = File(localAppFolder(), "logs")
             base.apply { mkdirs() }
         }
 
@@ -54,7 +54,7 @@ class AuditFileLogWriter : LogWriter() {
         // "el log de esta corrida" sin tener que recortarlo a mano.
         val logFile: File by lazy {
             val ts = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss"))
-            File(logDir, "wavora-$ts.log")
+            File(logDir, "aira-$ts.log")
         }
 
         private fun sessionKey(f: File): String = f.name.removeSuffix(".log").removeSuffix(".1")
@@ -82,7 +82,10 @@ class AuditFileLogWriter : LogWriter() {
         runCatching {
             val all = logDir.listFiles()?.filter { it.isFile } ?: return
             val current = sessionKey(logFile)
-            all.filter { it.name.startsWith("wavora-") && it.name.endsWith(".log") }
+            all.filter {
+                (it.name.startsWith("aira-") || it.name.startsWith("wavora-")) &&
+                    it.name.endsWith(".log")
+            }
                 .groupBy { sessionKey(it) }
                 .filterKeys { it != current }
                 .entries

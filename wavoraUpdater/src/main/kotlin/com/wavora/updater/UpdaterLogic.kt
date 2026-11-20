@@ -56,7 +56,7 @@ class UpdaterException(message: String, cause: Throwable? = null) : Exception(me
  */
 object UpdateLog {
     private val logFile: File by lazy {
-        val dir = File(System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir"), "Wavora/Updater/logs")
+        val dir = File(System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir"), "Aira/Updater/logs")
         dir.mkdirs()
         // Best-effort prune: keep only the 10 most recent log files so this
         // folder doesn't grow forever across many update attempts.
@@ -111,7 +111,7 @@ object UpdateLog {
  * case, without acquiring anything further or opening any UI).
  */
 fun acquireSingleInstanceLock(): FileLock? {
-    val lockDir = File(System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir"), "Wavora/Updater")
+    val lockDir = File(System.getenv("LOCALAPPDATA") ?: System.getProperty("java.io.tmpdir"), "Aira/Updater")
     lockDir.mkdirs()
     val lockFile = File(lockDir, ".instance.lock")
     val channel = RandomAccessFile(lockFile, "rw").channel

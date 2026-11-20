@@ -1,6 +1,6 @@
 package com.wavora.app.expect.ui.kcef
 
-import com.wavora.appdata.io.getHomeFolderPath
+import com.wavora.appdata.io.appHomeFolder
 import com.wavora.logger.Logger
 import dev.datlag.kcef.KCEF
 import kotlinx.coroutines.CoroutineScope
@@ -157,7 +157,7 @@ object KcefBootstrap {
                         // break depending on the process's working
                         // directory - a real risk for an app launched via a
                         // desktop shortcut/MSIX, not a terminal).
-                        val kcefHome = File(getHomeFolderPath(listOf(".wavora", "kcef")))
+                        val kcefHome = File(appHomeFolder(), "kcef")
                         val installDir = File(kcefHome, "bundle")
                         val cacheDir = File(kcefHome, "cache")
 

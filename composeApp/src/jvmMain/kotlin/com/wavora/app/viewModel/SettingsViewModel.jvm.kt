@@ -3,7 +3,7 @@ package com.wavora.app.viewModel
 import com.eygraber.uri.Uri
 import com.wavora.common.DB_NAME
 import com.wavora.common.SETTINGS_FILENAME
-import com.wavora.appdata.io.getHomeFolderPath
+import com.wavora.appdata.io.appHomeFolder
 import com.wavora.domain.repository.CacheRepository
 import com.wavora.domain.repository.CommonRepository
 import com.wavora.logger.Logger
@@ -45,7 +45,7 @@ actual suspend fun restoreNative(
             Logger.d("BackupRestore", "Processing entry: ${entry.name}")
             when {
                 entry.name == "$SETTINGS_FILENAME.preferences_pb" -> {
-                    File(getHomeFolderPath(listOf(".wavora")), "$SETTINGS_FILENAME.preferences_pb")
+                    File(appHomeFolder(), "$SETTINGS_FILENAME.preferences_pb")
                         .outputStream()
                         .use { outputStream ->
                             inputStream.copyTo(outputStream)
@@ -80,7 +80,7 @@ actual suspend fun backupNative(
         FileOutputStream(File(uri.toString()))
     ).use {
         it.buffered().zipOutputStream().use { outputStream ->
-            File(getHomeFolderPath(listOf(".wavora")), "$SETTINGS_FILENAME.preferences_pb")
+            File(appHomeFolder(), "$SETTINGS_FILENAME.preferences_pb")
                 .inputStream()
                 .buffered()
                 .use { inputStream ->
