@@ -274,7 +274,13 @@ compose.desktop {
         // Куча маленькая (десятки мегабайт живых объектов), поэтому G1 с его служебными
         // структурами и десятком потоков здесь лишний: Serial GC экономит ~50 МБ и потоки,
         // а плавность интерфейса при такой куче не страдает.
-        jvmArgs += "-Xmx512m"
+        // Measured: ~72 MB of live objects, but the heap sat at ~490 MB committed (the initial size is 1/64 of
+        // the RAM and the young generation grows to a third of it), and the young generation is touched in full
+        // between collections, so all of it counts as resident. A small fixed young generation and a small start
+        // size keep the working set near what is really used; collections stay cheap with this little live data.
+        jvmArgs += "-Xms48m"
+        jvmArgs += "-Xmn32m"
+        jvmArgs += "-Xmx384m"
         jvmArgs += "-XX:+UseSerialGC"
         jvmArgs += "-XX:CICompilerCount=3"
         jvmArgs += "-XX:MinHeapFreeRatio=10"
