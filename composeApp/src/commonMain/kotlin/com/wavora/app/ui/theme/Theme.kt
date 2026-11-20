@@ -85,9 +85,9 @@ private val LightColors =
 fun AppTheme(
     mode: String = DataStoreManager.THEME_MODE_DARK,
     primaryColorHex: String = "#FDC5E2",
-    backgroundColorHex: String = "#0B0B0F",
-    surfaceColorHex: String = "#12121A",
-    textColorHex: String = "auto",
+    backgroundColorHex: String = "#0F0E27",
+    surfaceColorHex: String = "#06050F",
+    textColorHex: String = "#F2F2F2",
     secondaryTextColorHex: String = "auto",
     content:
         @Composable()

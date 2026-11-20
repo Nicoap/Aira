@@ -198,9 +198,9 @@ fun App(
     val isLiquidGlassEnabled by viewModel.getEnableLiquidGlass().collectAsStateWithLifecycle(DataStoreManager.FALSE)
     val themeMode by themeSettings.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
     val themePrimaryColor by themeSettings.themePrimaryColor.collectAsStateWithLifecycle("#FDC5E2")
-    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsStateWithLifecycle("auto")
-    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsStateWithLifecycle("auto")
-    val themeTextColor by themeSettings.themeTextColor.collectAsStateWithLifecycle("auto")
+    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsStateWithLifecycle("#0F0E27")
+    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsStateWithLifecycle("#06050F")
+    val themeTextColor by themeSettings.themeTextColor.collectAsStateWithLifecycle("#F2F2F2")
     val themeSecondaryTextColor by themeSettings.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
     // MiniPlayer visibility logic
     var isShowMiniPlayer by rememberSaveable {
@@ -1090,7 +1090,7 @@ fun App(
                                 )
                             }
                         },
-                        containerColor = Color(0xFF12121A),
+                        containerColor = MaterialTheme.colorScheme.surface,
                     )
                 }
 

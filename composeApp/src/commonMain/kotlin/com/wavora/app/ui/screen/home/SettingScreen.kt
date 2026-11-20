@@ -642,10 +642,10 @@ fun SettingScreen(
         }
     val displayedThemeBackgroundColor =
         themeBackgroundColor.takeUnless { it == "auto" }
-            ?: if (isDarkTheme) "#0B0B0F" else "#F8F7FA"
+            ?: if (isDarkTheme) "#0F0E27" else "#F8F7FA"
     val displayedThemeSurfaceColor =
         themeSurfaceColor.takeUnless { it == "auto" }
-            ?: if (isDarkTheme) "#12121A" else "#FFFFFF"
+            ?: if (isDarkTheme) "#06050F" else "#FFFFFF"
     // Действующий пресет вычисляется по сохранённым цветам: отдельной настройки нет, поэтому
     // подпись не может разойтись с реальной палитрой. Совпал со всеми четырьмя — это он,
     // иначе «Своя».

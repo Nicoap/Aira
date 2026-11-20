@@ -285,6 +285,14 @@ compose.desktop {
         jvmArgs += "-XX:CICompilerCount=3"
         jvmArgs += "-XX:MinHeapFreeRatio=10"
         jvmArgs += "-XX:MaxHeapFreeRatio=30"
+        // Native-memory profiling (opt-in). The heap is capped at 384 MB, yet the
+        // process still sits several hundred MB higher — that gap is Skia/VLC
+        // natives, code cache and thread stacks. `-Pnmt` turns on Native Memory
+        // Tracking so `jcmd <pid> VM.native_memory summary` gives the real split
+        // instead of a guess. Off by default: NMT costs a few MB and some CPU.
+        if (providers.gradleProperty("nmt").isPresent) {
+            jvmArgs += "-XX:NativeMemoryTracking=summary"
+        }
 
         nativeDistributions {
             appResourcesRootDir = rootDir.resolve("vlc-natives/")

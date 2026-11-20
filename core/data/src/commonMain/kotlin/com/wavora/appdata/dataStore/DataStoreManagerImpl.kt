@@ -1634,7 +1634,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val themeBackgroundColor: Flow<String> =
-        settingsDataStore.data.map { it[THEME_BACKGROUND_COLOR] ?: "auto" }
+        settingsDataStore.data.map { it[THEME_BACKGROUND_COLOR] ?: "#0F0E27" }
 
     override suspend fun setThemeBackgroundColor(color: String) {
         withContext(Dispatchers.IO) {
@@ -1643,7 +1643,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val themeSurfaceColor: Flow<String> =
-        settingsDataStore.data.map { it[THEME_SURFACE_COLOR] ?: "auto" }
+        settingsDataStore.data.map { it[THEME_SURFACE_COLOR] ?: "#06050F" }
 
     override suspend fun setThemeSurfaceColor(color: String) {
         withContext(Dispatchers.IO) {
@@ -1652,7 +1652,7 @@ internal class DataStoreManagerImpl(
     }
 
     override val themeTextColor: Flow<String> =
-        settingsDataStore.data.map { it[THEME_TEXT_COLOR] ?: "auto" }
+        settingsDataStore.data.map { it[THEME_TEXT_COLOR] ?: "#F2F2F2" }
 
     override suspend fun setThemeTextColor(color: String) {
         withContext(Dispatchers.IO) {

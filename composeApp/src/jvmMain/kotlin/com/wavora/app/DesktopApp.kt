@@ -274,9 +274,9 @@ fun runDesktopApp(args: Array<String> = emptyArray()) {
         var splashPrimaryColor by remember { mutableStateOf("#FDC5E2") }
         // Полная палитра для сплэша: иначе окно рисовалось на дефолтном тёмном фоне
         // и не совпадало с выбранной темой (пользователь видел «чужое» окно).
-        var splashBackgroundColor by remember { mutableStateOf("auto") }
-        var splashSurfaceColor by remember { mutableStateOf("auto") }
-        var splashTextColor by remember { mutableStateOf("auto") }
+        var splashBackgroundColor by remember { mutableStateOf("#0F0E27") }
+        var splashSurfaceColor by remember { mutableStateOf("#06050F") }
+        var splashTextColor by remember { mutableStateOf("#F2F2F2") }
         var splashSecondaryTextColor by remember { mutableStateOf("auto") }
         // WAVORA SPLASH FIX (Objetivo 1, Problema 4): antes, apenas `appReady`
         // dejaba de ser null, `SplashWindow` se desmontaba en el mismo frame que
@@ -644,9 +644,9 @@ private fun androidx.compose.ui.window.ApplicationScope.MainAppWindow(
     val themeSettings = remember { getKoin().get<DataStoreManager>() }
     val themeMode by themeSettings.themeMode.collectAsState(DataStoreManager.THEME_MODE_DARK)
     val themePrimaryColor by themeSettings.themePrimaryColor.collectAsState("#FDC5E2")
-    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsState("auto")
-    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsState("auto")
-    val themeTextColor by themeSettings.themeTextColor.collectAsState("auto")
+    val themeBackgroundColor by themeSettings.themeBackgroundColor.collectAsState("#0F0E27")
+    val themeSurfaceColor by themeSettings.themeSurfaceColor.collectAsState("#06050F")
+    val themeTextColor by themeSettings.themeTextColor.collectAsState("#F2F2F2")
     val themeSecondaryTextColor by themeSettings.themeSecondaryTextColor.collectAsState("auto")
     // Main Window - restore saved size and position
     val windowPrefs = java.util.prefs.Preferences.userRoot().node("Wavora/MainWindow")

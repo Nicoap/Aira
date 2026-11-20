@@ -38,8 +38,8 @@ val WavoraThemePresets =
         WavoraThemePreset(
             id = "graphite",
             labelRes = Res.string.theme_preset_graphite,
-            background = "#0B0B0B",
-            surface = "#131313",
+            background = "#0F0E27",
+            surface = "#06050F",
             text = "#F2F2F2",
             primary = "#FDC5E2",
         ),

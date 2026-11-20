@@ -471,6 +471,10 @@ val vlcSetupLinuxCi by tasks.registering {
             include("**/*.so", "**/*.so.*")
             // Strip the top-level dir inside the jar (matches upstream plugin).
             eachFile {
+                if (isPrunedVlcPlugin(relativePath)) {
+                    exclude()
+                    return@eachFile
+                }
                 if (relativePath.segments.size > 1) {
                     relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
                 }
@@ -490,6 +494,43 @@ val vlcSetupLinuxCi by tasks.registering {
             nested.deleteRecursively()
         }
     }
+}
+
+// ---------------------------------------------------------------------------
+// VLC plugin pruning (shared by every platform slice).
+// ---------------------------------------------------------------------------
+// VLC ships its full desktop build: ~150 MB of plugins, of which the Qt
+// interface alone is ~19 MB. Aira draws its own UI and only decodes audio and
+// video streams, so the Qt interface, Lua scripting, network discovery and
+// audio visualisers are never loaded — dropping them shrinks both the shipped
+// runtime and the resident set, while the decode path (access / demux /
+// codec / packetizer / audio+video output) stays untouched.
+val prunedVlcPluginDirs = setOf(
+    "gui",                // Qt interface, skins, tray, extensions dialog
+    "lua",                // playlist/interpreter scripts
+    "services_discovery", // UPnP, SAP, SMB, NFS browsing
+    "visualization",      // projectm / libvisual plugins
+)
+
+// Flat bundle layouts (macOS VLC.app) keep plugins in a single directory, so
+// the same pruning is expressed as file-name prefixes there.
+val prunedVlcPluginPrefixes = listOf(
+    "libqt",
+    "liblua",
+    "libupnp",
+    "libsap",
+    "libnfs",
+    "libdsm",
+    "libmicrodns",
+    "libvisual",
+    "libprojectm",
+)
+
+fun isPrunedVlcPlugin(path: RelativePath): Boolean {
+    val segments = path.segments
+    if (segments.any { it.lowercase() in prunedVlcPluginDirs }) return true
+    val name = segments.lastOrNull()?.lowercase() ?: return false
+    return prunedVlcPluginPrefixes.any { name.startsWith(it) }
 }
 
 // Shared Mac DMG download + extraction logic. Each per-arch task calls
@@ -578,6 +619,10 @@ fun extractMacVlcSlice(
             include("lib/libvlc.dylib", "lib/libvlccore.dylib", "plugins/**")
             // Flatten lib/ → root (matches upstream Mac VlcSetupTask).
             eachFile {
+                if (isPrunedVlcPlugin(relativePath)) {
+                    exclude()
+                    return@eachFile
+                }
                 if (relativePath.segments.firstOrNull() == "lib") {
                     relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
                 }
@@ -638,6 +683,10 @@ fun extractWindowsVlcSlice(
         include("**/*.dll")
         // Strip top-level `vlc-<ver>/` prefix dir.
         eachFile {
+            if (isPrunedVlcPlugin(relativePath)) {
+                exclude()
+                return@eachFile
+            }
             if (relativePath.segments.size > 1) {
                 relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
             }

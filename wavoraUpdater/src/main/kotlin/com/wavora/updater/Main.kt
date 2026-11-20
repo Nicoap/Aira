@@ -59,7 +59,7 @@ private const val MANUAL_DOWNLOAD_URL = "https://github.com/Nicoap/Aira/releases
 // not depend on :composeApp's theme module - see build.gradle.kts's doc on
 // why this module stays standalone). Keep in sync by eye if the palette in
 // composeApp/src/commonMain/kotlin/com/wavora/app/ui/theme/Color.kt changes. =====
-private val wavoraBackground = Color(0xFF0B0B0F)
+private val wavoraBackground = Color(0xFF0F0E27)
 private val wavoraPrimary = Color(0xFFFDC5E2)
 private val wavoraGradientMid = Color(0xFFEFA8D8)
 private val wavoraGradientEnd = Color(0xFFC9A7FF)

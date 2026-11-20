@@ -64,9 +64,9 @@ fun MiniPlayerRoot(
     val dataStoreManager: DataStoreManager = koinInject()
     val themeMode by dataStoreManager.themeMode.collectAsStateWithLifecycle(DataStoreManager.THEME_MODE_DARK)
     val themePrimaryColor by dataStoreManager.themePrimaryColor.collectAsStateWithLifecycle("#FDC5E2")
-    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("auto")
-    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("auto")
-    val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("auto")
+    val themeBackgroundColor by dataStoreManager.themeBackgroundColor.collectAsStateWithLifecycle("#0F0E27")
+    val themeSurfaceColor by dataStoreManager.themeSurfaceColor.collectAsStateWithLifecycle("#06050F")
+    val themeTextColor by dataStoreManager.themeTextColor.collectAsStateWithLifecycle("#F2F2F2")
     val themeSecondaryTextColor by dataStoreManager.themeSecondaryTextColor.collectAsStateWithLifecycle("auto")
 
     val lyricsData by remember {

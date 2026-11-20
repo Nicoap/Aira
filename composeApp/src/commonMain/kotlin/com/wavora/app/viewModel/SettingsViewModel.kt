@@ -203,11 +203,11 @@ class SettingsViewModel(
     val themeMode: StateFlow<String> = _themeMode
     private val _themePrimaryColor = MutableStateFlow("#FDC5E2")
     val themePrimaryColor: StateFlow<String> = _themePrimaryColor
-    private val _themeBackgroundColor = MutableStateFlow("auto")
+    private val _themeBackgroundColor = MutableStateFlow("#0F0E27")
     val themeBackgroundColor: StateFlow<String> = _themeBackgroundColor
-    private val _themeSurfaceColor = MutableStateFlow("auto")
+    private val _themeSurfaceColor = MutableStateFlow("#06050F")
     val themeSurfaceColor: StateFlow<String> = _themeSurfaceColor
-    private val _themeTextColor = MutableStateFlow("auto")
+    private val _themeTextColor = MutableStateFlow("#F2F2F2")
     val themeTextColor: StateFlow<String> = _themeTextColor
     private val _themeSecondaryTextColor = MutableStateFlow("auto")
     val themeSecondaryTextColor: StateFlow<String> = _themeSecondaryTextColor
