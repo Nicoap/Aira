@@ -64,9 +64,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.wavora.app.ui.theme.LocalAppTypography
-import com.wavora.app.ui.theme.wavoraGradientEnd
-import com.wavora.app.ui.theme.wavoraGradientStart
-import com.wavora.app.ui.theme.wavoraSecondary
 import com.wavora.app.viewModel.SettingsViewModel
 import com.wavora.app.viewModel.detectSystemLanguageTag
 import com.wavora.common.SUPPORTED_LANGUAGE
@@ -283,17 +280,17 @@ private fun LanguageSelectionStep(
             Button(
                 onClick = onContinue,
                 modifier = Modifier.fillMaxWidth().padding(bottom = 32.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.primary,
+                    contentColor = MaterialTheme.colorScheme.onPrimary,
+                ),
                 shape = RoundedCornerShape(50),
             ) {
                 Box(
                     modifier =
                         Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                Brush.horizontalGradient(listOf(wavoraGradientStart, wavoraGradientEnd)),
-                            ).padding(vertical = 12.dp),
+                            .padding(vertical = 12.dp),
                     contentAlignment = Alignment.Center,
                 ) {
                     Text(
@@ -303,7 +300,6 @@ private fun LanguageSelectionStep(
                             } else {
                                 stringResource(Res.string.onboarding_next)
                             },
-                        color = MaterialTheme.colorScheme.onBackground,
                         fontWeight = FontWeight.SemiBold,
                         style = LocalAppTypography.current.labelLarge,
                     )
@@ -331,19 +327,19 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
             emoji = "📝",
             title = { stringResource(Res.string.onboarding_page2_title) },
             subtitle = { stringResource(Res.string.onboarding_page2_subtitle) },
-            accentColor = wavoraSecondary,
+            accentColor = MaterialTheme.colorScheme.secondary,
         ),
         OnboardingPage(
             emoji = "🌐",
             title = { stringResource(Res.string.onboarding_page3_title) },
             subtitle = { stringResource(Res.string.onboarding_page3_subtitle) },
-            accentColor = wavoraGradientStart,
+            accentColor = MaterialTheme.colorScheme.tertiary,
         ),
         OnboardingPage(
             emoji = "📥",
             title = { stringResource(Res.string.onboarding_page4_title) },
             subtitle = { stringResource(Res.string.onboarding_page4_subtitle) },
-            accentColor = wavoraGradientEnd,
+            accentColor = MaterialTheme.colorScheme.primary,
         ),
     )
 
@@ -541,18 +537,15 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                         }
                     },
                     modifier = Modifier.weight(2f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color.Transparent),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.primary,
+                        contentColor = MaterialTheme.colorScheme.onPrimary,
+                    ),
                     shape = RoundedCornerShape(50),
                 ) {
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(50))
-                            .background(
-                                Brush.horizontalGradient(
-                                    listOf(wavoraGradientStart, wavoraGradientEnd),
-                                ),
-                            )
                             .padding(vertical = 12.dp),
                         contentAlignment = Alignment.Center,
                     ) {
@@ -562,7 +555,6 @@ private fun OnboardingTutorialPager(onFinish: () -> Unit) {
                             } else {
                                 stringResource(Res.string.onboarding_next)
                             },
-                            color = MaterialTheme.colorScheme.onBackground,
                             fontWeight = FontWeight.SemiBold,
                             style = LocalAppTypography.current.labelLarge,
                         )

@@ -17,5 +17,5 @@
         android:width="96dp"
         android:height="96dp"
         android:gravity="center"
-        android:drawable="@drawable/app_icon" />
+        android:drawable="@drawable/ic_launcher_star" />
 </layer-list>

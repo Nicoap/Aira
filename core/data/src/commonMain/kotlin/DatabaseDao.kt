@@ -825,7 +825,10 @@ interface DatabaseDao {
     @Insert(onConflict = OnConflictStrategy.ABORT)
     suspend fun insertPlaybackEvent(playbackEventEntity: PlaybackEventEntity): Long
 
-    @Insert
+    // IGNORE, а не ABORT: YouTube Music иногда отдаёт один и тот же канал
+    // артиста дважды в списке, и дубль бил в первичный ключ (eventId, channelId),
+    // роняя всю транзакцию записи события прослушивания.
+    @Insert(onConflict = OnConflictStrategy.IGNORE)
     suspend fun insertEventArtist(eventArtist: EventArtistEntity)
 
     @Transaction
@@ -849,7 +852,8 @@ interface DatabaseDao {
                 ),
             )
 
-        channelIds.forEach { channelId ->
+        // distinct + без пустых: дубли в списке каналов ломали unique-ключ
+        channelIds.distinct().filter { it.isNotBlank() }.forEach { channelId ->
             insertEventArtist(
                 EventArtistEntity(
                     eventId = eventId,
