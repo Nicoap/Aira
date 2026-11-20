@@ -27,6 +27,9 @@ internal object RenderGuard {
     private val pending = File(dir, "render_pending")
     private val forceSoftware = File(dir, "render_force_software")
 
+    // How long a software fallback stays in force before the GPU is tried again.
+    private const val STICKY_FALLBACK_MAX_AGE_MS = 24L * 60 * 60 * 1000
+
     @Volatile
     private var usingGpu = false
 
@@ -56,19 +59,32 @@ internal object RenderGuard {
             if (pending.exists()) {
                 // Previous launch neither rendered a frame nor exited cleanly.
                 forceSoftware.createNewFile()
+                forceSoftware.setLastModified(System.currentTimeMillis())
                 why = "previous launch died before its first frame"
+            }
+            var retried = false
+            if (forceSoftware.exists() && why == null &&
+                System.currentTimeMillis() - forceSoftware.lastModified() > STICKY_FALLBACK_MAX_AGE_MS
+            ) {
+                // A single killed launch (a restart of the dev build, a task kill, a power cut) is enough to
+                // set the flag, and it used to switch the GPU off for good: every later launch drew the whole UI
+                // on the CPU (about half a core on the UI thread) without any visible reason. A fallback
+                // therefore expires; if the GPU really does crash, the marker brings the flag back.
+                forceSoftware.delete()
+                pending.delete()
+                retried = true
             }
             if (forceSoftware.exists()) {
                 pending.delete()
                 return pick(
                     "SOFTWARE",
                     why
-                        ?: "sticky fallback flag ${forceSoftware.name} from an earlier failed launch " +
-                        "(delete it or set WAVORA_RENDER=gpu to retry the GPU)",
+                        ?: "fallback flag ${forceSoftware.name} from an earlier failed launch, retried after " +
+                        "${STICKY_FALLBACK_MAX_AGE_MS / 3_600_000} h (delete it or set WAVORA_RENDER=gpu to retry now)",
                 )
             }
             usingGpu = true
-            return pick("DIRECT3D", "default")
+            return pick("DIRECT3D", if (retried) "retrying the GPU after an expired fallback" else "default")
         } catch (_: Throwable) {
             return pick("SOFTWARE", "RenderGuard error")
         }
